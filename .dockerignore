@@ -1,0 +1,14 @@
+.git
+.next
+.next-local
+.next.stale-*
+node_modules
+.venv
+artifacts
+.env
+.env.local
+*.tsbuildinfo
+npm-debug.log
+Dockerfile*
+docker-compose*.yml
+README.md
