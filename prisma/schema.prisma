@@ -1,0 +1,208 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  DISABLED
+  EXPIRED
+  CANCELED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  CANCELED
+  FAILED
+}
+
+enum PaymentProvider {
+  YOOKASSA
+  PLATEGA
+}
+
+enum PromoCodeType {
+  DISCOUNT_PERCENT
+  DISCOUNT_FIXED
+  FREE_DAYS
+  FREE_TRAFFIC_GB
+}
+
+model User {
+  id                  String           @id @default(cuid())
+  email               String           @unique
+  passwordHash        String
+  remnawaveUuid       String?          @unique @map("remnawave_uuid")
+  remnawaveUsername   String?
+  remnawaveShortUuid  String?
+  telegramId          String?          @unique
+  role                Role             @default(USER)
+  referralCode        String           @unique @default(cuid())
+  referredById        String?
+  referredBy          User?            @relation("Referrals", fields: [referredById], references: [id])
+  referrals           User[]           @relation("Referrals")
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  payments            Payment[]
+  subscription        Subscription?
+  promoUsages         PromoUsage[]
+  referralRewards     ReferralReward[] @relation("ReferralRewardOwner")
+  referralSources     ReferralReward[] @relation("ReferralRewardSource")
+  adminLogs           AdminLog[]
+
+  @@index([role])
+  @@map("users")
+}
+
+model Subscription {
+  id                  String             @id @default(cuid())
+  userId              String             @unique
+  planId              String
+  status              SubscriptionStatus @default(PENDING)
+  startsAt            DateTime?
+  expiresAt           DateTime?
+  trafficLimitBytes   BigInt?
+  trafficUsedBytes    BigInt?            @default(0)
+  remnawaveLastSyncAt DateTime?
+  grantedByAdminId    String?
+  grantNote           String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                Plan               @relation(fields: [planId], references: [id])
+  payments            Payment[]
+
+  @@index([status])
+  @@index([expiresAt])
+  @@map("subscriptions")
+}
+
+model Payment {
+  id                String          @id @default(cuid())
+  userId            String
+  planId            String
+  subscriptionId    String?
+  provider          PaymentProvider
+  externalPaymentId String?         @unique
+  amount            Int
+  originalAmount    Int?
+  currency          String          @default("RUB")
+  status            PaymentStatus   @default(PENDING)
+  confirmationUrl   String?
+  providerPayload   Json?
+  promoCodeId       String?
+  paidAt            DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan              Plan            @relation(fields: [planId], references: [id])
+  subscription      Subscription?   @relation(fields: [subscriptionId], references: [id])
+  promoCode         PromoCode?      @relation(fields: [promoCodeId], references: [id])
+
+  @@index([status])
+  @@index([provider])
+  @@index([createdAt])
+  @@map("payments")
+}
+
+model Plan {
+  id                         String         @id @default(cuid())
+  slug                       String         @unique
+  name                       String
+  description                String?
+  durationDays               Int
+  trafficGB                  Int
+  price                      Int
+  isActive                   Boolean        @default(true)
+  highlight                  String?
+  sortOrder                  Int            @default(0)
+  remnawaveExternalSquadUuid String?
+  remnawaveInternalSquadUuids String[]      @default([])
+  remnawaveHwidDeviceLimit   Int?
+  createdAt                  DateTime       @default(now())
+  updatedAt                  DateTime       @updatedAt
+  subscriptions              Subscription[]
+  payments                   Payment[]
+
+  @@index([isActive, sortOrder])
+  @@map("plans")
+}
+
+model PromoCode {
+  id               String        @id @default(cuid())
+  code             String        @unique
+  type             PromoCodeType
+  value            Int
+  maxUsages        Int?
+  currentUsages    Int           @default(0)
+  maxUsagesPerUser Int           @default(1)
+  minAmount        Int?
+  applicablePlanIds String[]     @default([])
+  startsAt         DateTime      @default(now())
+  expiresAt        DateTime?
+  isActive         Boolean       @default(true)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  usages           PromoUsage[]
+  payments         Payment[]
+
+  @@index([isActive, code])
+  @@map("promo_codes")
+}
+
+model PromoUsage {
+  id          String    @id @default(cuid())
+  promoCodeId String
+  userId      String
+  paymentId   String?
+  usedAt      DateTime  @default(now())
+  promoCode   PromoCode @relation(fields: [promoCodeId], references: [id])
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([promoCodeId, userId, paymentId])
+  @@map("promo_usages")
+}
+
+model ReferralReward {
+  id             String   @id @default(cuid())
+  ownerId        String
+  referredUserId String
+  rewardType     String
+  rewardValue    Int
+  applied        Boolean  @default(false)
+  paymentId      String?
+  createdAt      DateTime @default(now())
+  owner          User     @relation("ReferralRewardOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  referredUser   User     @relation("ReferralRewardSource", fields: [referredUserId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, applied])
+  @@unique([ownerId, referredUserId, paymentId])
+  @@map("referral_rewards")
+}
+
+model AdminLog {
+  id         String   @id @default(cuid())
+  adminId    String?
+  action     String
+  targetType String
+  targetId   String
+  details    Json?
+  createdAt  DateTime @default(now())
+  admin      User?    @relation(fields: [adminId], references: [id])
+
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([adminId])
+  @@index([createdAt])
+  @@map("admin_logs")
+}
