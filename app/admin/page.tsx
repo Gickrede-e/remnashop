@@ -56,7 +56,7 @@ export default async function AdminDashboardPage() {
         </div>
       </section>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {items.map((item) => (
           <Card key={item.label}>
             <CardHeader className="p-5 sm:p-6">

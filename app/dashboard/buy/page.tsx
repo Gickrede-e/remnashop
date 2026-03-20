@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { PaymentCheckout } from "@/components/dashboard/payment-checkout";
+import { buildLoginHref } from "@/lib/auth/navigation";
 import { getSession } from "@/lib/auth/session";
 import { getActivePlans } from "@/lib/services/plans";
 
@@ -9,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function DashboardBuyPage() {
   const session = await getSession();
   if (!session) {
-    redirect("/login");
+    redirect(buildLoginHref("/dashboard/buy"));
   }
 
   const plans = await getActivePlans();

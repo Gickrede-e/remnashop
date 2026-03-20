@@ -16,7 +16,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div className="container py-6 md:py-8 lg:py-10">
+    <div className="container overflow-x-hidden py-4 sm:py-6 md:py-8 lg:py-10">
       <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
         <AdminSidebar />
         <div className="grid min-w-0 gap-6">{children}</div>

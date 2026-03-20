@@ -1,3 +1,4 @@
+import { AsyncActionButton } from "@/components/admin/async-action-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PaymentStatusBadge } from "@/components/shared/status-badge";
@@ -22,6 +23,9 @@ export default async function AdminPaymentsPage({ searchParams }: PaymentsPagePr
     status: resolvedSearchParams?.status,
     provider: resolvedSearchParams?.provider
   });
+
+  const canRefreshPayment = (payment: (typeof result.items)[number]) =>
+    payment.status === "PENDING" || (payment.status === "SUCCEEDED" && !payment.subscriptionId);
 
   return (
     <Card>
@@ -51,6 +55,13 @@ export default async function AdminPaymentsPage({ searchParams }: PaymentsPagePr
                   <PaymentStatusBadge status={payment.status} />
                   <p className="text-xs text-zinc-500">{formatDateTime(payment.paidAt ?? payment.createdAt)}</p>
                 </div>
+                {canRefreshPayment(payment) ? (
+                  <AsyncActionButton
+                    label="Проверить статус"
+                    pendingLabel="Проверяем..."
+                    endpoint={`/api/admin/payments/${payment.id}/refresh`}
+                  />
+                ) : null}
               </div>
             </div>
           ))}
@@ -66,6 +77,7 @@ export default async function AdminPaymentsPage({ searchParams }: PaymentsPagePr
                 <TableHead>Сумма</TableHead>
                 <TableHead>Статус</TableHead>
                 <TableHead>Дата</TableHead>
+                <TableHead>Действия</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -79,6 +91,15 @@ export default async function AdminPaymentsPage({ searchParams }: PaymentsPagePr
                     <PaymentStatusBadge status={payment.status} />
                   </TableCell>
                   <TableCell>{formatDateTime(payment.paidAt ?? payment.createdAt)}</TableCell>
+                  <TableCell>
+                    {canRefreshPayment(payment) ? (
+                      <AsyncActionButton
+                        label="Проверить статус"
+                        pendingLabel="Проверяем..."
+                        endpoint={`/api/admin/payments/${payment.id}/refresh`}
+                      />
+                    ) : null}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

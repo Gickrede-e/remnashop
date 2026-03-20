@@ -15,9 +15,6 @@ export function SiteFooter() {
           <Link href="/faq" className="transition hover:text-foreground">
             FAQ
           </Link>
-          <Link href="/setup" className="transition hover:text-foreground">
-            Настройка
-          </Link>
         </div>
       </div>
     </footer>

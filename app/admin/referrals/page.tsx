@@ -10,7 +10,7 @@ export default async function AdminReferralsPage() {
 
   return (
     <div className="grid gap-6">
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle>Всего рефералов</CardTitle>

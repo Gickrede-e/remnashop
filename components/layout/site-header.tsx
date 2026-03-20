@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button";
 
 const links = [
   { href: "/pricing", label: "Тарифы" },
-  { href: "/faq", label: "FAQ" },
-  { href: "/setup", label: "Настройка" }
+  { href: "/faq", label: "FAQ" }
 ];
 
 export async function SiteHeader() {

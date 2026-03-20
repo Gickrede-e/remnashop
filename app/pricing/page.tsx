@@ -14,6 +14,7 @@ export default async function PricingPage() {
   const session = await getSession();
   const plans = await getPublicPlans();
   const purchaseHref = session ? "/dashboard/buy" : buildLoginHref("/dashboard/buy");
+  const hasPlans = plans.length > 0;
 
   return (
     <div className="container py-8 sm:py-10 lg:py-14">
@@ -50,46 +51,57 @@ export default async function PricingPage() {
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {plans.map((plan) => (
-            <Card
-              key={plan.id}
-              className={`overflow-hidden ${plan.highlight ? "surface-feature border-sky-300/18" : "surface-soft"}`}
-            >
-              <CardHeader className="gap-4 border-b border-white/8 bg-gradient-to-br from-sky-400/8 via-transparent to-transparent p-5 sm:p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-2">
-                    <CardTitle>{plan.name}</CardTitle>
-                    <CardDescription className="leading-6">
-                      {plan.description || "Полный доступ к VPN, личный кабинет и удобное продление."}
-                    </CardDescription>
+        {hasPlans ? (
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {plans.map((plan) => (
+              <Card
+                key={plan.id}
+                className={`overflow-hidden ${plan.highlight ? "surface-feature border-sky-300/18" : "surface-soft"}`}
+              >
+                <CardHeader className="gap-4 border-b border-white/8 bg-gradient-to-br from-sky-400/8 via-transparent to-transparent p-5 sm:p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-2">
+                      <CardTitle>{plan.name}</CardTitle>
+                      <CardDescription className="leading-6">
+                        {plan.description || "Полный доступ к VPN, личный кабинет и удобное продление."}
+                      </CardDescription>
+                    </div>
+                    {plan.highlight ? <Badge className="shrink-0">{plan.highlight}</Badge> : null}
                   </div>
-                  {plan.highlight ? <Badge className="shrink-0">{plan.highlight}</Badge> : null}
-                </div>
-                <div className="space-y-1">
-                  <p className="text-3xl font-semibold text-white">{formatCurrency(plan.price)}</p>
-                  <p className="text-sm text-zinc-400">{plan.durationDays} дней доступа</p>
-                </div>
-              </CardHeader>
-              <CardContent className="flex h-full flex-col gap-5 p-5 sm:p-6">
-                <ul className="grid gap-3 text-sm leading-6 text-zinc-300">
-                  <li className="rounded-2xl border border-white/8 bg-white/[0.02] px-4 py-3">
-                    {plan.trafficGB} ГБ трафика
-                  </li>
-                  <li className="rounded-2xl border border-white/8 bg-white/[0.02] px-4 py-3">
-                    История платежей и управление в кабинете
-                  </li>
-                  <li className="rounded-2xl border border-white/8 bg-white/[0.02] px-4 py-3">
-                    Продление с сохранением дней и трафика
-                  </li>
-                </ul>
-                <Button asChild className="mt-auto w-full">
-                  <Link href={purchaseHref}>Купить тариф</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </section>
+                  <div className="space-y-1">
+                    <p className="text-3xl font-semibold text-white">{formatCurrency(plan.price)}</p>
+                    <p className="text-sm text-zinc-400">{plan.durationDays} дней доступа</p>
+                  </div>
+                </CardHeader>
+                <CardContent className="flex h-full flex-col gap-5 p-5 sm:p-6">
+                  <ul className="grid gap-3 text-sm leading-6 text-zinc-300">
+                    <li className="rounded-2xl border border-white/8 bg-white/[0.02] px-4 py-3">
+                      {plan.trafficGB} ГБ трафика
+                    </li>
+                    <li className="rounded-2xl border border-white/8 bg-white/[0.02] px-4 py-3">
+                      История платежей и управление в кабинете
+                    </li>
+                    <li className="rounded-2xl border border-white/8 bg-white/[0.02] px-4 py-3">
+                      Продление с сохранением дней и трафика
+                    </li>
+                  </ul>
+                  <Button asChild className="mt-auto w-full">
+                    <Link href={purchaseHref}>Купить тариф</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </section>
+        ) : (
+          <Card className="surface-soft">
+            <CardHeader className="p-5 sm:p-6">
+              <CardTitle>Тарифы временно недоступны</CardTitle>
+              <CardDescription className="leading-6">
+                Сейчас в продаже нет активных тарифов. Проверьте настройки тарифной сетки в админке или вернитесь позже.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        )}
       </div>
     </div>
   );

@@ -154,6 +154,19 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
     });
   }, [promoCode, selectedPlan, startTransition]);
 
+  if (plans.length === 0) {
+    return (
+      <Card className="surface-soft">
+        <CardHeader>
+          <CardTitle>Нет доступных тарифов</CardTitle>
+          <CardDescription>
+            Сейчас активные тарифы не найдены. Проверьте настройки тарифов в админке и повторите попытку.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
   return (
     <div className="grid items-start gap-6 xl:grid-cols-[1.2fr_0.8fr]">
       <div className="grid gap-4">
@@ -220,10 +233,10 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
           {message ? <p className="text-sm text-zinc-400">{message}</p> : null}
 
           <div className="grid gap-3">
-            <Button onClick={() => createPayment(PaymentProvider.YOOKASSA)} disabled={pending}>
+            <Button className="w-full" onClick={() => createPayment(PaymentProvider.YOOKASSA)} disabled={pending}>
               Оплатить через ЮKassa
             </Button>
-            <Button variant="secondary" onClick={() => createPayment(PaymentProvider.PLATEGA)} disabled={pending}>
+            <Button className="w-full" variant="secondary" onClick={() => createPayment(PaymentProvider.PLATEGA)} disabled={pending}>
               Оплатить через Platega
             </Button>
           </div>

@@ -8,13 +8,11 @@ import { LogoutButton } from "@/components/shared/logout-button";
 
 const links = [
   { href: "/pricing", label: "Тарифы" },
-  { href: "/setup", label: "Настройка" },
   { href: "/faq", label: "FAQ" }
 ];
 
 export function SiteHeader({ session }: { session: SessionPayload | null }) {
-  const dashboardHref = session?.role === "ADMIN" ? "/admin" : "/dashboard";
-  const dashboardLabel = session?.role === "ADMIN" ? "Админка" : "Личный кабинет";
+  const isAdmin = session?.role === "ADMIN";
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/5 bg-black/30 backdrop-blur-xl">
@@ -35,11 +33,22 @@ export function SiteHeader({ session }: { session: SessionPayload | null }) {
         <div className="hidden items-center gap-3 md:flex">
           {session ? (
             <>
-              <Link href={dashboardHref}>
-                <Button size="sm">
-                  {dashboardLabel}
-                </Button>
-              </Link>
+              {isAdmin ? (
+                <>
+                  <Link href="/dashboard">
+                    <Button size="sm" variant="secondary">
+                      Личный кабинет
+                    </Button>
+                  </Link>
+                  <Link href="/admin">
+                    <Button size="sm">Админка</Button>
+                  </Link>
+                </>
+              ) : (
+                <Link href="/dashboard">
+                  <Button size="sm">Личный кабинет</Button>
+                </Link>
+              )}
               <LogoutButton />
             </>
           ) : (
@@ -58,9 +67,15 @@ export function SiteHeader({ session }: { session: SessionPayload | null }) {
 
         <div className="flex items-center gap-2 md:hidden">
           {session ? (
-            <Link href={dashboardHref}>
-              <Button size="sm">{dashboardLabel}</Button>
-            </Link>
+            isAdmin ? (
+              <Link href="/admin">
+                <Button size="sm">Админка</Button>
+              </Link>
+            ) : (
+              <Link href="/dashboard">
+                <Button size="sm">Личный кабинет</Button>
+              </Link>
+            )
           ) : (
             <Link href="/login">
               <Button variant="ghost" size="sm">
@@ -91,11 +106,26 @@ export function SiteHeader({ session }: { session: SessionPayload | null }) {
               <div className="mt-3 grid gap-2 border-t border-white/10 pt-3">
                 {session ? (
                   <>
-                    <Link href={dashboardHref}>
-                      <Button className="w-full" size="sm">
-                        {dashboardLabel}
-                      </Button>
-                    </Link>
+                    {isAdmin ? (
+                      <>
+                        <Link href="/admin">
+                          <Button className="w-full" size="sm">
+                            Админка
+                          </Button>
+                        </Link>
+                        <Link href="/dashboard">
+                          <Button className="w-full" size="sm" variant="secondary">
+                            Личный кабинет
+                          </Button>
+                        </Link>
+                      </>
+                    ) : (
+                      <Link href="/dashboard">
+                        <Button className="w-full" size="sm">
+                          Личный кабинет
+                        </Button>
+                      </Link>
+                    )}
                     <div className="w-full [&>button]:w-full">
                       <LogoutButton />
                     </div>
