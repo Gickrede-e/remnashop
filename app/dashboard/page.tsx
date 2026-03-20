@@ -28,18 +28,43 @@ export default async function DashboardPage() {
   const referralLink = user ? `${process.env.NEXT_PUBLIC_SITE_URL}/register?ref=${user.referralCode}` : "";
 
   return (
-    <>
-      <div className="space-y-2">
-        <p className="text-sm uppercase tracking-[0.2em] text-zinc-500">Личный кабинет</p>
-        <h1 className="text-4xl font-semibold text-white">Статус подписки и доступ</h1>
-      </div>
+    <div className="grid gap-6">
+      <section className="surface-feature p-5 sm:p-7">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.8fr)] xl:items-end">
+          <div className="space-y-4">
+            <p className="section-kicker">Личный кабинет</p>
+            <div className="space-y-3">
+              <h1 className="text-3xl font-semibold text-white sm:text-4xl">Статус подписки и доступ</h1>
+              <p className="max-w-2xl text-sm leading-6 text-zinc-300 sm:text-base">
+                Здесь видно актуальный статус доступа, остаток трафика, ссылку для подключения и быстрые
+                действия по продлению подписки.
+              </p>
+            </div>
+          </div>
+
+          <div className="surface-soft grid gap-3 p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-sm text-zinc-400">Текущий статус</span>
+              {subscription ? <SubscriptionStatusBadge status={subscription.status} /> : <span className="text-sm text-zinc-500">Нет подписки</span>}
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-sm text-zinc-400">Тариф</span>
+              <span className="text-sm font-medium text-white">{subscription?.plan?.name ?? "Не выбран"}</span>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-sm text-zinc-400">Доступ до</span>
+              <span className="text-sm font-medium text-white">{formatDateTime(subscription?.expiresAt)}</span>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <div className="grid gap-4 xl:grid-cols-3">
         <Card>
-          <CardHeader>
+          <CardHeader className="p-5 sm:p-6">
             <CardTitle>Подписка</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 p-5 pt-0 sm:p-6 sm:pt-0">
             {subscription ? (
               <>
                 <SubscriptionStatusBadge status={subscription.status} />
@@ -52,20 +77,20 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
+          <CardHeader className="p-5 sm:p-6">
             <CardTitle>Трафик</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-2 p-5 pt-0 sm:p-6 sm:pt-0">
             <p className="text-sm text-zinc-400">Лимит</p>
             <p className="text-2xl font-semibold text-white">{formatBytes(subscription?.trafficLimitBytes)}</p>
             <p className="text-sm text-zinc-400">Использовано {formatBytes(subscription?.trafficUsedBytes)}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
+          <CardHeader className="p-5 sm:p-6">
             <CardTitle>Конфиг и действия</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-3">
+          <CardContent className="grid gap-3 p-5 pt-0 sm:p-6 sm:pt-0">
             <Link href="/dashboard/buy">
               <Button className="w-full justify-between">
                 Продлить или купить
@@ -89,10 +114,10 @@ export default async function DashboardPage() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="p-5 sm:p-6">
           <CardTitle>Реферальная ссылка</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 p-5 pt-0 sm:p-6 sm:pt-0">
           <div className="break-all rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-zinc-300">
             {referralLink || "Ссылка появится после загрузки профиля."}
           </div>
@@ -104,6 +129,6 @@ export default async function DashboardPage() {
           </Link>
         </CardContent>
       </Card>
-    </>
+    </div>
   );
 }

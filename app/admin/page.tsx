@@ -29,27 +29,49 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="grid gap-6">
-      <div className="space-y-2">
-        <p className="text-sm uppercase tracking-[0.2em] text-zinc-500">Админка</p>
-        <h1 className="text-4xl font-semibold text-white">Дашборд GickVPN</h1>
-      </div>
+      <section className="surface-feature p-5 sm:p-7">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.85fr)] xl:items-end">
+          <div className="space-y-3">
+            <p className="section-kicker">Админка</p>
+            <h1 className="text-3xl font-semibold text-white sm:text-4xl">Дашборд GickVPN</h1>
+            <p className="max-w-2xl text-sm leading-6 text-zinc-300 sm:text-base">
+              Основные показатели продаж, активности пользователей и подписок собраны на одном экране.
+            </p>
+          </div>
+
+          <div className="surface-soft grid gap-3 p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-sm text-zinc-400">Активные подписки</span>
+              <span className="text-base font-semibold text-white">{stats.activeSubscriptions}</span>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-sm text-zinc-400">Пользователи</span>
+              <span className="text-base font-semibold text-white">{stats.totalUsers}</span>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-sm text-zinc-400">Конверсия</span>
+              <span className="text-base font-semibold text-white">{stats.conversion}%</span>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {items.map((item) => (
           <Card key={item.label}>
-            <CardHeader>
+            <CardHeader className="p-5 sm:p-6">
               <CardTitle className="text-base text-zinc-300">{item.label}</CardTitle>
             </CardHeader>
-            <CardContent className="text-3xl font-semibold text-white">{item.value}</CardContent>
+            <CardContent className="p-5 pt-0 text-3xl font-semibold text-white sm:p-6 sm:pt-0">{item.value}</CardContent>
           </Card>
         ))}
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="p-5 sm:p-6">
           <CardTitle>Доход по дням за 30 дней</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-5 pt-0 sm:p-6 sm:pt-0">
           <RevenueChart data={chart} />
         </CardContent>
       </Card>

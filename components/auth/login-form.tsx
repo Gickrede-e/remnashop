@@ -66,12 +66,14 @@ export function LoginForm({
   });
 
   return (
-    <Card className="mx-auto w-full max-w-md">
-      <CardHeader>
+    <Card className="surface-soft mx-auto w-full max-w-xl">
+      <CardHeader className="p-5 sm:p-6">
         <CardTitle>Вход в GickVPN</CardTitle>
-        <CardDescription>Войдите по email или через Telegram, чтобы открыть кабинет.</CardDescription>
+        <CardDescription className="leading-6">
+          Войдите по email или через Telegram, чтобы открыть кабинет.
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 p-5 pt-0 sm:p-6 sm:pt-0">
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -95,6 +97,10 @@ export function LoginForm({
         <div className="space-y-3">
           <p className="text-center text-xs uppercase tracking-[0.2em] text-zinc-500">или</p>
           <TelegramLoginButton botUsername={telegramUsername} nextPath={safeNextPath} />
+        </div>
+
+        <div className="rounded-2xl border border-white/8 bg-white/[0.02] px-4 py-3 text-sm leading-6 text-zinc-400">
+          После входа вы вернётесь в кабинет или продолжите покупку без лишних шагов.
         </div>
 
         <p className="text-sm text-zinc-400">

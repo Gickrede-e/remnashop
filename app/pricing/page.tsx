@@ -16,39 +16,80 @@ export default async function PricingPage() {
   const purchaseHref = session ? "/dashboard/buy" : buildLoginHref("/dashboard/buy");
 
   return (
-    <div className="container py-16">
-      <div className="mb-10 max-w-2xl">
-        <p className="text-sm uppercase tracking-[0.24em] text-muted-foreground">Pricing</p>
-        <h1 className="mt-3 font-['Space_Grotesk'] text-4xl font-semibold">Тарифы GickVPN</h1>
-        <p className="mt-3 text-muted-foreground">Каждый тариф активируется через личный кабинет, поддерживает продление и работает с промокодами.</p>
-      </div>
-      <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
-        {plans.map((plan) => (
-          <Card key={plan.id} className="overflow-hidden">
-            <CardHeader className="bg-gradient-to-br from-violet-500/12 to-blue-500/12">
-              <div className="flex items-center justify-between">
-                <CardTitle>{plan.name}</CardTitle>
-                {plan.highlight ? <Badge>{plan.highlight}</Badge> : null}
+    <div className="container py-8 sm:py-10 lg:py-14">
+      <div className="grid gap-6">
+        <section className="surface-feature overflow-hidden p-5 sm:p-7 lg:p-8">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)] lg:items-end">
+            <div className="space-y-4">
+              <p className="section-kicker">Тарифы</p>
+              <div className="space-y-3">
+                <h1 className="max-w-3xl text-3xl font-semibold text-white sm:text-4xl lg:text-5xl">
+                  Выберите тариф под свой ритм и подключайтесь без лишних шагов.
+                </h1>
+                <p className="max-w-2xl text-sm leading-6 text-zinc-300 sm:text-base">
+                  Все условия видны сразу: цена, срок, объём трафика и метки выгоды. После оплаты доступ
+                  появляется в кабинете автоматически.
+                </p>
               </div>
-              <CardDescription>{plan.description || "VPN-подписка с предсказуемым лимитом."}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <div>
-                <p className="text-3xl font-semibold">{formatCurrency(plan.price)}</p>
-                <p className="text-sm text-muted-foreground">{plan.durationDays} дней</p>
+            </div>
+
+            <div className="surface-soft grid gap-3 p-4 sm:p-5">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-sm text-zinc-400">Способы оплаты</span>
+                <span className="text-sm font-medium text-white">ЮKassa и Platega</span>
               </div>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>{plan.trafficGB} ГБ трафика</li>
-                <li>Покупка через ЮKassa и Platega</li>
-                <li>История платежей в кабинете</li>
-                <li>Продление без потери остатка</li>
-              </ul>
-              <Button asChild className="w-full">
-                <Link href={purchaseHref}>Купить тариф</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-sm text-zinc-400">Промокоды</span>
+                <span className="text-sm font-medium text-white">Поддерживаются</span>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-sm text-zinc-400">Продление</span>
+                <span className="text-sm font-medium text-white">Без потери остатка</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {plans.map((plan) => (
+            <Card
+              key={plan.id}
+              className={`overflow-hidden ${plan.highlight ? "surface-feature border-sky-300/18" : "surface-soft"}`}
+            >
+              <CardHeader className="gap-4 border-b border-white/8 bg-gradient-to-br from-sky-400/8 via-transparent to-transparent p-5 sm:p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-2">
+                    <CardTitle>{plan.name}</CardTitle>
+                    <CardDescription className="leading-6">
+                      {plan.description || "Полный доступ к VPN, личный кабинет и удобное продление."}
+                    </CardDescription>
+                  </div>
+                  {plan.highlight ? <Badge className="shrink-0">{plan.highlight}</Badge> : null}
+                </div>
+                <div className="space-y-1">
+                  <p className="text-3xl font-semibold text-white">{formatCurrency(plan.price)}</p>
+                  <p className="text-sm text-zinc-400">{plan.durationDays} дней доступа</p>
+                </div>
+              </CardHeader>
+              <CardContent className="flex h-full flex-col gap-5 p-5 sm:p-6">
+                <ul className="grid gap-3 text-sm leading-6 text-zinc-300">
+                  <li className="rounded-2xl border border-white/8 bg-white/[0.02] px-4 py-3">
+                    {plan.trafficGB} ГБ трафика
+                  </li>
+                  <li className="rounded-2xl border border-white/8 bg-white/[0.02] px-4 py-3">
+                    История платежей и управление в кабинете
+                  </li>
+                  <li className="rounded-2xl border border-white/8 bg-white/[0.02] px-4 py-3">
+                    Продление с сохранением дней и трафика
+                  </li>
+                </ul>
+                <Button asChild className="mt-auto w-full">
+                  <Link href={purchaseHref}>Купить тариф</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </section>
       </div>
     </div>
   );

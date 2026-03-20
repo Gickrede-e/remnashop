@@ -64,12 +64,14 @@ export function RegisterForm({
   });
 
   return (
-    <Card className="mx-auto w-full max-w-md">
-      <CardHeader>
+    <Card className="surface-soft mx-auto w-full max-w-xl">
+      <CardHeader className="p-5 sm:p-6">
         <CardTitle>Регистрация</CardTitle>
-        <CardDescription>Создайте аккаунт, чтобы покупать и продлевать подписки GickVPN.</CardDescription>
+        <CardDescription className="leading-6">
+          Создайте аккаунт, чтобы покупать и продлевать подписки GickVPN.
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 p-5 pt-0 sm:p-6 sm:pt-0">
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -88,6 +90,10 @@ export function RegisterForm({
             {pending ? "Создаём аккаунт..." : "Создать аккаунт"}
           </Button>
         </form>
+
+        <div className="rounded-2xl border border-white/8 bg-white/[0.02] px-4 py-3 text-sm leading-6 text-zinc-400">
+          После регистрации можно сразу выбрать тариф, применить промокод и оплатить подписку.
+        </div>
 
         <p className="text-sm text-zinc-400">
           Уже зарегистрированы?{" "}
