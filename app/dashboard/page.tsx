@@ -34,7 +34,7 @@ export default async function DashboardPage() {
           <div className="space-y-4">
             <p className="section-kicker">Личный кабинет</p>
             <div className="space-y-3">
-              <h1 className="text-3xl font-semibold text-white sm:text-4xl">Статус подписки и доступ</h1>
+              <h1 className="text-2xl font-semibold text-white sm:text-3xl lg:text-4xl">Статус подписки и доступ</h1>
               <p className="max-w-2xl text-sm leading-6 text-zinc-300 sm:text-base">
                 Здесь видно актуальный статус доступа, остаток трафика, ссылку для подключения и быстрые
                 действия по продлению подписки.
@@ -59,7 +59,7 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <Card>
           <CardHeader className="p-5 sm:p-6">
             <CardTitle>Подписка</CardTitle>
@@ -91,23 +91,23 @@ export default async function DashboardPage() {
             <CardTitle>Конфиг и действия</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 p-5 pt-0 sm:p-6 sm:pt-0">
-            <Link href="/dashboard/buy">
-              <Button className="w-full justify-between">
+            <Button asChild className="w-full justify-between">
+              <Link href="/dashboard/buy">
                 Продлить или купить
                 <CreditCard className="h-4 w-4" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
             {activeUser?.remnawaveShortUuid ? (
-              <a
-                href={`${process.env.REMNAWAVE_BASE_URL}/api/sub/${activeUser.remnawaveShortUuid}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <Button variant="secondary" className="w-full justify-between">
+              <Button asChild variant="secondary" className="w-full justify-between">
+                <a
+                  href={`${process.env.REMNAWAVE_BASE_URL}/api/sub/${activeUser.remnawaveShortUuid}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   Открыть subscription URL
                   <ExternalLink className="h-4 w-4" />
-                </Button>
-              </a>
+                </a>
+              </Button>
             ) : null}
           </CardContent>
         </Card>

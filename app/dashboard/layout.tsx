@@ -12,7 +12,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   return (
-    <div className="container py-6 md:py-8 lg:py-10">
+    <div className="container overflow-x-hidden py-4 sm:py-6 md:py-8 lg:py-10">
       <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
         <DashboardSidebar />
         <div className="grid min-w-0 gap-6">{children}</div>

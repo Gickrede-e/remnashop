@@ -25,8 +25,10 @@ export default async function DashboardReferralsPage() {
         <CardHeader>
           <CardTitle>Реферальная ссылка</CardTitle>
         </CardHeader>
-        <CardContent className="break-all rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-zinc-300">
-          {referralLink || "Ссылка недоступна"}
+        <CardContent>
+          <div className="break-all rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-zinc-300">
+            {referralLink || "Ссылка недоступна"}
+          </div>
         </CardContent>
       </Card>
 

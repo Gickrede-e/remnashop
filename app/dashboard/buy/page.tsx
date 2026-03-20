@@ -21,7 +21,7 @@ export default async function DashboardBuyPage() {
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.75fr)] xl:items-end">
           <div className="space-y-3">
             <p className="section-kicker">Покупка</p>
-            <h1 className="text-3xl font-semibold text-white sm:text-4xl">Выберите тариф и способ оплаты</h1>
+            <h1 className="text-2xl font-semibold text-white sm:text-3xl lg:text-4xl">Выберите тариф и способ оплаты</h1>
             <p className="max-w-2xl text-sm leading-6 text-zinc-300 sm:text-base">
               Итоговая цена видна до оплаты. Если у вас есть промокод, примените его прямо здесь и
               переходите к оплате без лишних шагов.
