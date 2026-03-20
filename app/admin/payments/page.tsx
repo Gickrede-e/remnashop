@@ -39,7 +39,7 @@ export default async function AdminPaymentsPage({ searchParams }: PaymentsPagePr
               <div className="space-y-3">
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-white break-all">{payment.user.email}</p>
-                  <p className="text-sm text-zinc-400">{payment.plan.name}</p>
+                  <p className="break-words text-sm text-zinc-400">{payment.plan.name}</p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
@@ -51,7 +51,7 @@ export default async function AdminPaymentsPage({ searchParams }: PaymentsPagePr
                     <p className="mt-2 text-sm text-white">{formatPrice(payment.amount)}</p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <PaymentStatusBadge status={payment.status} />
                   <p className="text-xs text-zinc-500">{formatDateTime(payment.paidAt ?? payment.createdAt)}</p>
                 </div>

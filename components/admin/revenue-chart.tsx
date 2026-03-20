@@ -7,21 +7,29 @@ function formatChartDate(value: string) {
   return value.slice(5).replace("-", ".");
 }
 
+function formatCompactRevenue(value: number) {
+  if (value >= 1000) {
+    return `${Math.round(value / 100) / 10}k`;
+  }
+
+  return String(value);
+}
+
 export const RevenueChart = memo(function RevenueChart({
   data
 }: {
   data: Array<{ date: string; revenue: number }>;
 }) {
   return (
-    <div className="h-[260px] w-full overflow-hidden md:h-[300px]">
+    <div className="h-[260px] w-full min-w-0 overflow-hidden md:h-[300px]">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={data}
           margin={{
             top: 8,
-            right: 8,
-            bottom: 4,
-            left: 0
+            right: 4,
+            bottom: 8,
+            left: -8
           }}
         >
           <defs>
@@ -36,6 +44,8 @@ export const RevenueChart = memo(function RevenueChart({
             tick={{ fill: "#a1a1aa", fontSize: 11 }}
             tickLine={false}
             axisLine={false}
+            height={26}
+            interval="preserveStartEnd"
             minTickGap={24}
             tickMargin={8}
             tickFormatter={formatChartDate}
@@ -44,8 +54,9 @@ export const RevenueChart = memo(function RevenueChart({
             tick={{ fill: "#a1a1aa", fontSize: 11 }}
             tickLine={false}
             axisLine={false}
-            width={36}
+            width={44}
             tickMargin={8}
+            tickFormatter={formatCompactRevenue}
           />
           <Tooltip
             contentStyle={{

@@ -31,8 +31,8 @@ export default async function AdminPromosPage() {
             <div key={promo.id} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
               <div className="space-y-4">
                 <div className="space-y-1">
-                  <p className="text-lg font-semibold text-white">{promo.code}</p>
-                  <p className="text-sm text-zinc-400">{promo.type}</p>
+                  <p className="break-all text-lg font-semibold text-white">{promo.code}</p>
+                  <p className="break-words text-sm text-zinc-400">{promo.type}</p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">

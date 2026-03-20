@@ -21,10 +21,10 @@ export default async function AdminLogsPage() {
           {result.items.map((log) => (
             <div key={log.id} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
               <div className="space-y-3">
-                <div className="flex items-start justify-between gap-4">
-                  <p className="text-sm font-medium text-white">{log.action}</p>
-                  <p className="text-xs text-zinc-500">{formatDateTime(log.createdAt)}</p>
-                </div>
+                  <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <p className="break-words text-sm font-medium text-white">{log.action}</p>
+                    <p className="text-xs text-zinc-500">{formatDateTime(log.createdAt)}</p>
+                  </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
                     <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Админ</p>

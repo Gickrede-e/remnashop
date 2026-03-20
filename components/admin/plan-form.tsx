@@ -114,7 +114,7 @@ export function PlanForm({
                   setValues((current) => ({ ...current, slug: slugify(event.target.value).slice(0, 16) }))
                 }
               />
-              <p className="text-xs text-zinc-500">Tag в Remnawave будет вычислен из slug: {remnawaveTag || "—"}</p>
+              <p className="break-all text-xs text-zinc-500">Tag в Remnawave будет вычислен из slug: {remnawaveTag || "—"}</p>
             </div>
           </div>
           <div className="space-y-2">
@@ -245,19 +245,19 @@ export function PlanForm({
         </CardContent>
       </Card>
 
-      <Card className="h-fit">
+      <Card className="h-fit min-w-0">
         <CardHeader>
           <CardTitle>Предпросмотр</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-xl font-semibold text-white">{values.name || "Новый тариф"}</p>
           <p className="text-3xl font-semibold text-white">{previewPrice}</p>
-          <p className="text-sm text-zinc-400">{values.description || "Описание тарифа появится здесь."}</p>
+          <p className="break-words text-sm text-zinc-400">{values.description || "Описание тарифа появится здесь."}</p>
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-zinc-300">
             <p>{values.durationDays} дней доступа</p>
             <p>{values.trafficGB} ГБ трафика</p>
-            <p>{values.highlight || "Без highlight-метки"}</p>
-            <p>Tag Remnawave: {remnawaveTag || "—"}</p>
+            <p className="break-words">{values.highlight || "Без highlight-метки"}</p>
+            <p className="break-all">Tag Remnawave: {remnawaveTag || "—"}</p>
             <p>Лимит устройств: {values.remnawaveHwidDeviceLimit || "без лимита"}</p>
             <p>Внутренние сквады: {values.remnawaveInternalSquadUuids.length || 0}</p>
             <p>Внешний сквад: {values.remnawaveExternalSquadUuid || "—"}</p>

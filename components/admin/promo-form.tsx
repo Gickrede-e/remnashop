@@ -193,7 +193,7 @@ export function PromoForm({
               return (
                 <label
                   key={plan.id}
-                  className="flex items-center gap-3 rounded-2xl border border-white/10 px-4 py-3 text-sm text-zinc-300"
+                  className="flex min-h-11 items-center gap-3 rounded-2xl border border-white/10 px-4 py-3 text-sm text-zinc-300"
                 >
                   <input
                     type="checkbox"

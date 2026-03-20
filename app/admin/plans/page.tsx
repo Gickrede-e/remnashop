@@ -31,8 +31,8 @@ export default async function AdminPlansPage() {
             <div key={plan.id} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
               <div className="space-y-4">
                 <div className="space-y-1">
-                  <p className="text-lg font-semibold text-white">{plan.name}</p>
-                  <p className="text-xs text-zinc-500">
+                  <p className="break-words text-lg font-semibold text-white">{plan.name}</p>
+                  <p className="break-all text-xs text-zinc-500">
                     {plan.slug} • {slugToRemnawaveTag(plan.slug)}
                   </p>
                 </div>
@@ -52,6 +52,18 @@ export default async function AdminPlansPage() {
                     <p className="mt-2 text-sm text-white">
                       {plan.remnawaveInternalSquadUuids.length} вн. / {plan.remnawaveExternalSquadUuid ? "1 внеш." : "0 внеш."}
                     </p>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Устройства</p>
+                    <p className="mt-2 text-sm text-white">{plan.remnawaveHwidDeviceLimit ?? "—"}</p>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Метка</p>
+                    <p className="mt-2 break-words text-sm text-white">{plan.highlight ?? "—"}</p>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Порядок</p>
+                    <p className="mt-2 text-sm text-white">{plan.sortOrder}</p>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
                     <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Статус</p>

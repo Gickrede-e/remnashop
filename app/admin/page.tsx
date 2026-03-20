@@ -39,18 +39,18 @@ export default async function AdminDashboardPage() {
             </p>
           </div>
 
-          <div className="surface-soft grid gap-3 p-4 sm:p-5">
+          <div className="surface-soft grid min-w-0 gap-3 p-4 sm:p-5">
             <div className="flex items-center justify-between gap-4">
               <span className="text-sm text-zinc-400">Активные подписки</span>
-              <span className="text-base font-semibold text-white">{stats.activeSubscriptions}</span>
+              <span className="text-right text-base font-semibold text-white">{stats.activeSubscriptions}</span>
             </div>
             <div className="flex items-center justify-between gap-4">
               <span className="text-sm text-zinc-400">Пользователи</span>
-              <span className="text-base font-semibold text-white">{stats.totalUsers}</span>
+              <span className="text-right text-base font-semibold text-white">{stats.totalUsers}</span>
             </div>
             <div className="flex items-center justify-between gap-4">
               <span className="text-sm text-zinc-400">Конверсия</span>
-              <span className="text-base font-semibold text-white">{stats.conversion}%</span>
+              <span className="text-right text-base font-semibold text-white">{stats.conversion}%</span>
             </div>
           </div>
         </div>
@@ -62,7 +62,9 @@ export default async function AdminDashboardPage() {
             <CardHeader className="p-5 sm:p-6">
               <CardTitle className="text-base text-zinc-300">{item.label}</CardTitle>
             </CardHeader>
-            <CardContent className="p-5 pt-0 text-3xl font-semibold text-white sm:p-6 sm:pt-0">{item.value}</CardContent>
+            <CardContent className="break-words p-5 pt-0 text-2xl font-semibold leading-tight text-white sm:p-6 sm:pt-0 sm:text-3xl">
+              {item.value}
+            </CardContent>
           </Card>
         ))}
       </div>

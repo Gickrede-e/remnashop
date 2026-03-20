@@ -92,7 +92,7 @@ export default async function AdminReferralsPage() {
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
                     <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Тип</p>
-                    <p className="mt-2 text-sm text-white">{reward.rewardType}</p>
+                    <p className="mt-2 break-words text-sm text-white">{reward.rewardType}</p>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
                     <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Значение</p>
