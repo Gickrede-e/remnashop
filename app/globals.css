@@ -31,19 +31,30 @@
     @apply border-border;
   }
 
-  html {
-    @apply scroll-smooth;
+  html:focus-within {
+    scroll-behavior: smooth;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-body);
+    overflow-x: hidden;
+    isolation: isolate;
+    position: relative;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
     background-image:
       radial-gradient(circle at 86% 10%, rgba(56, 189, 248, 0.18), transparent 22%),
       radial-gradient(circle at 14% 18%, rgba(14, 165, 233, 0.12), transparent 22%),
       radial-gradient(circle at 24% 92%, rgba(37, 99, 235, 0.12), transparent 28%),
       linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0));
-    background-attachment: fixed;
+    will-change: transform;
   }
 
   h1,
@@ -65,14 +76,16 @@
   }
 
   .surface-soft {
-    @apply rounded-[24px] border border-white/8 bg-white/[0.03] backdrop-blur-xl;
+    @apply rounded-[24px] border border-white/8;
+    background: hsl(222 34% 7% / 0.92);
     box-shadow:
       0 18px 60px rgba(2, 8, 23, 0.24),
       inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
   .surface-feature {
-    @apply rounded-[28px] border border-sky-300/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] backdrop-blur-xl;
+    @apply rounded-[28px] border border-sky-300/12;
+    background: linear-gradient(180deg, hsl(222 34% 9% / 0.95), hsl(222 34% 7% / 0.95));
     box-shadow:
       0 30px 100px rgba(2, 8, 23, 0.36),
       inset 0 1px 0 rgba(255, 255, 255, 0.05);

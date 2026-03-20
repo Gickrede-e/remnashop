@@ -60,12 +60,12 @@ export default async function HomePage() {
   return (
     <div className="pb-24">
       <section className="container relative py-16 md:py-20 lg:py-24">
-        <div className="pointer-events-none absolute -left-10 top-12 h-40 w-40 rounded-full bg-sky-500/8 blur-3xl md:h-56 md:w-56" />
-        <div className="pointer-events-none absolute -right-8 top-0 h-52 w-52 rounded-full bg-cyan-400/10 blur-3xl md:h-72 md:w-72" />
+        <div className="pointer-events-none absolute -left-10 top-12 h-40 w-40 rounded-full bg-sky-500/8 blur-3xl will-change-transform md:h-56 md:w-56" />
+        <div className="pointer-events-none absolute -right-8 top-0 h-52 w-52 rounded-full bg-cyan-400/10 blur-3xl will-change-transform md:h-72 md:w-72" />
 
         <div className="grid items-stretch gap-5 lg:grid-cols-[1.12fr_0.88fr]">
           <div className="surface-feature relative overflow-hidden p-8 md:p-10 lg:p-12">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.1),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.12),transparent_38%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.1),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.12),transparent_38%)] will-change-transform" />
             <div className="relative flex h-full flex-col justify-between gap-8">
               <div className="space-y-6">
                 <Badge variant="muted" className="w-fit border-white/10 bg-white/[0.04] text-zinc-300">
@@ -103,7 +103,7 @@ export default async function HomePage() {
           </div>
 
           <Card className="surface-soft relative overflow-hidden p-6 md:p-8 lg:p-10">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.18),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.1),transparent_34%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.18),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.1),transparent_34%)] will-change-transform" />
             <div className="relative flex h-full flex-col justify-between gap-8">
               <div className="space-y-5">
                 <Badge variant="secondary" className="w-fit border-sky-400/25 bg-sky-400/10 text-sky-100">

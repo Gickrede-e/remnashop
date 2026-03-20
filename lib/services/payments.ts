@@ -3,6 +3,7 @@ import { PaymentProvider, PaymentStatus } from "@prisma/client";
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 import { logAdminAction } from "@/lib/services/admin-logs";
+import { mapPlategaStatus, mapYooKassaStatus } from "@/lib/services/payment-status";
 import { registerPromoUsage, validatePromoCode } from "@/lib/services/promos";
 import { activateSubscriptionFromPayment } from "@/lib/services/subscriptions";
 import { createPlategaPayment, getPlategaPaymentStatus, verifyPlategaSignature } from "@/lib/services/platega";
@@ -235,34 +236,6 @@ async function syncPaymentStatusAndActivate(input: {
       where: { id: input.paymentId }
     });
   }
-}
-
-function mapYooKassaStatus(status: string) {
-  if (status === "succeeded") {
-    return PaymentStatus.SUCCEEDED;
-  }
-
-  if (status === "canceled") {
-    return PaymentStatus.CANCELED;
-  }
-
-  return PaymentStatus.PENDING;
-}
-
-function mapPlategaStatus(status: string) {
-  if (status === "confirmed" || status === "completed" || status === "succeeded") {
-    return PaymentStatus.SUCCEEDED;
-  }
-
-  if (status === "cancelled" || status === "canceled") {
-    return PaymentStatus.CANCELED;
-  }
-
-  if (status === "failed" || status === "expired" || status === "declined" || status === "error" || status === "chargeback") {
-    return PaymentStatus.FAILED;
-  }
-
-  return PaymentStatus.PENDING;
 }
 
 async function processYooKassaRemotePayment(input: {

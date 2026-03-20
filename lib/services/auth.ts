@@ -63,6 +63,10 @@ export async function loginUser(input: { email: string; password: string }) {
 
 export function verifyTelegramAuth(payload: Record<string, string>) {
   const hash = payload.hash;
+  if (!hash) {
+    return false;
+  }
+
   const secretKey = createHash("sha256")
     .update(process.env.TELEGRAM_BOT_TOKEN ?? "")
     .digest();
@@ -74,6 +78,10 @@ export function verifyTelegramAuth(payload: Record<string, string>) {
     .join("\n");
 
   const digest = createHmac("sha256", secretKey).update(checkString).digest("hex");
+  if (digest.length !== hash.length) {
+    return false;
+  }
+
   return timingSafeEqual(Buffer.from(digest), Buffer.from(hash));
 }
 

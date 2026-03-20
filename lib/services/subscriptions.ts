@@ -402,22 +402,42 @@ export async function expireStaleSubscriptions() {
         lt: new Date()
       }
     },
-    include: {
-      user: true
+    select: {
+      id: true,
+      user: {
+        select: {
+          remnawaveUuid: true
+        }
+      }
     }
   });
 
-  for (const subscription of expired) {
-    if (subscription.user.remnawaveUuid) {
-      try {
-        await disableRemnawaveUser(subscription.user.remnawaveUuid);
-      } catch (error) {
-        console.error("Failed to disable Remnawave user", error);
-      }
-    }
+  const batchSize = 10;
 
-    await prisma.subscription.update({
-      where: { id: subscription.id },
+  for (let index = 0; index < expired.length; index += batchSize) {
+    const batch = expired.slice(index, index + batchSize);
+    await Promise.allSettled(
+      batch.map(async (subscription) => {
+        if (!subscription.user.remnawaveUuid) {
+          return;
+        }
+
+        try {
+          await disableRemnawaveUser(subscription.user.remnawaveUuid);
+        } catch (error) {
+          console.error("Failed to disable Remnawave user", error);
+        }
+      })
+    );
+  }
+
+  if (expired.length) {
+    await prisma.subscription.updateMany({
+      where: {
+        id: {
+          in: expired.map((subscription) => subscription.id)
+        }
+      },
       data: {
         status: SubscriptionStatus.EXPIRED
       }

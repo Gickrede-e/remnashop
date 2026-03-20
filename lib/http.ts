@@ -34,11 +34,12 @@ export function apiOk<T>(data: T, status = 200) {
 }
 
 export function getPagination(searchParams: URLSearchParams) {
-  const page = Math.max(1, Number(searchParams.get("page") ?? 1));
-  const limit = Math.min(
-    PAGINATION_MAX_LIMIT,
-    Math.max(1, Number(searchParams.get("limit") ?? PAGINATION_DEFAULT_LIMIT))
-  );
+  const rawPage = Number(searchParams.get("page") ?? 1);
+  const rawLimit = Number(searchParams.get("limit") ?? PAGINATION_DEFAULT_LIMIT);
+  const page = Number.isFinite(rawPage) ? Math.max(1, Math.trunc(rawPage)) : 1;
+  const limit = Number.isFinite(rawLimit)
+    ? Math.min(PAGINATION_MAX_LIMIT, Math.max(1, Math.trunc(rawLimit)))
+    : PAGINATION_DEFAULT_LIMIT;
   return {
     page,
     limit,

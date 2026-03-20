@@ -29,7 +29,14 @@ export async function listUsers(options: {
           select: {
             amount: true,
             status: true
-          }
+          },
+          where: {
+            status: "SUCCEEDED"
+          },
+          orderBy: {
+            createdAt: "desc"
+          },
+          take: 3
         }
       },
       orderBy: {
@@ -41,10 +48,25 @@ export async function listUsers(options: {
     prisma.user.count({ where })
   ]);
 
+  const totals =
+    items.length === 0
+      ? []
+      : await prisma.payment.groupBy({
+          by: ["userId"],
+          where: {
+            userId: { in: items.map((user) => user.id) },
+            status: "SUCCEEDED"
+          },
+          _sum: { amount: true }
+        });
+  const totalSpentByUserId = new Map(
+    totals.map((entry) => [entry.userId, entry._sum.amount ?? 0])
+  );
+
   return {
     items: items.map((user) => ({
       ...user,
-      totalSpent: user.payments.reduce((total, payment) => total + (payment.status === "SUCCEEDED" ? payment.amount : 0), 0)
+      totalSpent: totalSpentByUserId.get(user.id) ?? 0
     })),
     total
   };

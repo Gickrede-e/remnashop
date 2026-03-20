@@ -15,7 +15,7 @@ export function SiteHeader({ session }: { session: SessionPayload | null }) {
   const isAdmin = session?.role === "ADMIN";
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/5 bg-black/30 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-white/5 bg-[hsl(222_47%_3%/0.97)]">
       <div className="container flex h-20 items-center justify-between gap-4">
         <Logo />
         <nav className="hidden items-center gap-10 md:flex">

@@ -24,8 +24,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="ru" className="dark" data-scroll-behavior="smooth">
       <body className="min-h-screen font-sans">
         <Providers>
-          <div className="relative min-h-screen overflow-x-hidden">
-            <div className="pointer-events-none absolute inset-0 grid-strokes opacity-30" />
+          <div className="relative min-h-screen">
+            <div
+              className="pointer-events-none fixed inset-0 grid-strokes opacity-30 will-change-transform"
+              style={{ zIndex: -1 }}
+            />
             <SiteHeader session={session} />
             <main>{children}</main>
             <SiteFooter />

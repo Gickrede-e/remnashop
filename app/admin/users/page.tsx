@@ -61,9 +61,7 @@ export default async function AdminUsersPage({ searchParams }: UsersPageProps) {
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
                     <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Оплачено</p>
-                    <p className="mt-2 text-sm text-white">
-                      {formatPrice(user.payments.reduce((sum, payment) => sum + payment.amount, 0))}
-                    </p>
+                    <p className="mt-2 text-sm text-white">{formatPrice(user.totalSpent)}</p>
                   </div>
                 </div>
                 <AdminUserActions
@@ -96,7 +94,7 @@ export default async function AdminUsersPage({ searchParams }: UsersPageProps) {
                   <TableCell className="max-w-[240px] break-all">{user.email}</TableCell>
                   <TableCell>{user.role}</TableCell>
                   <TableCell>{user.subscription?.status ?? "—"}</TableCell>
-                  <TableCell>{formatPrice(user.payments.reduce((sum, payment) => sum + payment.amount, 0))}</TableCell>
+                  <TableCell>{formatPrice(user.totalSpent)}</TableCell>
                   <TableCell>{formatDateTime(user.createdAt)}</TableCell>
                   <TableCell className="min-w-[300px]">
                     <AdminUserActions
