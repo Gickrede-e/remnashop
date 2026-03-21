@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useMemo, useState, useTransition } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { PaymentProvider, type Plan } from "@prisma/client";
 
 import { Button } from "@/components/ui/button";
@@ -18,19 +18,22 @@ type PromoState = {
 
 const CheckoutPlanCard = memo(function CheckoutPlanCard({
   active,
+  disabled,
   plan,
   onSelect
 }: {
   active: boolean;
+  disabled: boolean;
   plan: Plan;
   onSelect: (planId: string) => void;
 }) {
   return (
     <button
       type="button"
+      disabled={disabled}
       onClick={() => onSelect(plan.id)}
       aria-pressed={active}
-      className={`page-surface w-full text-left transition-colors ${active ? "ring-2 ring-violet-400/70" : "hover:bg-white/[0.05]"}`}
+      className={`page-surface w-full text-left transition-colors ${active ? "ring-2 ring-violet-400/70" : "hover:bg-white/[0.05]"} ${disabled ? "cursor-not-allowed opacity-70" : ""}`}
     >
       <div className="flex min-w-0 flex-col gap-4 p-4 sm:p-5">
         <div className="flex items-start justify-between gap-4">
@@ -79,8 +82,15 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
     () => plans.find((plan) => plan.id === resolvedSelectedPlanId) ?? plans[0] ?? null,
     [plans, resolvedSelectedPlanId]
   );
+  const currentPlanIdRef = useRef(resolvedSelectedPlanId);
+  const currentPromoCodeRef = useRef(promoCode.trim());
 
   const finalAmount = promoState?.finalAmount ?? selectedPlan?.price ?? 0;
+
+  useEffect(() => {
+    currentPlanIdRef.current = resolvedSelectedPlanId;
+    currentPromoCodeRef.current = promoCode.trim();
+  }, [promoCode, resolvedSelectedPlanId]);
 
   const handleSelectPlan = useCallback((planId: string) => {
     setSelectedPlanId(planId);
@@ -89,7 +99,10 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
   }, []);
 
   const validatePromo = useCallback(() => {
-    if (!selectedPlan || !promoCode.trim()) {
+    const requestedCode = promoCode.trim();
+    const requestedPlanId = selectedPlan?.id;
+
+    if (!selectedPlan || !requestedCode) {
       setPromoState(null);
       setMessage("Введите промокод для проверки.");
       return;
@@ -103,8 +116,8 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          code: promoCode.trim(),
-          planId: selectedPlan.id
+          code: requestedCode,
+          planId: requestedPlanId
         })
       });
       const payload = (await response.json()) as {
@@ -117,6 +130,13 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
           bonusTrafficGb?: number;
         };
       };
+
+      if (
+        currentPlanIdRef.current !== requestedPlanId ||
+        currentPromoCodeRef.current !== requestedCode
+      ) {
+        return;
+      }
 
       if (!response.ok || !payload.ok || !payload.data) {
         setPromoState(null);
@@ -195,6 +215,7 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
             <CheckoutPlanCard
               key={plan.id}
               active={resolvedSelectedPlanId === plan.id}
+              disabled={pending}
               onSelect={handleSelectPlan}
               plan={plan}
             />
@@ -214,6 +235,7 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
               <div className="grid gap-2">
                 <Input
                   id="promoCode"
+                  disabled={pending}
                   value={promoCode}
                   onChange={(event) => {
                     setPromoCode(event.target.value.toUpperCase());
