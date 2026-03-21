@@ -23,7 +23,7 @@ export default async function DashboardPage() {
   const subscription = activeUser?.subscription ?? null;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "";
   const remnawaveBaseUrl = process.env.REMNAWAVE_BASE_URL?.replace(/\/$/, "");
-  const referralLink = activeUser?.referralCode ? `${siteUrl}/register?ref=${activeUser.referralCode}` : "";
+  const referralLink = user?.referralCode ? `${siteUrl}/register?ref=${user.referralCode}` : "";
   const externalSubscriptionUrl =
     activeUser?.remnawaveShortUuid && remnawaveBaseUrl
       ? `${remnawaveBaseUrl}/api/sub/${activeUser.remnawaveShortUuid}`
