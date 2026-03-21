@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { PromoForm } from "@/components/admin/promo-form";
+import { ScreenHeader } from "@/components/shell/screen-header";
 import { getAllPlans } from "@/lib/services/plans";
 import { listPromoCodes } from "@/lib/services/promos";
 
@@ -15,22 +16,29 @@ export default async function AdminEditPromoPage({ params }: { params: Promise<{
   }
 
   return (
-    <PromoForm
-      mode="edit"
-      promoId={promo.id}
-      plans={plans}
-      initialValues={{
-        code: promo.code,
-        type: promo.type,
-        value: promo.value,
-        maxUsages: promo.maxUsages,
-        maxUsagesPerUser: promo.maxUsagesPerUser,
-        minAmount: promo.minAmount,
-        applicablePlanIds: promo.applicablePlanIds,
-        startsAt: promo.startsAt.toISOString().slice(0, 16),
-        expiresAt: promo.expiresAt ? promo.expiresAt.toISOString().slice(0, 16) : "",
-        isActive: promo.isActive
-      }}
-    />
+    <div className="grid gap-4 sm:gap-6">
+      <ScreenHeader
+        eyebrow="Админка"
+        title={`Промокод: ${promo.code}`}
+        description="Редактирование разделено на небольшие секции, чтобы быстро проверить тип, лимиты и окно действия."
+      />
+      <PromoForm
+        mode="edit"
+        promoId={promo.id}
+        plans={plans}
+        initialValues={{
+          code: promo.code,
+          type: promo.type,
+          value: promo.value,
+          maxUsages: promo.maxUsages,
+          maxUsagesPerUser: promo.maxUsagesPerUser,
+          minAmount: promo.minAmount,
+          applicablePlanIds: promo.applicablePlanIds,
+          startsAt: promo.startsAt.toISOString().slice(0, 16),
+          expiresAt: promo.expiresAt ? promo.expiresAt.toISOString().slice(0, 16) : "",
+          isActive: promo.isActive
+        }}
+      />
+    </div>
   );
 }
