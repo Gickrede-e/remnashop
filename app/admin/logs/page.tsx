@@ -1,4 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AdminRecordCard, AdminRecordEmptyState, AdminRecordList } from "@/components/blocks/admin/admin-record-list";
+import { ScreenHeader } from "@/components/shell/screen-header";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getAdminLogs } from "@/lib/services/admin-logs";
 import { formatDateTime, maskEmail } from "@/lib/utils";
@@ -12,63 +13,81 @@ export default async function AdminLogsPage() {
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Журнал действий</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-4 md:hidden">
-          {result.items.map((log) => (
-            <div key={log.id} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
-              <div className="space-y-3">
-                  <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <p className="break-words text-sm font-medium text-white">{log.action}</p>
-                    <p className="text-xs text-zinc-500">{formatDateTime(log.createdAt)}</p>
-                  </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Админ</p>
-                    <p className="mt-2 text-sm text-white">{log.admin?.email ? maskEmail(log.admin.email) : "Система"}</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Сущность</p>
-                    <p className="mt-2 text-sm text-white">{log.targetType}</p>
-                  </div>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                  <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Target ID</p>
-                  <p className="mt-2 break-all text-sm text-white">{log.targetId}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+    <div className="grid gap-4 sm:gap-6">
+      <ScreenHeader
+        eyebrow="Админка"
+        title="Логи"
+        description="Последние действия админов и системные записи в компактном mobile-first журнале."
+      />
 
-        <div className="hidden md:block">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Когда</TableHead>
-                <TableHead>Админ</TableHead>
-                <TableHead>Действие</TableHead>
-                <TableHead>Сущность</TableHead>
-                <TableHead>Target ID</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+      <AdminRecordList
+        title="Журнал действий"
+        description="Показываем последние 50 записей с ключевым контекстом, а полную таблицу оставляем только для широких экранов."
+        summary={
+          <div className="surface-soft grid gap-3 p-4 sm:grid-cols-2">
+            <SummaryItem label="Записей" value={String(result.items.length)} />
+            <SummaryItem label="Период" value="Последние события" />
+          </div>
+        }
+      >
+        {result.items.length === 0 ? (
+          <AdminRecordEmptyState
+            title="Логи пусты"
+            description="Когда админы начнут выполнять действия, записи появятся здесь."
+          />
+        ) : (
+          <>
+            <div className="grid gap-3 xl:hidden">
               {result.items.map((log) => (
-                <TableRow key={log.id}>
-                  <TableCell>{formatDateTime(log.createdAt)}</TableCell>
-                  <TableCell>{log.admin?.email ? maskEmail(log.admin.email) : "Система"}</TableCell>
-                  <TableCell>{log.action}</TableCell>
-                  <TableCell>{log.targetType}</TableCell>
-                  <TableCell className="max-w-[220px] break-all">{log.targetId}</TableCell>
-                </TableRow>
+                <AdminRecordCard
+                  key={log.id}
+                  title={log.action}
+                  subtitle={formatDateTime(log.createdAt)}
+                  metadata={[
+                    { label: "Админ", value: log.admin?.email ? maskEmail(log.admin.email) : "Система" },
+                    { label: "Сущность", value: log.targetType },
+                    { label: "Target ID", value: log.targetId }
+                  ]}
+                />
               ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+            </div>
+
+            <div className="hidden xl:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Когда</TableHead>
+                    <TableHead>Админ</TableHead>
+                    <TableHead>Действие</TableHead>
+                    <TableHead>Сущность</TableHead>
+                    <TableHead>Target ID</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {result.items.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell>{formatDateTime(log.createdAt)}</TableCell>
+                      <TableCell>{log.admin?.email ? maskEmail(log.admin.email) : "Система"}</TableCell>
+                      <TableCell>{log.action}</TableCell>
+                      <TableCell>{log.targetType}</TableCell>
+                      <TableCell className="max-w-[220px] break-all">{log.targetId}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
+        )}
+      </AdminRecordList>
+    </div>
+  );
+}
+
+function SummaryItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="space-y-1">
+      <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{label}</p>
+      <p className="text-sm font-medium text-white">{value}</p>
+    </div>
   );
 }
