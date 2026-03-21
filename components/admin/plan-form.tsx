@@ -112,6 +112,7 @@ export function PlanForm({
                   setValues((current) => ({ ...current, slug: slugify(event.target.value).slice(0, 16) }))
                 }
               />
+              <p className="break-all text-xs text-zinc-500">Tag в Remnawave будет вычислен из slug: {remnawaveTag || "—"}</p>
             </div>
           </div>
           <div className="space-y-2">
