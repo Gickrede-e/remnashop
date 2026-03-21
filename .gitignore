@@ -17,6 +17,7 @@ CLAUDE.md
 .codex/
 .claude/
 .publish-tmp/
+.worktrees/
 PROMPT-CODEX.md
 api-1.json
 *:Zone.Identifier
