@@ -14,6 +14,7 @@ enum Role {
 enum SubscriptionStatus {
   PENDING
   ACTIVE
+  DISABLED
   EXPIRED
   CANCELED
 }
@@ -115,20 +116,23 @@ model Payment {
 }
 
 model Plan {
-  id            String         @id @default(cuid())
-  slug          String         @unique
-  name          String
-  description   String?
-  durationDays  Int
-  trafficGB     Int
-  price         Int
-  isActive      Boolean        @default(true)
-  highlight     String?
-  sortOrder     Int            @default(0)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  subscriptions Subscription[]
-  payments      Payment[]
+  id                         String         @id @default(cuid())
+  slug                       String         @unique
+  name                       String
+  description                String?
+  durationDays               Int
+  trafficGB                  Int
+  price                      Int
+  isActive                   Boolean        @default(true)
+  highlight                  String?
+  sortOrder                  Int            @default(0)
+  remnawaveExternalSquadUuid String?
+  remnawaveInternalSquadUuids String[]      @default([])
+  remnawaveHwidDeviceLimit   Int?
+  createdAt                  DateTime       @default(now())
+  updatedAt                  DateTime       @updatedAt
+  subscriptions              Subscription[]
+  payments                   Payment[]
 
   @@index([isActive, sortOrder])
   @@map("plans")

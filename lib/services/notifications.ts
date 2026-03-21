@@ -1,5 +1,28 @@
 import { env } from "@/lib/env";
 
+let transporterPromise: Promise<Awaited<ReturnType<typeof createEmailTransporter>>> | null = null;
+
+async function createEmailTransporter() {
+  const nodemailer = await import("nodemailer");
+  return nodemailer.createTransport({
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    secure: env.SMTP_SECURE,
+    auth: {
+      user: env.SMTP_USER,
+      pass: env.SMTP_PASS
+    }
+  });
+}
+
+async function getEmailTransporter() {
+  if (!transporterPromise) {
+    transporterPromise = createEmailTransporter();
+  }
+
+  return transporterPromise;
+}
+
 async function sendEmailNotification(input: {
   to: string;
   subject: string;
@@ -9,16 +32,7 @@ async function sendEmailNotification(input: {
     return;
   }
 
-  const nodemailer = await import("nodemailer");
-  const transporter = nodemailer.createTransport({
-    host: env.SMTP_HOST,
-    port: env.SMTP_PORT,
-    secure: env.SMTP_SECURE,
-    auth: {
-      user: env.SMTP_USER,
-      pass: env.SMTP_PASS
-    }
-  });
+  const transporter = await getEmailTransporter();
 
   await transporter.sendMail({
     from: env.EMAIL_FROM,

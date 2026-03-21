@@ -54,12 +54,63 @@ export function formatBytes(value: bigint | number | null | undefined) {
 }
 
 export function slugify(input: string) {
-  return input
+  const transliterationMap: Record<string, string> = {
+    а: "a",
+    б: "b",
+    в: "v",
+    г: "g",
+    д: "d",
+    е: "e",
+    ё: "e",
+    ж: "zh",
+    з: "z",
+    и: "i",
+    й: "y",
+    к: "k",
+    л: "l",
+    м: "m",
+    н: "n",
+    о: "o",
+    п: "p",
+    р: "r",
+    с: "s",
+    т: "t",
+    у: "u",
+    ф: "f",
+    х: "h",
+    ц: "ts",
+    ч: "ch",
+    ш: "sh",
+    щ: "sch",
+    ъ: "",
+    ы: "y",
+    ь: "",
+    э: "e",
+    ю: "yu",
+    я: "ya"
+  };
+
+  const latin = input
     .toLowerCase()
+    .split("")
+    .map((symbol) => transliterationMap[symbol] ?? symbol)
+    .join("");
+
+  return latin
     .trim()
-    .replace(/[^a-z0-9а-яё\s-]/gi, "")
+    .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export function slugToRemnawaveTag(slug: string) {
+  return slug
+    .trim()
+    .replace(/-/g, "_")
+    .replace(/[^A-Za-z0-9_]/g, "")
+    .toUpperCase()
+    .slice(0, 16);
 }
 
 export function maskEmail(email: string) {

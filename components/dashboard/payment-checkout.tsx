@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { memo, useCallback, useMemo, useState, useTransition } from "react";
 import { PaymentProvider, type Plan } from "@prisma/client";
 
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,38 @@ type PromoState = {
   bonusTrafficGb: number;
 } | null;
 
+const CheckoutPlanCard = memo(function CheckoutPlanCard({
+  active,
+  plan,
+  onSelect
+}: {
+  active: boolean;
+  plan: Plan;
+  onSelect: (planId: string) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(plan.id)}
+      aria-pressed={active}
+      className={`page-surface text-left transition-colors ${active ? "ring-2 ring-violet-400/70" : "hover:bg-white/[0.05]"}`}
+    >
+      <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between sm:gap-6 sm:p-6">
+        <div className="space-y-2">
+          <h3 className="text-xl font-semibold text-white">{plan.name}</h3>
+          <p className="text-sm text-zinc-400">
+            {plan.durationDays} дней, {plan.trafficGB} ГБ
+          </p>
+        </div>
+        <div className="sm:text-right">
+          <p className="text-2xl font-semibold text-white">{formatPrice(plan.price)}</p>
+          {plan.highlight ? <p className="mt-2 text-xs uppercase tracking-[0.2em] text-cyan-300">{plan.highlight}</p> : null}
+        </div>
+      </div>
+    </button>
+  );
+});
+
 export function PaymentCheckout({ plans }: { plans: Plan[] }) {
   const [selectedPlanId, setSelectedPlanId] = useState(plans[0]?.id ?? "");
   const [promoCode, setPromoCode] = useState("");
@@ -23,14 +55,24 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const selectedPlan = useMemo(
-    () => plans.find((plan) => plan.id === selectedPlanId) ?? plans[0] ?? null,
+  const resolvedSelectedPlanId = useMemo(
+    () => (plans.some((plan) => plan.id === selectedPlanId) ? selectedPlanId : plans[0]?.id ?? ""),
     [plans, selectedPlanId]
+  );
+
+  const selectedPlan = useMemo(
+    () => plans.find((plan) => plan.id === resolvedSelectedPlanId) ?? plans[0] ?? null,
+    [plans, resolvedSelectedPlanId]
   );
 
   const finalAmount = promoState?.finalAmount ?? selectedPlan?.price ?? 0;
 
-  const validatePromo = () => {
+  const handleSelectPlan = useCallback((planId: string) => {
+    setSelectedPlanId(planId);
+    setPromoState(null);
+  }, []);
+
+  const validatePromo = useCallback(() => {
     if (!selectedPlan || !promoCode.trim()) {
       setPromoState(null);
       setMessage("Введите промокод для проверки.");
@@ -74,9 +116,9 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
       });
       setMessage("Промокод применён.");
     });
-  };
+  }, [promoCode, selectedPlan, startTransition]);
 
-  const createPayment = (provider: PaymentProvider) => {
+  const createPayment = useCallback((provider: PaymentProvider) => {
     if (!selectedPlan) {
       return;
     }
@@ -110,40 +152,32 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
 
       window.location.href = payload.data.redirectUrl;
     });
-  };
+  }, [promoCode, selectedPlan, startTransition]);
+
+  if (plans.length === 0) {
+    return (
+      <Card className="surface-soft">
+        <CardHeader>
+          <CardTitle>Нет доступных тарифов</CardTitle>
+          <CardDescription>
+            Сейчас активные тарифы не найдены. Проверьте настройки тарифов в админке и повторите попытку.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+    <div className="grid items-start gap-6 xl:grid-cols-[1.2fr_0.8fr]">
       <div className="grid gap-4">
-        {plans.map((plan) => {
-          const active = selectedPlanId === plan.id;
-          return (
-            <button
-              key={plan.id}
-              type="button"
-              onClick={() => {
-                setSelectedPlanId(plan.id);
-                setPromoState(null);
-              }}
-              className={`page-surface text-left transition ${active ? "ring-2 ring-violet-400/70" : "hover:bg-white/[0.05]"}`}
-            >
-              <div className="flex items-start justify-between gap-4 p-6">
-                <div className="space-y-2">
-                  <h3 className="text-xl font-semibold text-white">{plan.name}</h3>
-                  <p className="text-sm text-zinc-400">
-                    {plan.durationDays} дней, {plan.trafficGB} ГБ
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-semibold text-white">{formatPrice(plan.price)}</p>
-                  {plan.highlight ? (
-                    <p className="mt-2 text-xs uppercase tracking-[0.2em] text-cyan-300">{plan.highlight}</p>
-                  ) : null}
-                </div>
-              </div>
-            </button>
-          );
-        })}
+        {plans.map((plan) => (
+          <CheckoutPlanCard
+            key={plan.id}
+            active={resolvedSelectedPlanId === plan.id}
+            onSelect={handleSelectPlan}
+            plan={plan}
+          />
+        ))}
       </div>
 
       <Card className="h-fit">
@@ -154,14 +188,14 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
         <CardContent className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="promoCode">Промокод</Label>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Input
                 id="promoCode"
                 value={promoCode}
                 onChange={(event) => setPromoCode(event.target.value.toUpperCase())}
                 placeholder="WELCOME10"
               />
-              <Button type="button" variant="secondary" onClick={validatePromo} disabled={pending}>
+              <Button className="sm:w-auto" type="button" variant="secondary" onClick={validatePromo} disabled={pending}>
                 Проверить
               </Button>
             </div>
@@ -199,10 +233,10 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
           {message ? <p className="text-sm text-zinc-400">{message}</p> : null}
 
           <div className="grid gap-3">
-            <Button onClick={() => createPayment(PaymentProvider.YOOKASSA)} disabled={pending}>
+            <Button className="w-full" onClick={() => createPayment(PaymentProvider.YOOKASSA)} disabled={pending}>
               Оплатить через ЮKassa
             </Button>
-            <Button variant="secondary" onClick={() => createPayment(PaymentProvider.PLATEGA)} disabled={pending}>
+            <Button className="w-full" variant="secondary" onClick={() => createPayment(PaymentProvider.PLATEGA)} disabled={pending}>
               Оплатить через Platega
             </Button>
           </div>

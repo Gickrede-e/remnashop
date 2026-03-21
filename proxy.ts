@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { verifySession } from "@/lib/auth/session";
+import { buildLoginHref } from "@/lib/auth/navigation";
 import { SESSION_COOKIE_NAME } from "@/lib/constants";
 
 const DASHBOARD_PATH = "/dashboard";
@@ -10,6 +11,7 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const needsDashboardSession = pathname.startsWith(DASHBOARD_PATH);
   const needsAdminSession = pathname.startsWith(ADMIN_PATH);
+  const nextPath = `${pathname}${request.nextUrl.search}`;
 
   if (!needsDashboardSession && !needsAdminSession) {
     return NextResponse.next();
@@ -17,7 +19,7 @@ export async function proxy(request: NextRequest) {
 
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   if (!token) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(new URL(buildLoginHref(nextPath), request.url));
   }
 
   try {
@@ -28,7 +30,7 @@ export async function proxy(request: NextRequest) {
 
     return NextResponse.next();
   } catch {
-    const response = NextResponse.redirect(new URL("/login", request.url));
+    const response = NextResponse.redirect(new URL(buildLoginHref(nextPath), request.url));
     response.cookies.delete(SESSION_COOKIE_NAME);
     return response;
   }

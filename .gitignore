@@ -14,3 +14,5 @@ prisma/dev.db
 prisma/dev.db-journal
 artifacts/
 CLAUDE.md
+.codex/
+*:Zone.Identifier

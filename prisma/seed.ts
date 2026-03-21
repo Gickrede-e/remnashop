@@ -21,7 +21,10 @@ const plans = [
     trafficGB: 50,
     price: 14900,
     sortOrder: 1,
-    highlight: null
+    highlight: null,
+    remnawaveExternalSquadUuid: null,
+    remnawaveInternalSquadUuids: [],
+    remnawaveHwidDeviceLimit: null
   },
   {
     slug: "pro",
@@ -30,7 +33,10 @@ const plans = [
     trafficGB: 150,
     price: 29900,
     sortOrder: 2,
-    highlight: "Популярный"
+    highlight: "Популярный",
+    remnawaveExternalSquadUuid: null,
+    remnawaveInternalSquadUuids: [],
+    remnawaveHwidDeviceLimit: null
   },
   {
     slug: "ultra",
@@ -39,7 +45,10 @@ const plans = [
     trafficGB: 500,
     price: 49900,
     sortOrder: 3,
-    highlight: null
+    highlight: null,
+    remnawaveExternalSquadUuid: null,
+    remnawaveInternalSquadUuids: [],
+    remnawaveHwidDeviceLimit: null
   },
   {
     slug: "annual",
@@ -48,7 +57,10 @@ const plans = [
     trafficGB: 2000,
     price: 249900,
     sortOrder: 4,
-    highlight: "Выгодный"
+    highlight: "Выгодный",
+    remnawaveExternalSquadUuid: null,
+    remnawaveInternalSquadUuids: [],
+    remnawaveHwidDeviceLimit: null
   }
 ];
 

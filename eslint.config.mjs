@@ -9,6 +9,7 @@ export default defineConfig([
     ".next/**",
     ".next-local/**",
     ".next.stale*/**",
+    ".next-local.stale*/**",
     "out/**",
     "build/**",
     "coverage/**",

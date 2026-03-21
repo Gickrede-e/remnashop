@@ -24,6 +24,9 @@ export default async function AdminEditPlanPage({ params }: { params: Promise<{ 
         trafficGB: plan.trafficGB,
         priceRubles: plan.price / 100,
         highlight: plan.highlight,
+        remnawaveExternalSquadUuid: plan.remnawaveExternalSquadUuid,
+        remnawaveInternalSquadUuids: plan.remnawaveInternalSquadUuids,
+        remnawaveHwidDeviceLimit: plan.remnawaveHwidDeviceLimit?.toString() ?? "",
         sortOrder: plan.sortOrder,
         isActive: plan.isActive
       }}

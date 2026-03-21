@@ -193,7 +193,7 @@ export function PromoForm({
               return (
                 <label
                   key={plan.id}
-                  className="flex items-center gap-3 rounded-2xl border border-white/10 px-4 py-3 text-sm text-zinc-300"
+                  className="flex min-h-11 items-center gap-3 rounded-2xl border border-white/10 px-4 py-3 text-sm text-zinc-300"
                 >
                   <input
                     type="checkbox"
@@ -222,11 +222,16 @@ export function PromoForm({
           Промокод активен
         </label>
         {message ? <p className="text-sm text-red-300">{message}</p> : null}
-        <div className="flex gap-3">
-          <Button type="button" onClick={submit} disabled={pending}>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Button type="button" className="w-full sm:w-auto" onClick={submit} disabled={pending}>
             {pending ? "Сохраняем..." : "Сохранить"}
           </Button>
-          <Button type="button" variant="ghost" onClick={() => router.push("/admin/promos")}>
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full sm:w-auto"
+            onClick={() => router.push("/admin/promos")}
+          >
             Отмена
           </Button>
         </div>

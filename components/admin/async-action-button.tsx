@@ -10,13 +10,15 @@ export function AsyncActionButton({
   pendingLabel,
   variant = "secondary",
   endpoint,
-  method = "POST"
+  method = "POST",
+  confirmMessage
 }: {
   label: string;
   pendingLabel: string;
   variant?: "default" | "secondary" | "outline" | "ghost" | "destructive";
   endpoint: string;
   method?: "POST" | "PATCH" | "DELETE";
+  confirmMessage?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -26,10 +28,20 @@ export function AsyncActionButton({
       type="button"
       size="sm"
       variant={variant}
+      className="w-full sm:w-auto"
       disabled={pending}
       onClick={() =>
         startTransition(async () => {
-          await fetch(endpoint, { method });
+          if (confirmMessage && !window.confirm(confirmMessage)) {
+            return;
+          }
+
+          const response = await fetch(endpoint, { method });
+          if (!response.ok) {
+            const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+            window.alert(payload?.error ?? "Не удалось выполнить действие");
+            return;
+          }
           router.refresh();
         })
       }

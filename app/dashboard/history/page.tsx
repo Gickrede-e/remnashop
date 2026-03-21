@@ -38,31 +38,59 @@ export default async function DashboardHistoryPage() {
       <CardHeader>
         <CardTitle>История платежей</CardTitle>
       </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Тариф</TableHead>
-              <TableHead>Сумма</TableHead>
-              <TableHead>Статус</TableHead>
-              <TableHead>Промокод</TableHead>
-              <TableHead>Дата</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {payments.map((payment) => (
-              <TableRow key={payment.id}>
-                <TableCell>{payment.plan.name}</TableCell>
-                <TableCell>{formatPrice(payment.amount)}</TableCell>
-                <TableCell>
+      <CardContent className="space-y-4">
+        <div className="grid gap-4 md:hidden">
+          {payments.map((payment) => (
+            <div key={payment.id} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
+              <div className="space-y-3">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-white">{payment.plan.name}</p>
+                    <p className="mt-1 text-xs text-zinc-500">{formatDateTime(payment.paidAt ?? payment.createdAt)}</p>
+                  </div>
                   <PaymentStatusBadge status={payment.status} />
-                </TableCell>
-                <TableCell>{payment.promoCode?.code ?? "—"}</TableCell>
-                <TableCell>{formatDateTime(payment.paidAt ?? payment.createdAt)}</TableCell>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Сумма</p>
+                    <p className="mt-2 text-sm text-white">{formatPrice(payment.amount)}</p>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Промокод</p>
+                    <p className="mt-2 text-sm text-white">{payment.promoCode?.code ?? "—"}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="hidden md:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Тариф</TableHead>
+                <TableHead>Сумма</TableHead>
+                <TableHead>Статус</TableHead>
+                <TableHead>Промокод</TableHead>
+                <TableHead>Дата</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {payments.map((payment) => (
+                <TableRow key={payment.id}>
+                  <TableCell>{payment.plan.name}</TableCell>
+                  <TableCell>{formatPrice(payment.amount)}</TableCell>
+                  <TableCell>
+                    <PaymentStatusBadge status={payment.status} />
+                  </TableCell>
+                  <TableCell>{payment.promoCode?.code ?? "—"}</TableCell>
+                  <TableCell>{formatDateTime(payment.paidAt ?? payment.createdAt)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );

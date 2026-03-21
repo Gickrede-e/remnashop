@@ -2,7 +2,7 @@ import { PaymentStatus, SubscriptionStatus } from "@prisma/client";
 
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
-import { bytesFromGb } from "@/lib/utils";
+import { bytesFromGb, slugToRemnawaveTag } from "@/lib/utils";
 import { logAdminAction } from "@/lib/services/admin-logs";
 import { notifyPaymentSucceeded } from "@/lib/services/notifications";
 import { markPromoUsageSucceeded } from "@/lib/services/promos";
@@ -15,6 +15,53 @@ import {
 } from "@/lib/services/remnawave";
 import { createReferralRewardForFirstPayment } from "@/lib/services/referrals";
 
+type ActivationMeta = {
+  startsAt: string;
+  expiresAt: string;
+  trafficLimitBytes: string;
+};
+
+function toPayloadRecord(payload: unknown) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return {};
+  }
+
+  return payload as Record<string, unknown>;
+}
+
+function mergePaymentPayload(
+  payload: unknown,
+  extra: Record<string, unknown>
+) {
+  return JSON.parse(JSON.stringify({
+    ...toPayloadRecord(payload),
+    ...extra
+  }));
+}
+
+function parseActivationMeta(payload: unknown): ActivationMeta | null {
+  const record = toPayloadRecord(payload);
+  const meta = record.activationMeta;
+  if (!meta || typeof meta !== "object" || Array.isArray(meta)) {
+    return null;
+  }
+
+  const typedMeta = meta as Record<string, unknown>;
+  if (
+    typeof typedMeta.startsAt !== "string" ||
+    typeof typedMeta.expiresAt !== "string" ||
+    typeof typedMeta.trafficLimitBytes !== "string"
+  ) {
+    return null;
+  }
+
+  return {
+    startsAt: typedMeta.startsAt,
+    expiresAt: typedMeta.expiresAt,
+    trafficLimitBytes: typedMeta.trafficLimitBytes
+  };
+}
+
 function buildRemnawaveUsername(email: string, userId: string) {
   return `${email.split("@")[0]?.replace(/[^a-z0-9]/gi, "").slice(0, 12) ?? "user"}-${userId.slice(-6)}`;
 }
@@ -24,6 +71,14 @@ async function ensureRemnawaveIdentity(user: {
   email: string;
   remnawaveUuid: string | null;
   remnawaveUsername: string | null;
+}, seed: {
+  expireAt: Date;
+  trafficLimitBytes?: bigint;
+  description: string;
+  tag: string;
+  activeInternalSquads: string[];
+  externalSquadUuid: string | null;
+  hwidDeviceLimit: number | null;
 }) {
   if (user.remnawaveUuid) {
     return {
@@ -34,7 +89,16 @@ async function ensureRemnawaveIdentity(user: {
 
   const created = await createRemnawaveUser({
     username: buildRemnawaveUsername(user.email, user.id),
-    description: `GickVPN user ${user.email}`
+    expireAt: seed.expireAt.toISOString(),
+    status: "ACTIVE",
+    trafficLimitBytes: Number(seed.trafficLimitBytes ?? BigInt(0)),
+    trafficLimitStrategy: "NO_RESET",
+    description: seed.description,
+    email: user.email,
+    tag: seed.tag,
+    activeInternalSquads: seed.activeInternalSquads,
+    externalSquadUuid: seed.externalSquadUuid,
+    hwidDeviceLimit: seed.hwidDeviceLimit
   });
 
   await prisma.user.update({
@@ -86,99 +150,148 @@ export async function activateSubscriptionFromPayment(paymentId: string) {
     payment.promoCode?.type === "FREE_DAYS" ? payment.promoCode.value : 0;
   const promoBonusTrafficGb =
     payment.promoCode?.type === "FREE_TRAFFIC_GB" ? payment.promoCode.value : 0;
+  const savedActivationMeta = parseActivationMeta(payment.providerPayload);
+  const startsAt = savedActivationMeta
+    ? new Date(savedActivationMeta.startsAt)
+    : existingSubscription?.startsAt ?? now;
+  const expiresAt = savedActivationMeta
+    ? new Date(savedActivationMeta.expiresAt)
+    : new Date(
+        (isActive && currentExpiry ? currentExpiry : now).getTime() +
+          (payment.plan.durationDays + promoBonusDays) * 86400000
+      );
+  const newTrafficLimit = savedActivationMeta
+    ? BigInt(savedActivationMeta.trafficLimitBytes)
+    : (
+        (isActive && existingSubscription?.trafficLimitBytes
+          ? existingSubscription.trafficLimitBytes
+          : BigInt(0)) + bytesFromGb(payment.plan.trafficGB + promoBonusTrafficGb)
+      );
+  const remnawaveTag = slugToRemnawaveTag(payment.plan.slug);
+  const activationMeta = savedActivationMeta ?? {
+    startsAt: startsAt.toISOString(),
+    expiresAt: expiresAt.toISOString(),
+    trafficLimitBytes: newTrafficLimit.toString()
+  };
 
-  const baseDate = isActive && currentExpiry ? currentExpiry : now;
-  const expiresAt = new Date(baseDate.getTime() + (payment.plan.durationDays + promoBonusDays) * 86400000);
+  if (!savedActivationMeta || payment.status !== PaymentStatus.SUCCEEDED || !payment.paidAt) {
+    await prisma.payment.update({
+      where: { id: payment.id },
+      data: {
+        status: PaymentStatus.SUCCEEDED,
+        paidAt: payment.paidAt ?? new Date(),
+        providerPayload: mergePaymentPayload(payment.providerPayload, {
+          activationMeta,
+          activationState: "PROCESSING"
+        })
+      }
+    });
+  }
 
-  const baseTraffic = isActive && existingSubscription?.trafficLimitBytes
-    ? existingSubscription.trafficLimitBytes
-    : BigInt(0);
-  const newTrafficLimit =
-    baseTraffic + bytesFromGb(payment.plan.trafficGB + promoBonusTrafficGb);
-
-  const remnawave = await ensureRemnawaveIdentity(payment.user);
-
-  let snapshot;
   try {
-    snapshot = await updateRemnawaveUser(remnawave.uuid, {
+    const remnawave = await ensureRemnawaveIdentity(payment.user, {
+      expireAt: expiresAt,
+      trafficLimitBytes: newTrafficLimit,
+      description: `GickVPN ${payment.plan.name}`,
+      tag: remnawaveTag,
+      activeInternalSquads: payment.plan.remnawaveInternalSquadUuids,
+      externalSquadUuid: payment.plan.remnawaveExternalSquadUuid,
+      hwidDeviceLimit: payment.plan.remnawaveHwidDeviceLimit
+    });
+
+    const snapshot = await updateRemnawaveUser(remnawave.uuid, {
       expireAt: expiresAt.toISOString(),
       trafficLimitBytes: Number(newTrafficLimit),
       status: "ACTIVE",
-      description: `GickVPN ${payment.plan.name}`
+      description: `GickVPN ${payment.plan.name}`,
+      tag: remnawaveTag,
+      activeInternalSquads: payment.plan.remnawaveInternalSquadUuids,
+      externalSquadUuid: payment.plan.remnawaveExternalSquadUuid,
+      hwidDeviceLimit: payment.plan.remnawaveHwidDeviceLimit
     });
     await enableRemnawaveUser(remnawave.uuid);
-  } catch (error) {
-    console.error("Failed to provision Remnawave subscription", error);
-    throw error;
-  }
 
-  const subscription = existingSubscription
-    ? await prisma.subscription.update({
-        where: { id: existingSubscription.id },
-        data: {
-          planId: payment.planId,
-          status: SubscriptionStatus.ACTIVE,
-          startsAt: existingSubscription.startsAt ?? now,
-          expiresAt,
-          trafficLimitBytes: newTrafficLimit,
-          remnawaveLastSyncAt: new Date(),
-          trafficUsedBytes: existingSubscription.trafficUsedBytes ?? BigInt(0)
-        }
-      })
-    : await prisma.subscription.create({
-        data: {
-          userId: payment.userId,
-          planId: payment.planId,
-          status: SubscriptionStatus.ACTIVE,
-          startsAt: now,
-          expiresAt,
-          trafficLimitBytes: newTrafficLimit,
-          trafficUsedBytes: BigInt(0),
-          remnawaveLastSyncAt: new Date()
-        }
-      });
+    const subscription = existingSubscription
+      ? await prisma.subscription.update({
+          where: { id: existingSubscription.id },
+          data: {
+            planId: payment.planId,
+            status: SubscriptionStatus.ACTIVE,
+            startsAt,
+            expiresAt,
+            trafficLimitBytes: newTrafficLimit,
+            remnawaveLastSyncAt: new Date(),
+            trafficUsedBytes: existingSubscription.trafficUsedBytes ?? BigInt(0)
+          }
+        })
+      : await prisma.subscription.create({
+          data: {
+            userId: payment.userId,
+            planId: payment.planId,
+            status: SubscriptionStatus.ACTIVE,
+            startsAt,
+            expiresAt,
+            trafficLimitBytes: newTrafficLimit,
+            trafficUsedBytes: BigInt(0),
+            remnawaveLastSyncAt: new Date()
+          }
+        });
 
-  const updatedPayment = await prisma.payment.update({
-    where: { id: payment.id },
-    data: {
-      status: PaymentStatus.SUCCEEDED,
-      paidAt: new Date(),
-      subscriptionId: subscription.id,
-      providerPayload: JSON.parse(
-        JSON.stringify({
-          ...(payment.providerPayload && typeof payment.providerPayload === "object" ? payment.providerPayload : {}),
+    const updatedPayment = await prisma.payment.update({
+      where: { id: payment.id },
+      data: {
+        status: PaymentStatus.SUCCEEDED,
+        paidAt: payment.paidAt ?? new Date(),
+        subscriptionId: subscription.id,
+        providerPayload: mergePaymentPayload(payment.providerPayload, {
+          activationMeta,
+          activationState: "DONE",
           activationSnapshot: snapshot
         })
-      )
-    }
-  });
-
-  if (payment.promoCodeId) {
-    await markPromoUsageSucceeded(payment.promoCodeId);
-  }
-
-  await Promise.allSettled([
-    createReferralRewardForFirstPayment({
-      referredUserId: payment.userId,
-      paymentId: payment.id
-    }),
-    notifyPaymentSucceeded({
-      email: payment.user.email,
-      planName: payment.plan.name,
-      expiresAt
-    }),
-    logAdminAction({
-      action: "AUTO_ACTIVATE",
-      targetType: "PAYMENT",
-      targetId: payment.id,
-      details: {
-        subscriptionId: subscription.id,
-        provider: payment.provider
       }
-    })
-  ]);
+    });
 
-  return updatedPayment;
+    if (payment.promoCodeId) {
+      await markPromoUsageSucceeded(payment.promoCodeId);
+    }
+
+    await Promise.allSettled([
+      createReferralRewardForFirstPayment({
+        referredUserId: payment.userId,
+        paymentId: payment.id
+      }),
+      notifyPaymentSucceeded({
+        email: payment.user.email,
+        planName: payment.plan.name,
+        expiresAt
+      }),
+      logAdminAction({
+        action: "AUTO_ACTIVATE",
+        targetType: "PAYMENT",
+        targetId: payment.id,
+        details: {
+          subscriptionId: subscription.id,
+          provider: payment.provider
+        }
+      })
+    ]);
+
+    return updatedPayment;
+  } catch (error) {
+    console.error("Failed to provision Remnawave subscription", error);
+    await Promise.allSettled([
+      logAdminAction({
+        action: "PAYMENT_ACTIVATION_FAILED",
+        targetType: "PAYMENT",
+        targetId: payment.id,
+        details: {
+          provider: payment.provider,
+          error: error instanceof Error ? error.message : "Unknown activation error"
+        }
+      })
+    ]);
+    throw error;
+  }
 }
 
 export async function syncUserSubscription(userId: string) {
@@ -207,16 +320,17 @@ export async function syncUserSubscription(userId: string) {
     });
 
     if (user.subscription) {
+      const nextExpiresAt = snapshot.expireAt ? new Date(snapshot.expireAt) : user.subscription.expiresAt;
       await prisma.subscription.update({
         where: { id: user.subscription.id },
         data: {
           status:
-            snapshot.status === "DISABLED"
-              ? SubscriptionStatus.EXPIRED
-              : user.subscription.expiresAt && user.subscription.expiresAt < new Date()
+            nextExpiresAt && nextExpiresAt < new Date()
                 ? SubscriptionStatus.EXPIRED
-                : SubscriptionStatus.ACTIVE,
-          expiresAt: snapshot.expireAt ? new Date(snapshot.expireAt) : user.subscription.expiresAt,
+                : snapshot.status === "DISABLED"
+                  ? SubscriptionStatus.DISABLED
+                  : SubscriptionStatus.ACTIVE,
+          expiresAt: nextExpiresAt,
           trafficLimitBytes: snapshot.trafficLimitBytes
             ? BigInt(snapshot.trafficLimitBytes)
             : user.subscription.trafficLimitBytes,
@@ -281,27 +395,49 @@ export function toDashboardSubscriptionDto(input: {
 export async function expireStaleSubscriptions() {
   const expired = await prisma.subscription.findMany({
     where: {
-      status: SubscriptionStatus.ACTIVE,
+      status: {
+        in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.DISABLED]
+      },
       expiresAt: {
         lt: new Date()
       }
     },
-    include: {
-      user: true
+    select: {
+      id: true,
+      user: {
+        select: {
+          remnawaveUuid: true
+        }
+      }
     }
   });
 
-  for (const subscription of expired) {
-    if (subscription.user.remnawaveUuid) {
-      try {
-        await disableRemnawaveUser(subscription.user.remnawaveUuid);
-      } catch (error) {
-        console.error("Failed to disable Remnawave user", error);
-      }
-    }
+  const batchSize = 10;
 
-    await prisma.subscription.update({
-      where: { id: subscription.id },
+  for (let index = 0; index < expired.length; index += batchSize) {
+    const batch = expired.slice(index, index + batchSize);
+    await Promise.allSettled(
+      batch.map(async (subscription) => {
+        if (!subscription.user.remnawaveUuid) {
+          return;
+        }
+
+        try {
+          await disableRemnawaveUser(subscription.user.remnawaveUuid);
+        } catch (error) {
+          console.error("Failed to disable Remnawave user", error);
+        }
+      })
+    );
+  }
+
+  if (expired.length) {
+    await prisma.subscription.updateMany({
+      where: {
+        id: {
+          in: expired.map((subscription) => subscription.id)
+        }
+      },
       data: {
         status: SubscriptionStatus.EXPIRED
       }
@@ -337,13 +473,26 @@ export async function grantSubscriptionByAdmin(input: {
   const trafficLimitBytes =
     (current?.expiresAt && current.expiresAt > now ? current.trafficLimitBytes ?? BigInt(0) : BigInt(0)) +
     bytesFromGb(trafficGB);
+  const remnawaveTag = slugToRemnawaveTag(plan.slug);
 
-  const remnawave = await ensureRemnawaveIdentity(user);
+  const remnawave = await ensureRemnawaveIdentity(user, {
+    expireAt: expiresAt,
+    trafficLimitBytes,
+    description: `Admin grant: ${plan.name}`,
+    tag: remnawaveTag,
+    activeInternalSquads: plan.remnawaveInternalSquadUuids,
+    externalSquadUuid: plan.remnawaveExternalSquadUuid,
+    hwidDeviceLimit: plan.remnawaveHwidDeviceLimit
+  });
   await updateRemnawaveUser(remnawave.uuid, {
     expireAt: expiresAt.toISOString(),
     trafficLimitBytes: Number(trafficLimitBytes),
     status: "ACTIVE",
-    description: `Admin grant: ${plan.name}`
+    description: `Admin grant: ${plan.name}`,
+    tag: remnawaveTag,
+    activeInternalSquads: plan.remnawaveInternalSquadUuids,
+    externalSquadUuid: plan.remnawaveExternalSquadUuid,
+    hwidDeviceLimit: plan.remnawaveHwidDeviceLimit
   });
   await enableRemnawaveUser(remnawave.uuid);
 
@@ -436,7 +585,10 @@ export async function toggleUserRemnawaveState(input: {
   enabled?: boolean;
 }) {
   const user = await prisma.user.findUnique({
-    where: { id: input.userId }
+    where: { id: input.userId },
+    include: {
+      subscription: true
+    }
   });
 
   if (!user?.remnawaveUuid) {
@@ -450,6 +602,16 @@ export async function toggleUserRemnawaveState(input: {
     await enableRemnawaveUser(user.remnawaveUuid);
   } else {
     await disableRemnawaveUser(user.remnawaveUuid);
+  }
+
+  if (user.subscription) {
+    await prisma.subscription.update({
+      where: { id: user.subscription.id },
+      data: {
+        status: shouldEnable ? SubscriptionStatus.ACTIVE : SubscriptionStatus.DISABLED,
+        remnawaveLastSyncAt: new Date()
+      }
+    });
   }
 
   await logAdminAction({

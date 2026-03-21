@@ -1,12 +1,37 @@
 "use client";
 
+import { memo } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-export function RevenueChart({ data }: { data: Array<{ date: string; revenue: number }> }) {
+function formatChartDate(value: string) {
+  return value.slice(5).replace("-", ".");
+}
+
+function formatCompactRevenue(value: number) {
+  if (value >= 1000) {
+    return `${Math.round(value / 100) / 10}k`;
+  }
+
+  return String(value);
+}
+
+export const RevenueChart = memo(function RevenueChart({
+  data
+}: {
+  data: Array<{ date: string; revenue: number }>;
+}) {
   return (
-    <div className="h-[300px] w-full">
+    <div className="h-[260px] w-full min-w-0 overflow-hidden md:h-[300px]">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data}>
+        <AreaChart
+          data={data}
+          margin={{
+            top: 8,
+            right: 4,
+            bottom: 8,
+            left: -8
+          }}
+        >
           <defs>
             <linearGradient id="gickvpnRevenue" x1="0" x2="0" y1="0" y2="1">
               <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8} />
@@ -14,8 +39,25 @@ export function RevenueChart({ data }: { data: Array<{ date: string; revenue: nu
             </linearGradient>
           </defs>
           <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
-          <XAxis dataKey="date" tick={{ fill: "#a1a1aa", fontSize: 12 }} tickLine={false} axisLine={false} />
-          <YAxis tick={{ fill: "#a1a1aa", fontSize: 12 }} tickLine={false} axisLine={false} />
+          <XAxis
+            dataKey="date"
+            tick={{ fill: "#a1a1aa", fontSize: 11 }}
+            tickLine={false}
+            axisLine={false}
+            height={26}
+            interval="preserveStartEnd"
+            minTickGap={24}
+            tickMargin={8}
+            tickFormatter={formatChartDate}
+          />
+          <YAxis
+            tick={{ fill: "#a1a1aa", fontSize: 11 }}
+            tickLine={false}
+            axisLine={false}
+            width={44}
+            tickMargin={8}
+            tickFormatter={formatCompactRevenue}
+          />
           <Tooltip
             contentStyle={{
               background: "rgba(10,10,10,0.96)",
@@ -28,4 +70,4 @@ export function RevenueChart({ data }: { data: Array<{ date: string; revenue: nu
       </ResponsiveContainer>
     </div>
   );
-}
+});

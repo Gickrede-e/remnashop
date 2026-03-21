@@ -9,6 +9,9 @@ type PlanInput = {
   priceRubles?: number;
   priceRub?: number;
   highlight?: string | null;
+  remnawaveExternalSquadUuid?: string | null;
+  remnawaveInternalSquadUuids?: string[];
+  remnawaveHwidDeviceLimit?: number | null;
   sortOrder: number;
   isActive: boolean;
 };
@@ -22,6 +25,11 @@ function toPlanData(input: PlanInput) {
     trafficGB: input.trafficGB,
     price: Math.round((input.priceRubles ?? input.priceRub ?? 0) * 100),
     highlight: input.highlight || null,
+    remnawaveExternalSquadUuid: input.remnawaveExternalSquadUuid || null,
+    remnawaveInternalSquadUuids: Array.from(
+      new Set((input.remnawaveInternalSquadUuids ?? []).map((item) => item.trim()).filter(Boolean))
+    ),
+    remnawaveHwidDeviceLimit: input.remnawaveHwidDeviceLimit ?? null,
     sortOrder: input.sortOrder,
     isActive: input.isActive
   };
@@ -64,6 +72,17 @@ export async function deactivatePlan(id: string) {
     where: { id },
     data: { isActive: false }
   });
+}
+
+export async function setPlanActiveState(id: string, isActive: boolean) {
+  return prisma.plan.update({
+    where: { id },
+    data: { isActive }
+  });
+}
+
+export async function restorePlan(id: string) {
+  return setPlanActiveState(id, true);
 }
 
 export const softDeletePlan = deactivatePlan;

@@ -17,6 +17,18 @@ type RemnawaveEnvelope<T> = {
   result?: T;
 };
 
+function toOptionalString(value: unknown) {
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function toOptionalNumber(value: unknown) {
+  return typeof value === "number"
+    ? value
+    : typeof value === "string" && value.length > 0
+      ? Number(value)
+      : null;
+}
+
 function unwrap<T>(value: RemnawaveEnvelope<T> | T): T {
   if (typeof value === "object" && value !== null) {
     const maybeEnvelope = value as RemnawaveEnvelope<T>;
@@ -26,6 +38,10 @@ function unwrap<T>(value: RemnawaveEnvelope<T> | T): T {
 }
 
 function normalizeUser(payload: Record<string, unknown>): RemnawaveUserSnapshot {
+  const userTraffic =
+    typeof payload.userTraffic === "object" && payload.userTraffic !== null
+      ? (payload.userTraffic as Record<string, unknown>)
+      : null;
   const shortUuid =
     typeof payload.shortUuid === "string"
       ? payload.shortUuid
@@ -38,18 +54,16 @@ function normalizeUser(payload: Record<string, unknown>): RemnawaveUserSnapshot 
     username: String(payload.username ?? ""),
     shortUuid,
     status: payload.status ? String(payload.status) : null,
-    expireAt: payload.expireAt ? String(payload.expireAt) : payload.expire_at ? String(payload.expire_at) : null,
-    trafficLimitBytes: payload.trafficLimitBytes
-      ? Number(payload.trafficLimitBytes)
-      : payload.traffic_limit_bytes
-        ? Number(payload.traffic_limit_bytes)
-        : null,
-    trafficUsedBytes: payload.trafficUsedBytes
-      ? Number(payload.trafficUsedBytes)
-      : payload.traffic_used_bytes
-        ? Number(payload.traffic_used_bytes)
-        : null,
-    subscriptionUrl: shortUuid ? `${env.REMNAWAVE_BASE_URL}/api/sub/${shortUuid}` : null
+    expireAt: toOptionalString(payload.expireAt) ?? toOptionalString(payload.expire_at),
+    trafficLimitBytes:
+      toOptionalNumber(payload.trafficLimitBytes) ?? toOptionalNumber(payload.traffic_limit_bytes),
+    trafficUsedBytes:
+      toOptionalNumber(payload.trafficUsedBytes) ??
+      toOptionalNumber(payload.traffic_used_bytes) ??
+      toOptionalNumber(userTraffic?.usedTrafficBytes),
+    subscriptionUrl:
+      toOptionalString(payload.subscriptionUrl) ??
+      (shortUuid ? `${env.REMNAWAVE_BASE_URL}/api/sub/${shortUuid}` : null)
   };
 }
 
@@ -76,7 +90,16 @@ async function remnawaveRequest<T>(path: string, init?: RequestInit) {
 
 export async function createRemnawaveUser(input: {
   username: string;
+  expireAt: string;
+  status?: string;
+  trafficLimitBytes?: number;
+  trafficLimitStrategy?: string;
   description?: string;
+  email?: string | null;
+  tag?: string | null;
+  activeInternalSquads?: string[];
+  externalSquadUuid?: string | null;
+  hwidDeviceLimit?: number | null;
 }) {
   const data = await remnawaveRequest<Record<string, unknown>>("/api/users", {
     method: "POST",
@@ -101,22 +124,30 @@ export async function updateRemnawaveUser(
     expireAt?: string;
     trafficLimitBytes?: number;
     status?: string;
+    trafficLimitStrategy?: string;
     description?: string;
+    tag?: string | null;
+    activeInternalSquads?: string[];
+    externalSquadUuid?: string | null;
+    hwidDeviceLimit?: number | null;
   }
 ) {
-  const data = await remnawaveRequest<Record<string, unknown>>(`/api/users/${uuid}`, {
+  const data = await remnawaveRequest<Record<string, unknown>>("/api/users", {
     method: "PATCH",
-    body: JSON.stringify(input)
+    body: JSON.stringify({
+      uuid,
+      ...input
+    })
   });
   return normalizeUser(data);
 }
 
 export async function enableRemnawaveUser(uuid: string) {
-  await remnawaveRequest(`/api/users/${uuid}/enable`, { method: "POST" });
+  await remnawaveRequest(`/api/users/${uuid}/actions/enable`, { method: "POST" });
 }
 
 export async function disableRemnawaveUser(uuid: string) {
-  await remnawaveRequest(`/api/users/${uuid}/disable`, { method: "POST" });
+  await remnawaveRequest(`/api/users/${uuid}/actions/disable`, { method: "POST" });
 }
 
 export async function getRemnawaveSubscriptionByShortUuid(shortUuid: string) {

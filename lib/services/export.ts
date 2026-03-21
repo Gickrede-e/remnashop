@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 
-function escapeCsvValue(value: unknown) {
+const EXPORT_BATCH_SIZE = 1000;
+
+export function escapeCsvValue(value: unknown) {
   const stringValue = String(value ?? "");
   if (/[",\n;]/.test(stringValue)) {
     return `"${stringValue.replace(/"/g, '""')}"`;
@@ -8,7 +10,7 @@ function escapeCsvValue(value: unknown) {
   return stringValue;
 }
 
-function rowsToCsv(rows: Array<Record<string, unknown>>) {
+export function rowsToCsv(rows: Array<Record<string, unknown>>) {
   if (!rows.length) {
     return "\uFEFF";
   }
@@ -21,16 +23,49 @@ function rowsToCsv(rows: Array<Record<string, unknown>>) {
   return `\uFEFF${lines.join("\n")}`;
 }
 
+async function exportRowsInBatches<TItem extends { id: string }>(
+  loadBatch: (cursor: string | undefined) => Promise<TItem[]>,
+  mapItem: (item: TItem) => Record<string, unknown>
+) {
+  let cursor: string | undefined;
+  let headers: string[] | null = null;
+  const lines: string[] = [];
+
+  while (true) {
+    const batch = await loadBatch(cursor);
+    if (!batch.length) {
+      break;
+    }
+
+    const rows = batch.map(mapItem);
+    if (!headers && rows.length) {
+      headers = Object.keys(rows[0]);
+      lines.push(headers.join(","));
+    }
+
+    if (headers) {
+      lines.push(...rows.map((row) => headers!.map((header) => escapeCsvValue(row[header])).join(",")));
+    }
+
+    cursor = batch[batch.length - 1]?.id;
+  }
+
+  return headers ? `\uFEFF${lines.join("\n")}` : "\uFEFF";
+}
+
 export async function exportEntityToCsv(entity: "users" | "payments" | "subscriptions") {
   if (entity === "users") {
-    const users = await prisma.user.findMany({
-      include: {
-        subscription: true
-      },
-      orderBy: { createdAt: "desc" }
-    });
-    return rowsToCsv(
-      users.map((user) => ({
+    return exportRowsInBatches(
+      (cursor) =>
+        prisma.user.findMany({
+          take: EXPORT_BATCH_SIZE,
+          ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+          include: {
+            subscription: true
+          },
+          orderBy: { id: "asc" }
+        }),
+      (user) => ({
         id: user.id,
         email: user.email,
         role: user.role,
@@ -38,20 +73,23 @@ export async function exportEntityToCsv(entity: "users" | "payments" | "subscrip
         remnawaveUuid: user.remnawaveUuid ?? "",
         createdAt: user.createdAt.toISOString(),
         subscriptionStatus: user.subscription?.status ?? ""
-      }))
+      })
     );
   }
 
   if (entity === "payments") {
-    const payments = await prisma.payment.findMany({
-      include: {
-        user: true,
-        plan: true
-      },
-      orderBy: { createdAt: "desc" }
-    });
-    return rowsToCsv(
-      payments.map((payment) => ({
+    return exportRowsInBatches(
+      (cursor) =>
+        prisma.payment.findMany({
+          take: EXPORT_BATCH_SIZE,
+          ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+          include: {
+            user: true,
+            plan: true
+          },
+          orderBy: { id: "asc" }
+        }),
+      (payment) => ({
         id: payment.id,
         email: payment.user.email,
         plan: payment.plan.name,
@@ -60,20 +98,22 @@ export async function exportEntityToCsv(entity: "users" | "payments" | "subscrip
         amountRub: payment.amount / 100,
         createdAt: payment.createdAt.toISOString(),
         paidAt: payment.paidAt?.toISOString() ?? ""
-      }))
+      })
     );
   }
 
-  const subscriptions = await prisma.subscription.findMany({
-    include: {
-      user: true,
-      plan: true
-    },
-    orderBy: { updatedAt: "desc" }
-  });
-
-  return rowsToCsv(
-    subscriptions.map((subscription) => ({
+  return exportRowsInBatches(
+    (cursor) =>
+      prisma.subscription.findMany({
+        take: EXPORT_BATCH_SIZE,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+        include: {
+          user: true,
+          plan: true
+        },
+        orderBy: { id: "asc" }
+      }),
+    (subscription) => ({
       id: subscription.id,
       email: subscription.user.email,
       plan: subscription.plan.name,
@@ -82,7 +122,7 @@ export async function exportEntityToCsv(entity: "users" | "payments" | "subscrip
       expiresAt: subscription.expiresAt?.toISOString() ?? "",
       trafficLimitBytes: subscription.trafficLimitBytes?.toString() ?? "",
       trafficUsedBytes: subscription.trafficUsedBytes?.toString() ?? ""
-    }))
+    })
   );
 }
 

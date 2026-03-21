@@ -3,7 +3,13 @@ import { PAYMENT_STATUS_LABELS, SUBSCRIPTION_STATUS_LABELS } from "@/lib/constan
 
 export function SubscriptionStatusBadge({ status }: { status: keyof typeof SUBSCRIPTION_STATUS_LABELS }) {
   const variant =
-    status === "ACTIVE" ? "success" : status === "PENDING" ? "secondary" : "destructive";
+    status === "ACTIVE"
+      ? "success"
+      : status === "PENDING"
+        ? "secondary"
+        : status === "DISABLED"
+          ? "muted"
+          : "destructive";
   return <Badge variant={variant}>{SUBSCRIPTION_STATUS_LABELS[status]}</Badge>;
 }
 

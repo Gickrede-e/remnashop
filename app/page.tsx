@@ -1,380 +1,322 @@
 import Link from "next/link";
-import {
-  Activity,
-  ArrowRight,
-  BadgeCheck,
-  Check,
-  CreditCard,
-  Globe,
-  MonitorSmartphone,
-  Shield,
-  TimerReset,
-  Zap
-} from "lucide-react";
+import { ArrowRight, Check, CreditCard, Shield, Zap } from "lucide-react";
 
-import { marketingFaq } from "@/lib/constants";
-import { getSession } from "@/lib/auth/session";
-import { buildLoginHref } from "@/lib/auth/navigation";
-import { getPublicPlans } from "@/lib/services/plans";
-import { formatCurrency } from "@/lib/utils";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-const highlights = [
-  {
-    icon: Shield,
-    title: "Контур доступа под контролем",
-    text: "Аккаунт, подписка и статус пользователя синхронизируются между GickVPN и Remnawave без ручного администрирования."
-  },
-  {
-    icon: Zap,
-    title: "Активация после оплаты",
-    text: "Webhook провайдера сразу продлевает доступ, обновляет лимит трафика и отправляет уведомления."
-  },
-  {
-    icon: TimerReset,
-    title: "Продление без потерь остатка",
-    text: "Если подписка активна, новые дни и гигабайты аккуратно добавляются поверх текущего срока и лимита."
-  }
-];
-
-const steps = [
-  {
-    step: "01",
-    title: "Выбираете тариф",
-    text: "Стартовый, Про, Ультра или годовой. Сразу видно срок, лимит трафика и метки выгоды."
-  },
-  {
-    step: "02",
-    title: "Оплачиваете удобным способом",
-    text: "ЮKassa и Platega доступны прямо в кабинете. Промокод и итоговая цена считаются до перехода на оплату."
-  },
-  {
-    step: "03",
-    title: "Получаете готовый доступ",
-    text: "После подтверждения платежа кабинет обновляет статус, subscription URL и историю операций."
-  }
-];
-
-const platformBadges = ["iOS", "Android", "Windows", "macOS", "Linux", "Telegram"];
+import { buildLoginHref } from "@/lib/auth/navigation";
+import { getSession } from "@/lib/auth/session";
+import { marketingFaq } from "@/lib/constants";
+import { publicEnv } from "@/lib/env";
+import { getPublicPlans } from "@/lib/services/plans";
+import { formatCurrency } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const session = await getSession();
   const plans = await getPublicPlans();
-  const featuredPlan = plans.find((plan) => Boolean(plan.highlight)) ?? plans[0];
   const purchaseHref = session ? "/dashboard/buy" : buildLoginHref("/dashboard/buy");
 
+  const featuredPlan =
+    plans.find((plan) => plan.slug === "pro") ??
+    plans.find((plan) => Boolean(plan.highlight)) ??
+    plans[0] ??
+    null;
+  const secondaryPlans = featuredPlan ? plans.filter((plan) => plan.id !== featuredPlan.id) : [];
+  const minimumPlanPrice = plans.length ? Math.min(...plans.map((plan) => plan.price)) : null;
+  const entryPriceLabel = minimumPlanPrice != null ? `от ${formatCurrency(minimumPlanPrice)}/мес` : "от 200 ₽/мес";
+
+  const heroBenefits = [
+    {
+      title: "Мгновенная активация",
+      text: "Доступ появляется сразу после оплаты, без ожидания и лишних шагов."
+    },
+    {
+      title: "Прозрачный кабинет",
+      text: "Тариф, история платежей и бонусы всегда под рукой в одном месте."
+    }
+  ];
+
+  const showcaseItems = [
+    {
+      icon: Zap,
+      title: "Быстрая активация",
+      text: "Оплатили и сразу подключились."
+    },
+    {
+      icon: Shield,
+      title: "5 платформ",
+      text: "Телефон, ноутбук и рабочий стол."
+    },
+    {
+      icon: CreditCard,
+      title: "Оплата онлайн",
+      text: "Карты, СБП и электронные кошельки."
+    }
+  ];
+
   return (
-    <div className="pb-20">
-      <section className="container py-10 md:py-16 lg:py-20">
-        <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
-          <div className="space-y-8">
-            <div className="space-y-5">
-              <Badge className="w-fit border border-violet-400/20 bg-violet-500/10 text-violet-100" variant="secondary">
-                GickVPN • VPN-подписки с кабинетом и автоматикой
-              </Badge>
+    <div className="pb-24">
+      <section className="container relative py-16 md:py-20 lg:py-24">
+        <div className="pointer-events-none absolute -left-10 top-12 h-40 w-40 rounded-full bg-sky-500/8 blur-2xl md:h-56 md:w-56" />
+        <div className="pointer-events-none absolute -right-8 top-0 h-52 w-52 rounded-full bg-cyan-400/10 blur-2xl md:h-72 md:w-72" />
+
+        <div className="grid items-stretch gap-5 lg:grid-cols-[1.12fr_0.88fr]">
+          <div className="surface-feature relative overflow-hidden p-8 md:p-10 lg:p-12">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.1),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.12),transparent_38%)]" />
+            <div className="relative flex h-full flex-col justify-between gap-8">
+              <div className="space-y-6">
+                <Badge variant="muted" className="w-fit border-white/10 bg-white/[0.04] text-zinc-300">
+                  Приватный интернет без лишней сложности
+                </Badge>
+
+                <div className="space-y-5">
+                  <h1 className="max-w-3xl text-5xl font-semibold leading-[0.94] tracking-tight md:text-7xl">
+                    <span className="text-gradient">{publicEnv.NEXT_PUBLIC_SITE_NAME}</span> — ваш интернет, ваши правила
+                  </h1>
+                  <p className="max-w-2xl text-lg leading-8 text-zinc-300 md:text-2xl md:text-white/88">
+                    Современный VPN с мгновенной активацией, понятным личным кабинетом и честными тарифами. Подключили —
+                    работает.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-4">
+                  <Button asChild size="lg" className="group rounded-2xl px-7">
+                    <Link href={purchaseHref}>
+                      Купить тариф
+                      <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+                    </Link>
+                  </Button>
+                  <Link
+                    href="/pricing"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-zinc-300 transition hover:text-white"
+                  >
+                    Посмотреть тарифы
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <Card className="surface-soft relative overflow-hidden p-6 md:p-8 lg:p-10">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.18),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.1),transparent_34%)]" />
+            <div className="relative flex h-full flex-col justify-between gap-8">
               <div className="space-y-5">
-                <h1 className="max-w-4xl text-5xl font-semibold leading-[0.95] tracking-tight md:text-7xl">
-                  VPN-сервис, который выглядит как <span className="text-gradient">нормальный продукт</span>, а не форма оплаты.
-                </h1>
-                <p className="max-w-2xl text-lg leading-8 text-zinc-300 md:text-xl">
-                  Тёмный кабинет, моментальная активация, две платёжные системы, история операций, реферальная система и админка без ручной рутины.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              <Button asChild size="lg" className="group">
-                <Link href="/pricing">
-                  Перейти к тарифам
-                  <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <Link href="/setup">Посмотреть настройку</Link>
-              </Button>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3">
-              {[
-                { label: "Платёжные провайдеры", value: "2", hint: "ЮKassa + Platega" },
-                { label: "Платформы", value: "6", hint: "Телефон и десктоп" },
-                { label: "Сценарии тарифа", value: String(plans.length), hint: "От базового до годового" }
-              ].map((item) => (
-                <div key={item.label} className="rounded-[26px] border border-white/10 bg-white/[0.035] p-4 backdrop-blur-sm">
-                  <p className="text-xs uppercase tracking-[0.22em] text-zinc-500">{item.label}</p>
-                  <p className="mt-3 text-3xl font-semibold text-white">{item.value}</p>
-                  <p className="mt-2 text-sm text-zinc-400">{item.hint}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              {[
-                "Статус подписки синхронизируется с Remnawave",
-                "Поддержка промокодов и реферальных наград",
-                "История платежей и subscription URL в кабинете",
-                "Ручное управление пользователями из админки"
-              ].map((item) => (
-                <div
-                  key={item}
-                  className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-zinc-300"
-                >
-                  <Check className="h-4 w-4 text-emerald-300" />
-                  <span>{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="relative">
-            <div className="absolute -left-10 top-8 h-28 w-28 rounded-full bg-violet-500/25 blur-3xl" />
-            <div className="absolute -right-6 bottom-10 h-36 w-36 rounded-full bg-blue-500/20 blur-3xl" />
-            <div className="relative space-y-4 rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(14,14,22,0.94),rgba(7,7,12,0.88))] p-5 shadow-[0_24px_100px_rgba(76,29,149,0.28)] backdrop-blur-xl">
-              <div className="flex items-center justify-between gap-4 rounded-[26px] border border-white/10 bg-white/[0.04] px-4 py-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.22em] text-zinc-500">Control Room</p>
-                  <p className="mt-2 text-xl font-semibold text-white">GickVPN Dashboard</p>
-                </div>
-                <div className="flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200">
-                  <BadgeCheck className="h-3.5 w-3.5" />
-                  ACTIVE
+                <Badge variant="secondary" className="w-fit border-sky-400/25 bg-sky-400/10 text-sky-100">
+                  Безопасное подключение
+                </Badge>
+                <div className="space-y-4">
+                  <p className="text-xs uppercase tracking-[0.22em] text-zinc-500">Старт без ожидания</p>
+                  <p className="text-5xl font-semibold leading-none text-white md:text-6xl">{entryPriceLabel}</p>
+                  <p className="max-w-sm text-sm leading-7 text-zinc-400">
+                    Шифрование трафика, честная цена и понятная настройка без переписки с поддержкой.
+                  </p>
                 </div>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-[0.95fr_1.05fr]">
-                <div className="space-y-4 rounded-[26px] border border-white/10 bg-white/[0.035] p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-sm text-zinc-400">Текущий тариф</p>
-                      <p className="mt-2 text-3xl font-semibold text-white">{featuredPlan?.name ?? "Pro"}</p>
+              <div className="grid gap-3">
+                {showcaseItems.map((item) => (
+                  <div
+                    key={item.title}
+                    className="flex items-start gap-4 rounded-[22px] border border-white/8 bg-black/20 px-4 py-4 transition-transform transition-colors duration-200 md:hover:-translate-y-0.5 md:hover:border-white/14"
+                  >
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/[0.06]">
+                      <item.icon className="h-5 w-5 text-sky-200" />
                     </div>
-                    {featuredPlan?.highlight ? <Badge>{featuredPlan.highlight}</Badge> : null}
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-white">{item.title}</p>
+                      <p className="text-sm leading-6 text-zinc-400">{item.text}</p>
+                    </div>
                   </div>
-                  <div className="grid gap-3">
-                    {[
-                      {
-                        icon: CreditCard,
-                        label: "Сумма продления",
-                        value: featuredPlan ? formatCurrency(featuredPlan.price) : "299 ₽"
-                      },
-                      {
-                        icon: Activity,
-                        label: "Лимит трафика",
-                        value: featuredPlan ? `${featuredPlan.trafficGB} ГБ` : "150 ГБ"
-                      },
-                      {
-                        icon: Globe,
-                        label: "Срок доступа",
-                        value: featuredPlan ? `${featuredPlan.durationDays} дней` : "30 дней"
-                      }
-                    ].map((item) => (
-                      <div key={item.label} className="rounded-2xl border border-white/10 bg-black/20 p-3">
-                        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-zinc-500">
-                          <item.icon className="h-3.5 w-3.5" />
-                          {item.label}
-                        </div>
-                        <p className="mt-3 text-lg font-medium text-white">{item.value}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-4 rounded-[26px] border border-white/10 bg-gradient-to-br from-violet-500/12 via-transparent to-blue-500/12 p-4">
-                  <div className="space-y-2">
-                    <p className="text-sm uppercase tracking-[0.22em] text-zinc-500">Как это ощущается</p>
-                    <h2 className="text-2xl font-semibold text-white">Кабинет без серости и без ручных действий</h2>
-                    <p className="text-sm leading-7 text-zinc-300">
-                      Покупка, продление, контроль трафика и доступ к конфигу собраны в одном потоке.
-                    </p>
-                  </div>
-
-                  <div className="space-y-3">
-                    {[
-                      { label: "Оплата через ЮKassa", state: "онлайн" },
-                      { label: "Webhook подтвердил платёж", state: "автоматически" },
-                      { label: "Remnawave обновил подписку", state: "синхронизировано" }
-                    ].map((item) => (
-                      <div key={item.label} className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                        <span className="text-sm text-zinc-200">{item.label}</span>
-                        <span className="rounded-full border border-blue-400/20 bg-blue-500/10 px-3 py-1 text-xs text-blue-200">
-                          {item.state}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {["YooKassa", "Platega", "Remnawave", "Telegram"].map((item) => (
-                      <div key={item} className="rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-3 text-center text-sm text-zinc-300">
-                        {item}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
-          </div>
+          </Card>
         </div>
-      </section>
 
-      <section className="container py-8">
-        <div className="grid gap-4 lg:grid-cols-3">
-          {highlights.map((item, index) => (
-            <Card
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          {heroBenefits.map((item) => (
+            <div
               key={item.title}
-              className={index === 1 ? "border-violet-400/25 bg-gradient-to-br from-violet-500/10 to-blue-500/10" : ""}
+              className="surface-soft flex items-start gap-4 px-5 py-5 transition-transform transition-colors duration-200 md:hover:-translate-y-0.5 md:hover:border-white/14"
             >
-              <CardHeader className="space-y-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.06]">
-                  <item.icon className="h-5 w-5 text-violet-200" />
-                </div>
-                <CardTitle className="text-2xl">{item.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="leading-7 text-zinc-300">{item.text}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      <section className="container py-14">
-        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div className="space-y-3">
-            <p className="text-sm uppercase tracking-[0.26em] text-zinc-500">Поток покупки</p>
-            <h2 className="max-w-2xl text-3xl font-semibold md:text-4xl">
-              Всё, что должно происходить после оплаты, уже встроено в продукт.
-            </h2>
-          </div>
-          <p className="max-w-xl text-sm leading-7 text-zinc-400">
-            Это не просто сайт-визитка. Это магазин подписок с рабочим кабинетом, автоматическим
-            провижонингом и админским контуром.
-          </p>
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-3">
-          {steps.map((step) => (
-            <div key={step.step} className="rounded-[28px] border border-white/10 bg-white/[0.035] p-6">
-              <p className="text-xs uppercase tracking-[0.22em] text-zinc-500">{step.step}</p>
-              <h3 className="mt-4 text-2xl font-semibold text-white">{step.title}</h3>
-              <p className="mt-4 text-sm leading-7 text-zinc-300">{step.text}</p>
+              <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-sky-400/10">
+                <Check className="h-4 w-4 text-sky-200" />
+              </div>
+              <div className="space-y-1.5">
+                <p className="text-sm font-medium text-white">{item.title}</p>
+                <p className="text-sm leading-6 text-zinc-400">{item.text}</p>
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="container py-14">
-        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.26em] text-zinc-500">Тарифы</p>
-            <h2 className="mt-2 text-3xl font-semibold md:text-4xl">Линейка без визуальной каши</h2>
-          </div>
-          <Button asChild variant="ghost">
-            <Link href="/pricing">Открыть все тарифы</Link>
-          </Button>
+      <section className="container py-12 md:py-14">
+        <div className="mb-6 flex justify-end">
+          <Link
+            href="/pricing"
+            className="inline-flex items-center gap-2 text-sm font-medium text-zinc-300 transition hover:text-white"
+          >
+            Все тарифы
+            <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
 
-        <div className="grid gap-4 xl:grid-cols-4">
-          {plans.map((plan) => (
-            <Card
-              key={plan.id}
-              className={
-                plan.highlight
-                  ? "border-violet-400/30 bg-gradient-to-b from-violet-500/10 to-transparent shadow-[0_24px_80px_rgba(76,29,149,0.22)]"
-                  : ""
-              }
-            >
-              <CardHeader className="space-y-4">
-                <div className="flex items-center justify-between gap-3">
-                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                  {plan.highlight ? <Badge>{plan.highlight}</Badge> : null}
+        {featuredPlan ? (
+          <div className="grid gap-4 xl:grid-cols-4">
+            <Card className="surface-feature overflow-hidden xl:col-span-2">
+              <CardHeader className="gap-5 p-8 md:p-9">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Badge variant={featuredPlan.highlight ? "default" : "secondary"}>
+                    {featuredPlan.highlight || "Рекомендуемый тариф"}
+                  </Badge>
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-500">Лучший баланс цены и трафика</span>
                 </div>
-                <div>
-                  <p className="text-4xl font-semibold text-white">{formatCurrency(plan.price)}</p>
-                  <p className="mt-2 text-sm text-zinc-400">
-                    {plan.durationDays} дней • {plan.trafficGB} ГБ
+
+                <div className="space-y-3">
+                  <CardTitle className="text-3xl md:text-4xl">{featuredPlan.name}</CardTitle>
+                  <p className="max-w-xl text-sm leading-7 text-zinc-400">
+                    {featuredPlan.description ||
+                      "Полный доступ к VPN, продление без потери остатка и аккуратный личный кабинет без лишних действий."}
                   </p>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-5">
-                <p className="text-sm leading-7 text-zinc-300">
-                  {plan.description || "Подписка с прозрачной логикой продления, лимитом трафика и доступом в кабинет."}
-                </p>
-                <ul className="space-y-3 text-sm text-zinc-300">
-                  {[
-                    "История платежей и статусов",
-                    "Продление поверх активного периода",
-                    "Поддержка промокодов и referrals"
-                  ].map((item) => (
-                    <li key={item} className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-emerald-300" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <Button asChild className="w-full">
-                  <Link href={purchaseHref}>Купить тариф</Link>
-                </Button>
+
+              <CardContent className="grid gap-6 p-8 pt-0 md:p-9 md:pt-0 lg:grid-cols-[0.9fr_1.1fr]">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Цена</p>
+                    <p className="text-5xl font-semibold text-white">{formatCurrency(featuredPlan.price)}</p>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="surface-soft px-4 py-4">
+                      <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Срок</p>
+                      <p className="mt-2 text-xl font-semibold text-white">{featuredPlan.durationDays} дней</p>
+                    </div>
+                    <div className="surface-soft px-4 py-4">
+                      <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Трафик</p>
+                      <p className="mt-2 text-xl font-semibold text-white">{featuredPlan.trafficGB} ГБ</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col justify-between gap-6">
+                  <ul className="grid gap-3 text-sm text-zinc-300">
+                    {[
+                      "Моментальная активация после оплаты",
+                      "Платежи и статус подписки всегда видны в кабинете",
+                      "Продление суммируется с оставшимся временем и трафиком"
+                    ].map((item) => (
+                      <li
+                        key={item}
+                        className="flex items-start gap-3 rounded-[20px] border border-white/8 bg-black/20 px-4 py-4"
+                      >
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-sky-200" />
+                        <span className="leading-6">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <Button asChild className="w-full rounded-2xl sm:w-auto">
+                    <Link href={purchaseHref}>
+                      Купить тариф
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
-      </section>
 
-      <section className="container py-14">
-        <div className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
-          <div className="rounded-[30px] border border-white/10 bg-white/[0.035] p-6">
-            <p className="text-sm uppercase tracking-[0.22em] text-zinc-500">Настройка</p>
-            <h2 className="mt-3 text-3xl font-semibold text-white">Клиенты и инструкции уже разложены по платформам</h2>
-            <p className="mt-4 max-w-lg text-sm leading-7 text-zinc-300">
-              Не нужно отправлять пользователю набор ссылок вручную. На отдельной странице есть инструкции
-              для всех ключевых устройств.
-            </p>
-            <Button asChild className="mt-6">
-              <Link href="/setup">Открыть setup</Link>
-            </Button>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {platformBadges.map((item) => (
-              <div
-                key={item}
-                className="flex min-h-[116px] flex-col justify-between rounded-[26px] border border-white/10 bg-gradient-to-br from-white/[0.05] to-transparent p-5"
+            {secondaryPlans.map((plan) => (
+              <Card
+                key={plan.id}
+                className="surface-soft flex h-full flex-col transition-transform transition-colors duration-200 md:hover:-translate-y-0.5 md:hover:border-sky-400/20"
               >
-                <MonitorSmartphone className="h-5 w-5 text-blue-200" />
-                <div>
-                  <p className="text-lg font-medium text-white">{item}</p>
-                  <p className="mt-2 text-sm text-zinc-400">Пошаговый сценарий подключения и получения subscription URL.</p>
-                </div>
-              </div>
+                <CardHeader className="gap-4 p-6">
+                  <div className="flex items-center justify-between gap-3">
+                    <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                    {plan.highlight ? <Badge>{plan.highlight}</Badge> : null}
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-3xl font-semibold text-white">{formatCurrency(plan.price)}</p>
+                    <p className="text-sm text-zinc-500">
+                      {plan.durationDays} дней • {plan.trafficGB} ГБ
+                    </p>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="flex flex-1 flex-col gap-5 p-6 pt-0">
+                  <p className="flex-1 text-sm leading-7 text-zinc-400">
+                    {plan.description ||
+                      "Полный доступ к VPN, личный кабинет с историей платежей, умное продление и поддержка промокодов."}
+                  </p>
+                  <Button asChild className="w-full rounded-2xl">
+                    <Link href={purchaseHref}>Купить тариф</Link>
+                  </Button>
+                </CardContent>
+              </Card>
             ))}
           </div>
-        </div>
+        ) : (
+          <Card className="surface-soft p-8 text-center">
+            <div className="space-y-4">
+              <p className="text-2xl font-semibold text-white">Тарифы скоро появятся</p>
+              <p className="mx-auto max-w-lg text-sm leading-7 text-zinc-400">
+                Главная уже обновлена, а тарифы временно недоступны. Проверьте раздел FAQ или вернитесь чуть позже.
+              </p>
+              <div className="flex justify-center">
+                <Button asChild className="rounded-2xl">
+                  <Link href="/faq">Открыть FAQ</Link>
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
       </section>
 
-      <section className="container py-14">
-        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.26em] text-zinc-500">FAQ</p>
-            <h2 className="mt-2 text-3xl font-semibold md:text-4xl">Частые вопросы до покупки</h2>
+      <section className="container py-12 md:py-14">
+        <div className="grid gap-6 lg:grid-cols-[0.82fr_1.18fr]">
+          <div className="space-y-5">
+            <Badge variant="muted" className="w-fit border-white/10 bg-white/[0.04] text-zinc-400">
+              FAQ
+            </Badge>
+            <div className="space-y-3">
+              <h2 className="max-w-md text-2xl font-semibold md:text-3xl">Частые вопросы перед подключением</h2>
+              <p className="max-w-md text-sm leading-7 text-zinc-400">
+                Короткие ответы на основные вопросы перед покупкой и первым подключением.
+              </p>
+            </div>
+
+            <div className="surface-soft flex items-start gap-4 rounded-[22px] px-5 py-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-sky-400/10">
+                <Shield className="h-4 w-4 text-sky-200" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-white">GickVPN шифрует ваш трафик и скрывает IP-адрес.</p>
+                <p className="text-sm leading-6 text-zinc-400">Ваши данные — только ваши.</p>
+              </div>
+            </div>
           </div>
-          <p className="max-w-xl text-sm leading-7 text-zinc-400">
-            Секция оставлена компактной: короткие ответы до оплаты, а не перегруженная база знаний на первом экране.
-          </p>
+
+          <Accordion className="space-y-2" collapsible type="single">
+            {marketingFaq.map((item, index) => (
+              <AccordionItem
+                key={item.question}
+                value={`faq-${index}`}
+                className="surface-soft overflow-hidden rounded-[22px] border-white/8 px-5 data-[state=open]:bg-white/[0.05]"
+              >
+                <AccordionTrigger>{item.question}</AccordionTrigger>
+                <AccordionContent>{item.answer}</AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </div>
-        <Accordion className="space-y-3" collapsible type="single">
-          {marketingFaq.slice(0, 3).map((item, index) => (
-            <AccordionItem key={item.question} value={`faq-${index}`}>
-              <AccordionTrigger>{item.question}</AccordionTrigger>
-              <AccordionContent>{item.answer}</AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
       </section>
     </div>
   );

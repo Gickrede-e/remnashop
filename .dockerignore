@@ -4,6 +4,7 @@
 .next.stale-*
 node_modules
 .venv
+.codex
 artifacts
 .env
 .env.local
@@ -12,3 +13,4 @@ npm-debug.log
 Dockerfile*
 docker-compose*.yml
 README.md
+*:Zone.Identifier
