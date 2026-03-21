@@ -163,7 +163,7 @@ export function PlanForm({
         title="Лимиты и доступ"
         description="Основные пользовательские ограничения, которые видны и в checkout, и в личном кабинете."
       >
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="plan-duration">Дней</Label>
             <Input
@@ -180,19 +180,6 @@ export function PlanForm({
               type="number"
               value={values.trafficGB}
               onChange={(event) => setValues((current) => ({ ...current, trafficGB: Number(event.target.value) }))}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="plan-device-limit">Лимит устройств</Label>
-            <Input
-              id="plan-device-limit"
-              type="number"
-              min={1}
-              placeholder="Например, 3"
-              value={values.remnawaveHwidDeviceLimit}
-              onChange={(event) =>
-                setValues((current) => ({ ...current, remnawaveHwidDeviceLimit: event.target.value }))
-              }
             />
           </div>
         </div>
@@ -220,6 +207,19 @@ export function PlanForm({
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="plan-device-limit">Лимит устройств</Label>
+              <Input
+                id="plan-device-limit"
+                type="number"
+                min={1}
+                placeholder="Например, 3"
+                value={values.remnawaveHwidDeviceLimit}
+                onChange={(event) =>
+                  setValues((current) => ({ ...current, remnawaveHwidDeviceLimit: event.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
               <Label htmlFor="plan-internal-squads">Внутренние сквады Remnawave</Label>
               <Textarea
                 id="plan-internal-squads"
