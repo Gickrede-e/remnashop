@@ -69,6 +69,7 @@ function decorateItems(area: AppShellArea, items: AppNavItem[], pathname: string
 export function AppShell({ area, children }: AppShellProps) {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
+  const moreSheetId = `${area}-more-sheet`;
 
   const secondaryItems = decorateItems(area, getSecondaryNavItems(area), pathname, false);
 
@@ -90,6 +91,8 @@ export function AppShell({ area, children }: AppShellProps) {
         currentLabel={currentLabel}
         primaryItems={topbarPrimaryItems}
         isMoreActive={isMoreActive}
+        moreOpen={moreOpen}
+        moreSheetId={moreSheetId}
         onOpenMore={() => setMoreOpen(true)}
       />
 
@@ -97,8 +100,19 @@ export function AppShell({ area, children }: AppShellProps) {
         <div className="grid min-w-0 gap-6">{children}</div>
       </main>
 
-      <AppBottomNav items={primaryItems} onOpenMore={() => setMoreOpen(true)} />
-      <AppMoreSheet area={area} items={secondaryItems} open={moreOpen} onOpenChange={setMoreOpen} />
+      <AppBottomNav
+        items={primaryItems}
+        moreOpen={moreOpen}
+        moreSheetId={moreSheetId}
+        onOpenMore={() => setMoreOpen(true)}
+      />
+      <AppMoreSheet
+        area={area}
+        items={secondaryItems}
+        open={moreOpen}
+        contentId={moreSheetId}
+        onOpenChange={setMoreOpen}
+      />
     </div>
   );
 }

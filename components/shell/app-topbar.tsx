@@ -21,6 +21,8 @@ type AppTopbarProps = {
   currentLabel: string;
   primaryItems: AppTopbarItem[];
   isMoreActive: boolean;
+  moreOpen: boolean;
+  moreSheetId?: string;
   onOpenMore: () => void;
 };
 
@@ -35,7 +37,15 @@ const areaMeta = {
   }
 } satisfies Record<AppShellArea, { eyebrow: string; href: string }>;
 
-export function AppTopbar({ area, currentLabel, primaryItems, isMoreActive, onOpenMore }: AppTopbarProps) {
+export function AppTopbar({
+  area,
+  currentLabel,
+  primaryItems,
+  isMoreActive,
+  moreOpen,
+  moreSheetId,
+  onOpenMore
+}: AppTopbarProps) {
   const meta = areaMeta[area];
 
   return (
@@ -51,6 +61,9 @@ export function AppTopbar({ area, currentLabel, primaryItems, isMoreActive, onOp
               className="md:hidden"
               onClick={onOpenMore}
               aria-label="Открыть меню разделов"
+              aria-haspopup="dialog"
+              aria-expanded={moreOpen}
+              aria-controls={moreSheetId}
             >
               <Menu className="h-5 w-5" />
             </Button>
@@ -88,6 +101,9 @@ export function AppTopbar({ area, currentLabel, primaryItems, isMoreActive, onOp
                 !isMoreActive && "text-zinc-400 hover:bg-white/[0.05] hover:text-white"
               )}
               onClick={onOpenMore}
+              aria-haspopup="dialog"
+              aria-expanded={moreOpen}
+              aria-controls={moreSheetId}
             >
               <Menu className="h-4 w-4" />
               Ещё

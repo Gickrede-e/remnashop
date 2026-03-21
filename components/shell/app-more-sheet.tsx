@@ -25,6 +25,7 @@ type AppMoreSheetProps = {
   area: AppShellArea;
   items: AppMoreSheetItem[];
   open: boolean;
+  contentId?: string;
   onOpenChange: (open: boolean) => void;
 };
 
@@ -33,10 +34,13 @@ const descriptions = {
   admin: "Второстепенные разделы управления, отчёты и переход обратно в кабинет."
 } satisfies Record<AppShellArea, string>;
 
-export function AppMoreSheet({ area, items, open, onOpenChange }: AppMoreSheetProps) {
+export function AppMoreSheet({ area, items, open, contentId, onOpenChange }: AppMoreSheetProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!left-0 !top-auto !bottom-0 !w-full !translate-x-0 !translate-y-0 max-h-[85dvh] overflow-y-auto rounded-b-none rounded-t-[32px] border-x-0 border-b-0 p-0 sm:!left-1/2 sm:!top-1/2 sm:!bottom-auto sm:!w-[min(92vw,560px)] sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:max-h-[min(80vh,720px)] sm:rounded-[28px] sm:border">
+      <DialogContent
+        id={contentId}
+        className="!left-0 !top-auto !bottom-0 !w-full !translate-x-0 !translate-y-0 max-h-[85dvh] overflow-y-auto rounded-b-none rounded-t-[32px] border-x-0 border-b-0 p-0 sm:!left-1/2 sm:!top-1/2 sm:!bottom-auto sm:!w-[min(92vw,560px)] sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:max-h-[min(80vh,720px)] sm:rounded-[28px] sm:border"
+      >
         <DialogHeader className="border-b border-white/10 px-5 pt-5 pb-4 sm:px-6 sm:pt-6">
           <DialogTitle className="sr-only">Ещё разделы</DialogTitle>
           <DialogDescription className="sr-only">{descriptions[area]}</DialogDescription>

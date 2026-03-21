@@ -14,10 +14,12 @@ type AppBottomNavItem = {
 
 type AppBottomNavProps = {
   items: AppBottomNavItem[];
+  moreOpen: boolean;
+  moreSheetId?: string;
   onOpenMore: () => void;
 };
 
-export function AppBottomNav({ items, onOpenMore }: AppBottomNavProps) {
+export function AppBottomNav({ items, moreOpen, moreSheetId, onOpenMore }: AppBottomNavProps) {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[color-mix(in_srgb,var(--app-bg)_94%,transparent)] px-3 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] md:hidden">
       <div className="mx-auto flex max-w-lg items-stretch gap-1 rounded-[26px] border border-white/10 bg-white/[0.04] p-1">
@@ -39,7 +41,9 @@ export function AppBottomNav({ items, onOpenMore }: AppBottomNavProps) {
                   item.active && "bg-white/[0.08] text-white"
                 )}
                 onClick={onOpenMore}
-                aria-pressed={item.active}
+                aria-haspopup="dialog"
+                aria-expanded={moreOpen}
+                aria-controls={moreSheetId}
               >
                 {content}
               </button>
