@@ -121,7 +121,7 @@ export function PromoForm({
         title="Поведение скидки"
         description="Собираем числовые правила в одном месте, чтобы не растягивать форму по четырём строкам."
       >
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="promo-value">Значение</Label>
             <Input
@@ -142,31 +142,6 @@ export function PromoForm({
                   ...current,
                   minAmount: event.target.value ? Number(event.target.value) : null
                 }))
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="promo-max">Общий лимит</Label>
-            <Input
-              id="promo-max"
-              type="number"
-              value={values.maxUsages ?? ""}
-              onChange={(event) =>
-                setValues((current) => ({
-                  ...current,
-                  maxUsages: event.target.value ? Number(event.target.value) : null
-                }))
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="promo-user-limit">Лимит на пользователя</Label>
-            <Input
-              id="promo-user-limit"
-              type="number"
-              value={values.maxUsagesPerUser}
-              onChange={(event) =>
-                setValues((current) => ({ ...current, maxUsagesPerUser: Number(event.target.value) }))
               }
             />
           </div>
@@ -200,10 +175,38 @@ export function PromoForm({
       </FormSection>
 
       <FormSection
-        title="Применимость и публикация"
-        description="Выбираем, где промокод доступен, и сразу задаём его итоговый статус."
+        title="Применимость и лимиты"
+        description="Задаём, где промокод работает и сколько раз его можно использовать."
       >
         <div className="grid gap-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="promo-max">Общий лимит</Label>
+              <Input
+                id="promo-max"
+                type="number"
+                value={values.maxUsages ?? ""}
+                onChange={(event) =>
+                  setValues((current) => ({
+                    ...current,
+                    maxUsages: event.target.value ? Number(event.target.value) : null
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="promo-user-limit">Лимит на пользователя</Label>
+              <Input
+                id="promo-user-limit"
+                type="number"
+                value={values.maxUsagesPerUser}
+                onChange={(event) =>
+                  setValues((current) => ({ ...current, maxUsagesPerUser: Number(event.target.value) }))
+                }
+              />
+            </div>
+          </div>
+
           <div className="space-y-3">
             <Label>Тарифы</Label>
             <div className="grid gap-2 md:grid-cols-2">
@@ -232,33 +235,35 @@ export function PromoForm({
               })}
             </div>
           </div>
-
-          <label className="flex items-center gap-3 rounded-2xl border border-white/10 px-4 py-3 text-sm text-zinc-300">
-            <input
-              type="checkbox"
-              checked={values.isActive}
-              onChange={(event) => setValues((current) => ({ ...current, isActive: event.target.checked }))}
-            />
-            Промокод активен
-          </label>
-
-          {message ? <p className="text-sm text-red-300">{message}</p> : null}
-
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Button type="button" className="w-full sm:w-auto" onClick={submit} disabled={pending}>
-              {pending ? "Сохраняем..." : "Сохранить"}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full sm:w-auto"
-              onClick={() => router.push("/admin/promos")}
-            >
-              Отмена
-            </Button>
-          </div>
         </div>
       </FormSection>
+
+      <div className="grid gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+        <label className="flex items-center gap-3 rounded-2xl border border-white/10 px-4 py-3 text-sm text-zinc-300">
+          <input
+            type="checkbox"
+            checked={values.isActive}
+            onChange={(event) => setValues((current) => ({ ...current, isActive: event.target.checked }))}
+          />
+          Промокод активен
+        </label>
+
+        {message ? <p className="text-sm text-red-300">{message}</p> : null}
+
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Button type="button" className="w-full sm:w-auto" onClick={submit} disabled={pending}>
+            {pending ? "Сохраняем..." : "Сохранить"}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full sm:w-auto"
+            onClick={() => router.push("/admin/promos")}
+          >
+            Отмена
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
