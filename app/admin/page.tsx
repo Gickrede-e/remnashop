@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import nextDynamic from "next/dynamic";
 import { ClipboardList, CreditCard, UserCog, Users } from "lucide-react";
 
@@ -12,12 +13,12 @@ export const dynamic = "force-dynamic";
 const RevenueChart = nextDynamic(
   () => import("@/components/admin/revenue-chart").then((module) => module.RevenueChart),
   {
-    loading: () => <Skeleton className="h-[260px] w-full md:h-[300px]" />
+    loading: RevenueChartFallback
   }
 );
 
 export default async function AdminDashboardPage() {
-  const [stats, chart] = await Promise.all([getAdminStats(), getRevenueChartData()]);
+  const stats = await getAdminStats();
 
   return (
     <div className="grid gap-4 sm:gap-6">
@@ -86,8 +87,22 @@ export default async function AdminDashboardPage() {
             icon: ClipboardList
           }
         ]}
-        chart={<RevenueChart data={chart} />}
+        chart={
+          <Suspense fallback={<RevenueChartFallback />}>
+            <AdminRevenueChart />
+          </Suspense>
+        }
       />
     </div>
   );
+}
+
+async function AdminRevenueChart() {
+  const chart = await getRevenueChartData();
+
+  return <RevenueChart data={chart} />;
+}
+
+function RevenueChartFallback() {
+  return <Skeleton className="h-[260px] w-full md:h-[300px]" />;
 }
