@@ -42,5 +42,9 @@ export function getSecondaryNavItems(area: AppShellArea): AppNavItem[] {
 }
 
 export function isNavItemActive(pathname: string, href: string) {
-  return href === "/admin" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
+  if (href === "/admin" || href === "/dashboard") {
+    return pathname === href;
+  }
+
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
