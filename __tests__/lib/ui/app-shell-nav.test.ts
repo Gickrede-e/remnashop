@@ -14,6 +14,12 @@ describe("app shell nav", () => {
       "/dashboard/history",
       "#more"
     ]);
+    expect(getPrimaryNavItems("dashboard").map((item) => item.label)).toEqual([
+      "Обзор",
+      "Купить",
+      "История",
+      "Ещё"
+    ]);
   });
 
   it("moves referrals into dashboard secondary nav", () => {
@@ -32,6 +38,12 @@ describe("app shell nav", () => {
       "/admin/payments",
       "#more"
     ]);
+    expect(getPrimaryNavItems("admin").map((item) => item.label)).toEqual([
+      "Обзор",
+      "Пользователи",
+      "Платежи",
+      "Ещё"
+    ]);
     expect(getSecondaryNavItems("admin").map((item) => item.href)).toEqual([
       "/admin/plans",
       "/admin/promos",
@@ -39,6 +51,14 @@ describe("app shell nav", () => {
       "/admin/logs",
       "/admin/export",
       "/dashboard"
+    ]);
+    expect(getSecondaryNavItems("admin").map((item) => item.label)).toEqual([
+      "Тарифы",
+      "Промокоды",
+      "Рефералы",
+      "Логи",
+      "Экспорт",
+      "Личный кабинет"
     ]);
     expect(isNavItemActive("/admin/plans", "/admin")).toBe(false);
     expect(isNavItemActive("/dashboard/buy", "/dashboard")).toBe(false);

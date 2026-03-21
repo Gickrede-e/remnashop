@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { DashboardSidebar } from "@/components/dashboard/sidebar-nav";
+import { AppShell } from "@/components/shell/app-shell";
 import { getSession } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
@@ -11,12 +11,5 @@ export default async function DashboardLayout({ children }: { children: React.Re
     redirect("/login");
   }
 
-  return (
-    <div className="container overflow-x-hidden py-4 sm:py-6 md:py-8 lg:py-10">
-      <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
-        <DashboardSidebar />
-        <div className="grid min-w-0 gap-6">{children}</div>
-      </div>
-    </div>
-  );
+  return <AppShell area="dashboard">{children}</AppShell>;
 }

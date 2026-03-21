@@ -1,17 +1,26 @@
 "use client";
 
+import { ScreenHeader } from "@/components/shell/screen-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function AdminError({ reset }: { error: Error; reset: () => void }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Ошибка в админке</CardTitle>
-        <CardDescription>Повторите запрос или вернитесь позже. Ошибка поймана на уровне admin layout.</CardDescription>
+    <Card className="surface-feature">
+      <CardHeader className="p-5 sm:p-6">
+        <ScreenHeader
+          eyebrow="Админ-панель"
+          title="Ошибка в админке"
+          description="Повторите запрос или вернитесь позже. Ошибка поймана на уровне admin layout."
+          actions={<Button onClick={reset}>Повторить</Button>}
+        />
       </CardHeader>
-      <CardContent>
-        <Button onClick={reset}>Повторить</Button>
+      <CardContent className="grid gap-3 p-5 pt-0 text-sm text-zinc-400 sm:p-6 sm:pt-0">
+        <CardTitle className="text-base text-white">Что можно сделать сейчас</CardTitle>
+        <CardDescription className="text-sm text-zinc-400">
+          Повторная загрузка не меняет маршрут и не обходит проверки доступа. После сброса вы останетесь в текущем
+          разделе админки.
+        </CardDescription>
       </CardContent>
     </Card>
   );

@@ -7,30 +7,30 @@ export type AppNavItem = {
 };
 
 const dashboardPrimaryNavItems: AppNavItem[] = [
-  { href: "/dashboard", label: "Overview", slot: "primary" },
-  { href: "/dashboard/buy", label: "Buy", slot: "primary" },
-  { href: "/dashboard/history", label: "History", slot: "primary" },
-  { href: "#more", label: "More", slot: "primary" }
+  { href: "/dashboard", label: "Обзор", slot: "primary" },
+  { href: "/dashboard/buy", label: "Купить", slot: "primary" },
+  { href: "/dashboard/history", label: "История", slot: "primary" },
+  { href: "#more", label: "Ещё", slot: "primary" }
 ];
 
 const dashboardSecondaryNavItems: AppNavItem[] = [
-  { href: "/dashboard/referrals", label: "Referrals", slot: "secondary" }
+  { href: "/dashboard/referrals", label: "Рефералы", slot: "secondary" }
 ];
 
 const adminPrimaryNavItems: AppNavItem[] = [
-  { href: "/admin", label: "Overview", slot: "primary" },
-  { href: "/admin/users", label: "Users", slot: "primary" },
-  { href: "/admin/payments", label: "Payments", slot: "primary" },
-  { href: "#more", label: "More", slot: "primary" }
+  { href: "/admin", label: "Обзор", slot: "primary" },
+  { href: "/admin/users", label: "Пользователи", slot: "primary" },
+  { href: "/admin/payments", label: "Платежи", slot: "primary" },
+  { href: "#more", label: "Ещё", slot: "primary" }
 ];
 
 const adminSecondaryNavItems: AppNavItem[] = [
-  { href: "/admin/plans", label: "Plans", slot: "secondary" },
-  { href: "/admin/promos", label: "Promos", slot: "secondary" },
-  { href: "/admin/referrals", label: "Referrals", slot: "secondary" },
-  { href: "/admin/logs", label: "Logs", slot: "secondary" },
-  { href: "/admin/export", label: "Export", slot: "secondary" },
-  { href: "/dashboard", label: "Dashboard", slot: "secondary" }
+  { href: "/admin/plans", label: "Тарифы", slot: "secondary" },
+  { href: "/admin/promos", label: "Промокоды", slot: "secondary" },
+  { href: "/admin/referrals", label: "Рефералы", slot: "secondary" },
+  { href: "/admin/logs", label: "Логи", slot: "secondary" },
+  { href: "/admin/export", label: "Экспорт", slot: "secondary" },
+  { href: "/dashboard", label: "Личный кабинет", slot: "secondary" }
 ];
 
 export function getPrimaryNavItems(area: AppShellArea): AppNavItem[] {
