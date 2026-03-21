@@ -1,9 +1,10 @@
 import nextDynamic from "next/dynamic";
 
+import { AdminOverviewBlocks } from "@/components/blocks/admin/admin-overview-blocks";
+import { ScreenHeader } from "@/components/shell/screen-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAdminStats, getRevenueChartData } from "@/lib/services/stats";
-import { formatPrice } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -17,61 +18,18 @@ const RevenueChart = nextDynamic(
 export default async function AdminDashboardPage() {
   const [stats, chart] = await Promise.all([getAdminStats(), getRevenueChartData()]);
 
-  const items = [
-    { label: "Доход сегодня", value: formatPrice(stats.revenueToday) },
-    { label: "Доход за неделю", value: formatPrice(stats.revenueWeek) },
-    { label: "Доход за месяц", value: formatPrice(stats.revenueMonth) },
-    { label: "Доход за всё время", value: formatPrice(stats.revenueTotal) },
-    { label: "Активные подписки", value: String(stats.activeSubscriptions) },
-    { label: "Пользователи", value: String(stats.totalUsers) },
-    { label: "Конверсия", value: `${stats.conversion}%` }
-  ];
-
   return (
-    <div className="grid gap-6">
-      <section className="surface-feature p-5 sm:p-7">
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.85fr)] xl:items-end">
-          <div className="space-y-3">
-            <p className="section-kicker">Админка</p>
-            <h1 className="text-3xl font-semibold text-white sm:text-4xl">Дашборд GickVPN</h1>
-            <p className="max-w-2xl text-sm leading-6 text-zinc-300 sm:text-base">
-              Основные показатели продаж, активности пользователей и подписок собраны на одном экране.
-            </p>
-          </div>
-
-          <div className="surface-soft grid min-w-0 gap-3 p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-zinc-400">Активные подписки</span>
-              <span className="text-right text-base font-semibold text-white">{stats.activeSubscriptions}</span>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-zinc-400">Пользователи</span>
-              <span className="text-right text-base font-semibold text-white">{stats.totalUsers}</span>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-zinc-400">Конверсия</span>
-              <span className="text-right text-base font-semibold text-white">{stats.conversion}%</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {items.map((item) => (
-          <Card key={item.label}>
-            <CardHeader className="p-5 sm:p-6">
-              <CardTitle className="text-base text-zinc-300">{item.label}</CardTitle>
-            </CardHeader>
-            <CardContent className="break-words p-5 pt-0 text-2xl font-semibold leading-tight text-white sm:p-6 sm:pt-0 sm:text-3xl">
-              {item.value}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+    <div className="grid gap-4 sm:gap-6">
+      <ScreenHeader
+        eyebrow="Админка"
+        title="Обзор"
+        description="Ключевые KPI, финансовый срез и ближайший операционный фокус без desktop-heavy перегруза."
+      />
+      <AdminOverviewBlocks stats={stats} />
 
       <Card>
-        <CardHeader className="p-5 sm:p-6">
-          <CardTitle>Доход по дням за 30 дней</CardTitle>
+        <CardHeader className="p-5 pb-3 sm:p-6 sm:pb-4">
+          <CardTitle className="text-lg text-white sm:text-xl">Доход по дням за 30 дней</CardTitle>
         </CardHeader>
         <CardContent className="p-5 pt-0 sm:p-6 sm:pt-0">
           <RevenueChart data={chart} />
