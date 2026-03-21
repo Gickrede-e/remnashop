@@ -5,6 +5,8 @@
 node_modules
 .venv
 .codex
+.claude
+.publish-tmp
 artifacts
 .env
 .env.local
@@ -13,4 +15,6 @@ npm-debug.log
 Dockerfile*
 docker-compose*.yml
 README.md
+PROMPT-CODEX.md
+api-1.json
 *:Zone.Identifier

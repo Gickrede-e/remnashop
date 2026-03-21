@@ -15,4 +15,8 @@ prisma/dev.db-journal
 artifacts/
 CLAUDE.md
 .codex/
+.claude/
+.publish-tmp/
+PROMPT-CODEX.md
+api-1.json
 *:Zone.Identifier

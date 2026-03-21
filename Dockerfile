@@ -11,6 +11,7 @@ ARG DATABASE_URL=postgresql://postgres:postgres@postgres:5432/gickvpn?schema=pub
 ENV DATABASE_URL=${DATABASE_URL}
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN mkdir -p public
 RUN npx prisma generate
 RUN npm run build
 
