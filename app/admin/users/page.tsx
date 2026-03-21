@@ -1,5 +1,9 @@
+import { AdminRecordCard, AdminRecordEmptyState, AdminRecordList } from "@/components/blocks/admin/admin-record-list";
 import { AdminUserActions } from "@/components/admin/user-actions";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScreenHeader } from "@/components/shell/screen-header";
+import { SubscriptionStatusBadge } from "@/components/shared/status-badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getAllPlans } from "@/lib/services/plans";
 import { getAdminUsers } from "@/lib/services/stats";
@@ -22,95 +26,120 @@ export default async function AdminUsersPage({ searchParams }: UsersPageProps) {
     getAdminUsers({ page, limit: 20, search }),
     getAllPlans()
   ]);
+  const planOptions = plans.map((plan) => ({ id: plan.id, name: plan.name }));
 
   return (
-    <Card>
-      <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <CardTitle>Пользователи</CardTitle>
-          <p className="mt-1 text-sm text-zinc-400">Поиск, синхронизация и ручное управление доступом.</p>
-        </div>
-        <form className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-          <input
-            type="text"
-            name="search"
-            defaultValue={search}
-            placeholder="Поиск по email"
-            className="h-11 rounded-2xl border border-white/10 bg-white/[0.03] px-4 text-sm text-white"
-          />
-          <button className="min-h-11 rounded-2xl bg-white/10 px-4 text-sm text-white">Найти</button>
-        </form>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-4 md:hidden">
-          {result.items.map((user) => (
-            <div key={user.id} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm font-medium text-white break-all">{user.email}</p>
-                  <p className="mt-1 text-xs text-zinc-500">{formatDateTime(user.createdAt)}</p>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Роль</p>
-                    <p className="mt-2 text-sm text-white">{user.role}</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Подписка</p>
-                    <p className="mt-2 text-sm text-white">{user.subscription?.status ?? "—"}</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Оплачено</p>
-                    <p className="mt-2 text-sm text-white">{formatPrice(user.totalSpent)}</p>
-                  </div>
-                </div>
-                <AdminUserActions
-                  userId={user.id}
-                  subscriptionId={user.subscription?.id}
-                  currentlyEnabled={user.subscription?.status === "ACTIVE"}
-                  plans={plans.map((plan) => ({ id: plan.id, name: plan.name }))}
-                  idPrefix="mobile-admin-user"
-                />
-              </div>
-            </div>
-          ))}
-        </div>
+    <div className="grid gap-4 sm:gap-6">
+      <ScreenHeader
+        eyebrow="Админка"
+        title="Пользователи"
+        description="Поиск, синхронизация и ручное управление доступом в mobile-first списке."
+      />
 
-        <div className="hidden md:block">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Email</TableHead>
-                <TableHead>Роль</TableHead>
-                <TableHead>Подписка</TableHead>
-                <TableHead>Оплачено</TableHead>
-                <TableHead>Дата регистрации</TableHead>
-                <TableHead>Действия</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+      <AdminRecordList
+        title="Список пользователей"
+        description="Карточки на телефоне и таблица на широких экранах используют одни и те же данные и действия."
+        controls={
+          <form className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+            <Input type="text" name="search" defaultValue={search} placeholder="Поиск по email" />
+            <Button type="submit" variant="secondary">
+              Найти
+            </Button>
+          </form>
+        }
+        summary={
+          <div className="surface-soft grid gap-3 p-4 sm:grid-cols-2">
+            <SummaryItem label="Записей на странице" value={String(result.items.length)} />
+            <SummaryItem label="Текущий поиск" value={search?.trim() || "Все пользователи"} />
+          </div>
+        }
+      >
+        {result.items.length === 0 ? (
+          <AdminRecordEmptyState
+            title="Пользователи не найдены"
+            description="Измените поисковый запрос или сбросьте фильтр, чтобы увидеть больше записей."
+          />
+        ) : (
+          <>
+            <div className="grid gap-3 xl:hidden">
               {result.items.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="max-w-[240px] break-all">{user.email}</TableCell>
-                  <TableCell>{user.role}</TableCell>
-                  <TableCell>{user.subscription?.status ?? "—"}</TableCell>
-                  <TableCell>{formatPrice(user.totalSpent)}</TableCell>
-                  <TableCell>{formatDateTime(user.createdAt)}</TableCell>
-                  <TableCell className="min-w-[300px]">
+                <AdminRecordCard
+                  key={user.id}
+                  title={user.email}
+                  subtitle={`Регистрация ${formatDateTime(user.createdAt)}`}
+                  badge={
+                    user.subscription ? (
+                      <SubscriptionStatusBadge status={user.subscription.status} />
+                    ) : (
+                      <span className="inline-flex h-8 items-center rounded-full border border-white/10 bg-white/[0.04] px-3 text-xs text-zinc-300">
+                        Без подписки
+                      </span>
+                    )
+                  }
+                  metadata={[
+                    { label: "Роль", value: user.role },
+                    { label: "Подписка", value: user.subscription?.plan?.name ?? "—" },
+                    { label: "Оплачено", value: formatPrice(user.totalSpent) }
+                  ]}
+                  actions={
                     <AdminUserActions
                       userId={user.id}
                       subscriptionId={user.subscription?.id}
                       currentlyEnabled={user.subscription?.status === "ACTIVE"}
-                      plans={plans.map((plan) => ({ id: plan.id, name: plan.name }))}
-                      idPrefix="desktop-admin-user"
+                      plans={planOptions}
+                      idPrefix="mobile-admin-user"
                     />
-                  </TableCell>
-                </TableRow>
+                  }
+                />
               ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+            </div>
+
+            <div className="hidden xl:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Роль</TableHead>
+                    <TableHead>Подписка</TableHead>
+                    <TableHead>Оплачено</TableHead>
+                    <TableHead>Дата регистрации</TableHead>
+                    <TableHead>Действия</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {result.items.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="max-w-[240px] break-all">{user.email}</TableCell>
+                      <TableCell>{user.role}</TableCell>
+                      <TableCell>{user.subscription?.status ?? "—"}</TableCell>
+                      <TableCell>{formatPrice(user.totalSpent)}</TableCell>
+                      <TableCell>{formatDateTime(user.createdAt)}</TableCell>
+                      <TableCell className="min-w-[300px]">
+                        <AdminUserActions
+                          userId={user.id}
+                          subscriptionId={user.subscription?.id}
+                          currentlyEnabled={user.subscription?.status === "ACTIVE"}
+                          plans={planOptions}
+                          idPrefix="desktop-admin-user"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
+        )}
+      </AdminRecordList>
+    </div>
+  );
+}
+
+function SummaryItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="space-y-1">
+      <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{label}</p>
+      <p className="text-sm font-medium text-white">{value}</p>
+    </div>
   );
 }
