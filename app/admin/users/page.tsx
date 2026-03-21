@@ -44,7 +44,13 @@ export default async function AdminUsersPage({ searchParams }: UsersPageProps) {
         description="Карточки на телефоне и таблица на широких экранах используют одни и те же данные и действия."
         controls={
           <form className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
-            <Input type="text" name="search" defaultValue={search} placeholder="Поиск по email" />
+            <Input
+              type="text"
+              name="search"
+              defaultValue={search}
+              placeholder="Поиск по email"
+              aria-label="Поиск пользователя по email"
+            />
             <Button type="submit" variant="secondary">
               Найти
             </Button>

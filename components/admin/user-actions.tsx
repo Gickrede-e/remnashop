@@ -33,10 +33,28 @@ export function AdminUserActions({
     [grantState.planId, plans]
   );
 
-  const runAction = (action: () => Promise<void>) => {
+  const runAction = (action: () => Promise<Response>) => {
     startTransition(async () => {
-      await action();
-      router.refresh();
+      try {
+        const response = await action();
+
+        if (!response.ok) {
+          const payload = (await response.json().catch(() => null)) as
+            | { error?: string | { message?: string } }
+            | null;
+          const error =
+            typeof payload?.error === "string"
+              ? payload.error
+              : payload?.error?.message ?? "Не удалось выполнить действие";
+
+          window.alert(error);
+          return;
+        }
+
+        router.refresh();
+      } catch {
+        window.alert("Не удалось выполнить действие");
+      }
     });
   };
 
@@ -53,7 +71,7 @@ export function AdminUserActions({
           disabled={pending}
           onClick={() =>
             runAction(async () => {
-              await fetch(`/api/admin/users/${userId}/sync`, { method: "POST" });
+              return fetch(`/api/admin/users/${userId}/sync`, { method: "POST" });
             })
           }
         >
@@ -65,17 +83,19 @@ export function AdminUserActions({
           className="w-full"
           variant="outline"
           disabled={pending}
-          onClick={() => runAction(async () => {
-            await fetch(`/api/admin/users/${userId}/toggle`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                enabled: !currentlyEnabled
-              })
-            });
-          })}
+          onClick={() =>
+            runAction(async () => {
+              return fetch(`/api/admin/users/${userId}/toggle`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                  enabled: !currentlyEnabled
+                })
+              });
+            })
+          }
         >
           {currentlyEnabled ? "Отключить" : "Включить"}
         </Button>
@@ -86,9 +106,11 @@ export function AdminUserActions({
             className="w-full sm:col-span-2"
             variant="destructive"
             disabled={pending}
-            onClick={() => runAction(async () => {
-              await fetch(`/api/admin/subscriptions/${subscriptionId}/revoke`, { method: "POST" });
-            })}
+            onClick={() =>
+              runAction(async () => {
+                return fetch(`/api/admin/subscriptions/${subscriptionId}/revoke`, { method: "POST" });
+              })
+            }
           >
             Отозвать
           </Button>
@@ -152,21 +174,23 @@ export function AdminUserActions({
             size="sm"
             className="w-full sm:w-auto"
             disabled={pending}
-            onClick={() => runAction(async () => {
-              await fetch("/api/admin/subscriptions/grant", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                  userId,
-                  planId: selectedPlanId,
-                  durationDays: grantState.durationDays ? Number(grantState.durationDays) : undefined,
-                  trafficGB: grantState.trafficGB ? Number(grantState.trafficGB) : undefined,
-                  note: grantState.note || undefined
-                })
-              });
-            })}
+            onClick={() =>
+              runAction(async () => {
+                return fetch("/api/admin/subscriptions/grant", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json"
+                  },
+                  body: JSON.stringify({
+                    userId,
+                    planId: selectedPlanId,
+                    durationDays: grantState.durationDays ? Number(grantState.durationDays) : undefined,
+                    trafficGB: grantState.trafficGB ? Number(grantState.trafficGB) : undefined,
+                    note: grantState.note || undefined
+                  })
+                });
+              })
+            }
           >
             {pending ? "Сохраняем..." : "Выдать"}
           </Button>

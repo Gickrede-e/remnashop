@@ -51,6 +51,7 @@ export default async function AdminPaymentsPage({ searchParams }: PaymentsPagePr
             <select
               name="status"
               defaultValue={status ?? ""}
+              aria-label="Фильтр по статусу платежа"
               className="flex h-11 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 text-sm text-white"
             >
               <option value="">Все статусы</option>
@@ -63,6 +64,7 @@ export default async function AdminPaymentsPage({ searchParams }: PaymentsPagePr
             <select
               name="provider"
               defaultValue={provider ?? ""}
+              aria-label="Фильтр по провайдеру платежа"
               className="flex h-11 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 text-sm text-white"
             >
               <option value="">Все провайдеры</option>
