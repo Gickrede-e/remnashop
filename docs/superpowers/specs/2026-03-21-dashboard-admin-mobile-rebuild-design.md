@@ -55,9 +55,11 @@ Confirmed authenticated routes to preserve:
 - `app/admin/users/page.tsx`
 - `app/admin/plans/page.tsx`
 - `app/admin/plans/new/page.tsx`
+- `app/admin/plans/[id]/edit/page.tsx`
 - `app/admin/payments/page.tsx`
 - `app/admin/promos/page.tsx`
 - `app/admin/promos/new/page.tsx`
+- `app/admin/promos/[id]/edit/page.tsx`
 - `app/admin/referrals/page.tsx`
 - `app/admin/logs/page.tsx`
 - `app/admin/export/page.tsx`
@@ -118,9 +120,11 @@ app/
     users/page.tsx
     plans/page.tsx
     plans/new/page.tsx
+    plans/[id]/edit/page.tsx
     payments/page.tsx
     promos/page.tsx
     promos/new/page.tsx
+    promos/[id]/edit/page.tsx
     referrals/page.tsx
     logs/page.tsx
     export/page.tsx
