@@ -31,7 +31,7 @@ function getSubscriptionMessage(subscription: DashboardOverviewBlocksProps["subs
   }
 
   if (subscription.status === "PENDING") {
-    return "Активация ещё обрабатывается. Проверьте статус и при необходимости повторите покупку.";
+    return "Активация ещё обрабатывается. Подождите пару минут и обновите страницу, прежде чем создавать новый платёж.";
   }
 
   if (subscription.status === "EXPIRED") {
