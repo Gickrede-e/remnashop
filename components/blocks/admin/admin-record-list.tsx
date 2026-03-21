@@ -48,25 +48,32 @@ export function AdminRecordCard({
   actions?: ReactNode;
 }) {
   return (
-    <article className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 space-y-1">
-          <p className="break-all text-sm font-medium text-white">{title}</p>
-          {subtitle ? <p className="text-xs text-zinc-500">{subtitle}</p> : null}
-        </div>
-        {badge ? <div className="shrink-0">{badge}</div> : null}
-      </div>
-
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        {metadata.map((item) => (
-          <div key={item.label} className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-            <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{item.label}</p>
-            <p className="mt-2 break-words text-sm text-white">{item.value}</p>
+    <article className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+      <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start sm:gap-5">
+        <div className="min-w-0 space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 space-y-1">
+              <p className="break-all text-sm font-medium text-white">{title}</p>
+              {subtitle ? <p className="text-xs text-zinc-500">{subtitle}</p> : null}
+            </div>
+            {badge ? <div className="shrink-0">{badge}</div> : null}
           </div>
-        ))}
-      </div>
 
-      {actions ? <div className="mt-4">{actions}</div> : null}
+          <dl className="grid gap-2.5">
+            {metadata.map((item) => (
+              <div
+                key={item.label}
+                className="flex items-start justify-between gap-4 border-t border-white/6 pt-2.5 first:border-t-0 first:pt-0"
+              >
+                <dt className="shrink-0 text-xs uppercase tracking-[0.18em] text-zinc-500">{item.label}</dt>
+                <dd className="min-w-0 break-words text-right text-sm text-white">{item.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+
+        {actions ? <div className="sm:w-[320px] sm:max-w-full">{actions}</div> : null}
+      </div>
     </article>
   );
 }
