@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { AdminRecordCard, AdminRecordList } from "@/components/blocks/admin/admin-record-list";
 import { ScreenHeader } from "@/components/shell/screen-header";
 import { Button } from "@/components/ui/button";
@@ -47,7 +45,7 @@ export default function AdminExportPage() {
               ]}
               actions={
                 <Button asChild className="w-full sm:w-auto">
-                  <Link href={item.href}>Скачать CSV</Link>
+                  <a href={item.href}>Скачать CSV</a>
                 </Button>
               }
             />

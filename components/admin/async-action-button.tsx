@@ -31,7 +31,7 @@ export function AsyncActionButton({
       type="button"
       size="sm"
       variant={variant}
-      className={cn("w-full sm:w-auto", className)}
+      className={cn("w-full justify-center sm:min-w-[9.5rem] sm:w-auto", className)}
       disabled={pending}
       onClick={() =>
         startTransition(async () => {

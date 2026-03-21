@@ -25,7 +25,7 @@ export default async function AdminLogsPage() {
         description="Показываем последние 50 записей с ключевым контекстом, а полную таблицу оставляем только для широких экранов."
         summary={
           <div className="surface-soft grid gap-3 p-4 sm:grid-cols-2">
-            <SummaryItem label="Записей" value={String(result.items.length)} />
+            <SummaryItem label="Всего записей" value={String(result.total)} />
             <SummaryItem label="Период" value="Последние события" />
           </div>
         }
