@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Menu, type LucideIcon } from "lucide-react";
 
-import { Logo } from "@/components/layout/logo";
+import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
 import { ScreenHeader } from "@/components/shell/screen-header";
 import type { AppShellArea } from "@/lib/ui/app-shell-nav";
