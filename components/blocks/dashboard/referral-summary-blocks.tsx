@@ -81,7 +81,7 @@ function InvitedUsersSection({ referredUsers }: Pick<ReferralSummaryBlocksProps,
     <Card>
       <CardHeader className="space-y-2 p-5 pb-3 sm:p-6 sm:pb-4">
         <CardTitle className="text-lg text-white sm:text-xl">Приглашённые пользователи</CardTitle>
-        <p className="text-sm leading-6 text-zinc-400">Список регистраций по вашей ссылке и дата первого успешного платежа.</p>
+        <p className="text-sm leading-6 text-zinc-400">Список регистраций по вашей ссылке и дата последнего успешного платежа.</p>
       </CardHeader>
 
       <CardContent className="grid gap-4 p-5 pt-0 sm:p-6 sm:pt-0">
@@ -102,7 +102,7 @@ function InvitedUsersSection({ referredUsers }: Pick<ReferralSummaryBlocksProps,
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 space-y-1">
                         <p className="text-sm font-medium text-white">{maskEmail(userItem.email)}</p>
-                        <p className="text-xs text-zinc-500">{hasPayment ? "Первый платёж зафиксирован" : "Ожидает первый платёж"}</p>
+                        <p className="text-xs text-zinc-500">{hasPayment ? "Последний платёж зафиксирован" : "Ожидает успешный платёж"}</p>
                       </div>
                       <span className="inline-flex h-8 items-center rounded-full border border-white/10 bg-white/[0.04] px-3 text-xs text-zinc-300">
                         {hasPayment ? "Оплатил" : "Без оплаты"}
@@ -111,7 +111,7 @@ function InvitedUsersSection({ referredUsers }: Pick<ReferralSummaryBlocksProps,
 
                     <div className="mt-4 grid gap-3">
                       <SummaryChip label="Регистрация" value={formatDateTime(userItem.createdAt)} />
-                      <SummaryChip label="Первый платёж" value={formatDateTime(firstPayment)} />
+                      <SummaryChip label="Последний платёж" value={formatDateTime(firstPayment)} />
                     </div>
                   </article>
                 );
@@ -124,7 +124,7 @@ function InvitedUsersSection({ referredUsers }: Pick<ReferralSummaryBlocksProps,
                   <TableRow>
                     <TableHead>Email</TableHead>
                     <TableHead>Регистрация</TableHead>
-                    <TableHead>Первый платёж</TableHead>
+                    <TableHead>Последний платёж</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

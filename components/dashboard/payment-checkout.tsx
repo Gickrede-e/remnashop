@@ -85,6 +85,7 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
   const handleSelectPlan = useCallback((planId: string) => {
     setSelectedPlanId(planId);
     setPromoState(null);
+    setMessage(null);
   }, []);
 
   const validatePromo = useCallback(() => {
@@ -214,7 +215,11 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
                 <Input
                   id="promoCode"
                   value={promoCode}
-                  onChange={(event) => setPromoCode(event.target.value.toUpperCase())}
+                  onChange={(event) => {
+                    setPromoCode(event.target.value.toUpperCase());
+                    setPromoState(null);
+                    setMessage(null);
+                  }}
                   placeholder="WELCOME10"
                 />
                 <Button type="button" variant="secondary" onClick={validatePromo} disabled={pending}>
@@ -223,7 +228,11 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
               </div>
             </div>
 
-            {message ? <p className="text-sm leading-5 text-zinc-400">{message}</p> : null}
+            {message ? (
+              <p role="status" aria-live="polite" className="text-sm leading-5 text-zinc-400">
+                {message}
+              </p>
+            ) : null}
 
             <div className="grid gap-3">
               <Button className="w-full" onClick={() => createPayment(PaymentProvider.YOOKASSA)} disabled={pending}>
