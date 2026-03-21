@@ -65,26 +65,26 @@
 
   .page-surface {
     @apply rounded-[28px] border;
-    border-color: hsl(var(--border) / 0.9);
-    background: hsl(var(--card) / 0.98);
+    border-color: var(--app-border);
+    background: color-mix(in srgb, var(--app-surface) 96%, transparent);
   }
 
   .surface-soft {
     @apply rounded-[24px] border;
-    border-color: hsl(var(--border) / 0.82);
-    background: hsl(222 24% 11% / 0.96);
+    border-color: color-mix(in srgb, var(--app-border) 84%, transparent);
+    background: color-mix(in srgb, var(--app-surface) 94%, transparent);
   }
 
   .surface-feature {
     @apply rounded-[28px] border;
-    border-color: hsl(var(--border) / 0.95);
-    background: hsl(222 24% 14% / 0.98);
+    border-color: color-mix(in srgb, var(--app-border) 92%, transparent);
+    background: color-mix(in srgb, var(--app-surface-strong) 96%, transparent);
   }
 
   .grid-strokes {
     background-image:
-      linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px);
+      linear-gradient(to right, color-mix(in srgb, var(--app-border) 38%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in srgb, var(--app-border) 38%, transparent) 1px, transparent 1px);
     background-size: 48px 48px;
   }
 
