@@ -8,7 +8,7 @@ vi.mock("next/link", () => ({
     React.createElement("a", { href, ...props }, children)
 }));
 
-vi.mock("@/components/layout/logo", () => ({
+vi.mock("@/components/shared/logo", () => ({
   Logo: ({ href = "/" }: { href?: string }) => React.createElement("a", { href }, "Logo")
 }));
 
