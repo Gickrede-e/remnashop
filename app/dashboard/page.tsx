@@ -20,10 +20,10 @@ export default async function DashboardPage() {
   ]);
 
   const activeUser = syncedUser ?? user;
-  const subscription = activeUser?.subscription;
+  const subscription = activeUser?.subscription ?? null;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "";
   const remnawaveBaseUrl = process.env.REMNAWAVE_BASE_URL?.replace(/\/$/, "");
-  const referralLink = user?.referralCode ? `${siteUrl}/register?ref=${user.referralCode}` : "";
+  const referralLink = activeUser?.referralCode ? `${siteUrl}/register?ref=${activeUser.referralCode}` : "";
   const externalSubscriptionUrl =
     activeUser?.remnawaveShortUuid && remnawaveBaseUrl
       ? `${remnawaveBaseUrl}/api/sub/${activeUser.remnawaveShortUuid}`
@@ -33,8 +33,8 @@ export default async function DashboardPage() {
     <div className="grid gap-4 sm:gap-6">
       <ScreenHeader
         eyebrow="Личный кабинет"
-        title="Обзор доступа"
-        description="Проверьте текущий статус подписки, быстро продлите доступ и откройте нужные действия без лишнего шума."
+        title="Обзор"
+        description="Подписка, быстрые действия и ссылка для доступа к вашему профилю."
       />
       <DashboardOverviewBlocks
         subscription={
