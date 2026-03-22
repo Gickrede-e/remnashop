@@ -16,7 +16,7 @@ export function Logo({
     <Link href={href} className={cn("inline-flex items-center gap-3", className)}>
       <span
         className={cn(
-          "flex items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 via-blue-500 to-cyan-400 text-white shadow-glow",
+          "flex items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 via-blue-500 to-cyan-400 text-white shadow-sm shadow-black/20",
           compact ? "h-9 w-9" : "h-10 w-10"
         )}
       >

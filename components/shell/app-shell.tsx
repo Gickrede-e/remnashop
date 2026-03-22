@@ -96,9 +96,9 @@ export function AppShell({ area, children }: AppShellProps) {
         onOpenMore={() => setMoreOpen(true)}
       />
 
-      <main className="container overflow-x-hidden py-4 pb-28 sm:py-6 sm:pb-32 md:pb-8 lg:py-8 lg:pb-10">
+      <div className="container overflow-x-hidden py-4 pb-28 sm:py-6 sm:pb-32 md:pb-8 lg:py-8 lg:pb-10">
         <div className="grid min-w-0 gap-6">{children}</div>
-      </main>
+      </div>
 
       <AppBottomNav
         items={primaryItems}
