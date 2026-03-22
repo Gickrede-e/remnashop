@@ -1,3 +1,5 @@
+import { Buffer } from "node:buffer";
+
 import { env } from "@/lib/env";
 
 export type ProviderStatus = "available" | "timeout" | "unavailable" | "not_configured";
@@ -10,37 +12,75 @@ export type ProviderStatusRow = {
   checkedAt: string;
 };
 
+type GetProviderStatusesOptions = {
+  timeoutMs?: number;
+};
+
+type ProviderProbe = {
+  label: ProviderStatusRow["label"];
+  isConfigured: boolean;
+  run: (signal: AbortSignal) => Promise<Response>;
+};
+
+const DEFAULT_TIMEOUT_MS = 2500;
+
 const placeholderConfig = {
-  remnawaveBaseUrl: "https://your-panel.example.com",
-  remnawaveApiToken: "placeholder_token",
-  yookassaShopId: "123456",
-  yookassaSecretKey: "test_secret_key",
-  plategaApiKey: "platega_placeholder_key",
-  plategaWebhookSecret: "platega_placeholder_secret",
-  plategaMerchantId: ""
+  remnawaveBaseUrls: ["https://your-panel.example.com"],
+  remnawaveApiTokens: ["placeholder_token"],
+  yookassaShopIds: ["123456"],
+  yookassaSecretKeys: ["test_secret_key"],
+  plategaApiKeys: ["platega_placeholder_key", "your_platega_api_key"],
+  plategaWebhookSecrets: ["platega_placeholder_secret", "your_platega_webhook_secret"]
 } as const;
 
-function buildNotConfiguredRow(label: string, checkedAt: string): ProviderStatusRow {
+class ProbeTimeoutError extends Error {
+  constructor(timeoutMs: number) {
+    super(`request timed out after ${timeoutMs}ms`);
+    this.name = "ProbeTimeoutError";
+  }
+}
+
+function buildStatus(
+  label: string,
+  status: ProviderStatus,
+  summary: string,
+  detail: string,
+  checkedAt: string
+): ProviderStatusRow {
   return {
     label,
-    status: "not_configured",
-    summary: "Не настроен",
-    detail: "placeholder config",
+    status,
+    summary,
+    detail,
     checkedAt
   };
 }
 
-function buildPendingRow(label: string, checkedAt: string): ProviderStatusRow {
-  return {
-    label,
-    status: "unavailable",
-    summary: "Недоступен",
-    detail: "probe pending",
-    checkedAt
-  };
+function buildNotConfiguredRow(label: string, checkedAt: string) {
+  return buildStatus(label, "not_configured", "Не настроен", "placeholder config", checkedAt);
 }
 
-function isPlaceholderConfig() {
+function buildUnavailableRow(label: string, detail: string, checkedAt: string) {
+  return buildStatus(label, "unavailable", "Недоступен", detail, checkedAt);
+}
+
+function hasPlaceholderValue(value: string, placeholders: readonly string[]) {
+  return placeholders.includes(value);
+}
+
+function stripTrailingSlash(value: string) {
+  return value.replace(/\/+$/, "");
+}
+
+function getYooKassaAuthHeader() {
+  const token = Buffer.from(
+    `${env.YOOKASSA_SHOP_ID}:${env.YOOKASSA_SECRET_KEY}`,
+    "utf8"
+  ).toString("base64");
+  return `Basic ${token}`;
+}
+
+function getPlaceholderFlags() {
   const remnawaveBaseUrl = env.REMNAWAVE_BASE_URL;
   const remnawaveApiToken = env.REMNAWAVE_API_TOKEN;
   const yookassaShopId = env.YOOKASSA_SHOP_ID;
@@ -51,31 +91,152 @@ function isPlaceholderConfig() {
 
   return {
     remnawave:
-      remnawaveBaseUrl === placeholderConfig.remnawaveBaseUrl ||
-      remnawaveApiToken === placeholderConfig.remnawaveApiToken,
+      hasPlaceholderValue(remnawaveBaseUrl, placeholderConfig.remnawaveBaseUrls) ||
+      hasPlaceholderValue(remnawaveApiToken, placeholderConfig.remnawaveApiTokens),
     yookassa:
-      yookassaShopId === placeholderConfig.yookassaShopId ||
-      yookassaSecretKey === placeholderConfig.yookassaSecretKey,
+      hasPlaceholderValue(yookassaShopId, placeholderConfig.yookassaShopIds) ||
+      hasPlaceholderValue(yookassaSecretKey, placeholderConfig.yookassaSecretKeys),
     platega:
-      plategaApiKey === placeholderConfig.plategaApiKey ||
-      plategaWebhookSecret === placeholderConfig.plategaWebhookSecret ||
-      plategaMerchantId === placeholderConfig.plategaMerchantId
+      hasPlaceholderValue(plategaApiKey, placeholderConfig.plategaApiKeys) ||
+      hasPlaceholderValue(plategaWebhookSecret, placeholderConfig.plategaWebhookSecrets) ||
+      !plategaMerchantId
   } as const;
 }
 
-export async function getProviderStatuses(): Promise<ProviderStatusRow[]> {
-  const checkedAt = new Date().toISOString();
-  const placeholderFlags = isPlaceholderConfig();
+function createProviderProbes() {
+  const placeholderFlags = getPlaceholderFlags();
 
   return [
-    placeholderFlags.remnawave
-      ? buildNotConfiguredRow("Remnawave", checkedAt)
-      : buildPendingRow("Remnawave", checkedAt),
-    placeholderFlags.yookassa
-      ? buildNotConfiguredRow("YooKassa", checkedAt)
-      : buildPendingRow("YooKassa", checkedAt),
-    placeholderFlags.platega
-      ? buildNotConfiguredRow("Platega", checkedAt)
-      : buildPendingRow("Platega", checkedAt)
-  ];
+    {
+      label: "Remnawave",
+      isConfigured: !placeholderFlags.remnawave,
+      run: (signal) =>
+        fetch(`${stripTrailingSlash(env.REMNAWAVE_BASE_URL)}/api/users`, {
+          headers: {
+            Authorization: `Bearer ${env.REMNAWAVE_API_TOKEN}`
+          },
+          cache: "no-store",
+          signal
+        })
+    },
+    {
+      label: "YooKassa",
+      isConfigured: !placeholderFlags.yookassa,
+      // YooKassa docs expose GET /v3/payments as a read-only listing endpoint with HTTP Basic auth.
+      run: (signal) =>
+        fetch("https://api.yookassa.ru/v3/payments?limit=1", {
+          headers: {
+            Authorization: getYooKassaAuthHeader()
+          },
+          cache: "no-store",
+          signal
+        })
+    },
+    {
+      label: "Platega",
+      isConfigured: !placeholderFlags.platega,
+      // Platega docs expose GET /transaction/balance-unlock-operations with X-MerchantId/X-Secret.
+      run: (signal) => {
+        const to = new Date().toISOString();
+        const from = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const query = new URLSearchParams({
+          from,
+          to,
+          page: "1",
+          size: "1"
+        });
+
+        return fetch(`https://app.platega.io/transaction/balance-unlock-operations?${query}`, {
+          headers: {
+            "X-MerchantId": env.PLATEGA_MERCHANT_ID,
+            "X-Secret": env.PLATEGA_API_KEY,
+            Accept: "text/plain"
+          },
+          cache: "no-store",
+          signal
+        });
+      }
+    }
+  ] satisfies ProviderProbe[];
+}
+
+async function withTimeout<T>(
+  run: (signal: AbortSignal) => Promise<T>,
+  timeoutMs: number
+): Promise<T> {
+  const controller = new AbortController();
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      controller.abort();
+      reject(new ProbeTimeoutError(timeoutMs));
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([run(controller.signal), timeoutPromise]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
+}
+
+function normalizeProbeError(label: string, error: unknown, checkedAt: string): ProviderStatusRow {
+  if (error instanceof ProbeTimeoutError) {
+    return buildStatus(label, "timeout", "Таймаут", error.message, checkedAt);
+  }
+
+  if (error instanceof Error) {
+    return buildUnavailableRow(label, error.message, checkedAt);
+  }
+
+  return buildUnavailableRow(label, String(error), checkedAt);
+}
+
+async function probeWithTimeout(
+  label: string,
+  run: (signal: AbortSignal) => Promise<Response>,
+  timeoutMs: number,
+  checkedAt: string
+): Promise<ProviderStatusRow> {
+  try {
+    const response = await withTimeout(run, timeoutMs);
+
+    return response.ok
+      ? buildStatus(label, "available", "Доступен", "auth ok", checkedAt)
+      : buildUnavailableRow(
+          label,
+          `${response.status} ${response.statusText}`.trim(),
+          checkedAt
+        );
+  } catch (error) {
+    return normalizeProbeError(label, error, checkedAt);
+  }
+}
+
+export async function getProviderStatuses(
+  options: GetProviderStatusesOptions = {}
+): Promise<ProviderStatusRow[]> {
+  const checkedAt = new Date().toISOString();
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const probes = createProviderProbes();
+  const settled = await Promise.allSettled(
+    probes.map((probe) =>
+      probe.isConfigured
+        ? probeWithTimeout(probe.label, probe.run, timeoutMs, checkedAt)
+        : Promise.resolve(buildNotConfiguredRow(probe.label, checkedAt))
+    )
+  );
+
+  return settled.map((result, index) => {
+    if (result.status === "fulfilled") {
+      return result.value;
+    }
+
+    const label = probes[index]?.label ?? "Unknown";
+    const detail = result.reason instanceof Error ? result.reason.message : String(result.reason);
+    return buildUnavailableRow(label, detail, checkedAt);
+  });
 }

@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Buffer } from "node:buffer";
+
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockEnv, envReads } = vi.hoisted(() => {
   const state = {
@@ -30,6 +32,16 @@ vi.mock("@/lib/env", () => ({ env: mockEnv }));
 
 import { getProviderStatuses } from "@/lib/services/provider-status";
 
+function configureAllProviders() {
+  mockEnv.REMNAWAVE_BASE_URL = "https://panel.example.com";
+  mockEnv.REMNAWAVE_API_TOKEN = "real-token";
+  mockEnv.YOOKASSA_SHOP_ID = "shop-id";
+  mockEnv.YOOKASSA_SECRET_KEY = "secret";
+  mockEnv.PLATEGA_API_KEY = "platega-real-key";
+  mockEnv.PLATEGA_WEBHOOK_SECRET = "platega-real-secret";
+  mockEnv.PLATEGA_MERCHANT_ID = "merchant-1";
+}
+
 describe("getProviderStatuses", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -43,7 +55,14 @@ describe("getProviderStatuses", () => {
     mockEnv.PLATEGA_MERCHANT_ID = "";
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("marks placeholder providers as not_configured without calling fetch", async () => {
+    mockEnv.PLATEGA_API_KEY = "your_platega_api_key";
+    mockEnv.PLATEGA_WEBHOOK_SECRET = "your_platega_webhook_secret";
+
     const fetchSpy = vi.spyOn(globalThis, "fetch");
 
     const result = await getProviderStatuses();
@@ -89,37 +108,126 @@ describe("getProviderStatuses", () => {
     expect(result[1]?.checkedAt).toBe(result[2]?.checkedAt);
   });
 
-  it("marks configured providers as unavailable until probe logic exists", async () => {
+  it("marks a provider as available when the probe returns ok", async () => {
     mockEnv.REMNAWAVE_BASE_URL = "https://panel.example.com";
     mockEnv.REMNAWAVE_API_TOKEN = "real-token";
 
+    const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
     const result = await getProviderStatuses();
 
-    expect(result).toEqual([
-      {
-        label: "Remnawave",
-        status: "unavailable",
-        summary: "Недоступен",
-        detail: "probe pending",
-        checkedAt: expect.stringMatching(
-          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/
-        )
+    expect(result.find((item) => item.label === "Remnawave")).toMatchObject({
+      status: "available",
+      summary: "Доступен",
+      detail: "auth ok"
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://panel.example.com/api/users",
+      expect.objectContaining({
+        headers: {
+          Authorization: "Bearer real-token"
+        },
+        cache: "no-store"
+      })
+    );
+  });
+
+  it("maps a timed out probe to timeout", async () => {
+    mockEnv.REMNAWAVE_BASE_URL = "https://panel.example.com";
+    mockEnv.REMNAWAVE_API_TOKEN = "real-token";
+
+    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
+
+    const result = await getProviderStatuses({ timeoutMs: 1 });
+
+    expect(result.find((item) => item.label === "Remnawave")).toMatchObject({
+      status: "timeout",
+      summary: "Таймаут",
+      detail: "request timed out after 1ms"
+    });
+  });
+
+  it("maps auth and transport failures to unavailable without crashing the aggregate", async () => {
+    configureAllProviders();
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("{}", { status: 401, statusText: "Unauthorized" }))
+      .mockRejectedValueOnce(new TypeError("fetch failed"))
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }));
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await getProviderStatuses();
+
+    expect(result).toHaveLength(3);
+    expect(result.find((item) => item.label === "Remnawave")).toMatchObject({
+      status: "unavailable",
+      summary: "Недоступен",
+      detail: "401 Unauthorized"
+    });
+    expect(result.find((item) => item.label === "YooKassa")).toMatchObject({
+      status: "unavailable",
+      summary: "Недоступен",
+      detail: "fetch failed"
+    });
+    expect(result.find((item) => item.label === "Platega")).toMatchObject({
+      status: "available",
+      summary: "Доступен",
+      detail: "auth ok"
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      "https://panel.example.com/api/users",
+      expect.objectContaining({
+        headers: {
+          Authorization: "Bearer real-token"
+        },
+        cache: "no-store"
+      })
+    );
+
+    // YooKassa docs expose GET /v3/payments as a read-only authenticated listing endpoint.
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "https://api.yookassa.ru/v3/payments?limit=1",
+      expect.objectContaining({
+        headers: {
+          Authorization: `Basic ${Buffer.from("shop-id:secret", "utf8").toString("base64")}`
+        },
+        cache: "no-store"
+      })
+    );
+
+    const plategaCall = fetchMock.mock.calls[2];
+    const plategaUrl = new URL(String(plategaCall?.[0]));
+    const plategaInit = plategaCall?.[1] as RequestInit | undefined;
+
+    // Platega docs expose GET /transaction/balance-unlock-operations with X-MerchantId/X-Secret.
+    expect(plategaUrl.origin).toBe("https://app.platega.io");
+    expect(plategaUrl.pathname).toBe("/transaction/balance-unlock-operations");
+    expect(plategaUrl.searchParams.get("page")).toBe("1");
+    expect(plategaUrl.searchParams.get("size")).toBe("1");
+    expect(plategaUrl.searchParams.get("from")).toMatch(
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/
+    );
+    expect(plategaUrl.searchParams.get("to")).toMatch(
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/
+    );
+    expect(plategaInit).toEqual(
+      expect.objectContaining({
+      headers: {
+        Accept: "text/plain",
+        "X-MerchantId": "merchant-1",
+        "X-Secret": "platega-real-key"
       },
-      {
-        label: "YooKassa",
-        status: "not_configured",
-        summary: "Не настроен",
-        detail: "placeholder config",
-        checkedAt: expect.any(String)
-      },
-      {
-        label: "Platega",
-        status: "not_configured",
-        summary: "Не настроен",
-        detail: "placeholder config",
-        checkedAt: expect.any(String)
-      }
-    ]);
-    expect(result[0]?.status).not.toBe("not_configured");
+      cache: "no-store"
+      })
+    );
   });
 });
