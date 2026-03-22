@@ -18,7 +18,7 @@ describe("remnawave site identities", () => {
       "cm8abc123xyz987654"
     );
 
-    expect(username).toMatch(/^gs_[a-z0-9_]+_[a-z0-9]{10}$/);
+    expect(username).toBe("gs_very_long_email_alias__3xyz987654");
     expect(username.length).toBeLessThanOrEqual(36);
   });
 
