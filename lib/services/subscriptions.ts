@@ -11,14 +11,39 @@ import {
   disableRemnawaveUser,
   enableRemnawaveUser,
   getRemnawaveUser,
+  getRemnawaveUserByUsername,
+  isRemnawaveNotFoundError,
+  listRemnawaveUsersByEmail,
   updateRemnawaveUser
 } from "@/lib/services/remnawave";
 import { createReferralRewardForFirstPayment } from "@/lib/services/referrals";
+import {
+  buildPrimaryProjectUsername,
+  resolveRemnawaveIdentityLookup
+} from "@/lib/services/remnawave-site-identities";
 
 type ActivationMeta = {
   startsAt: string;
   expiresAt: string;
   trafficLimitBytes: string;
+};
+
+type RemnawaveIdentitySeed = {
+  expireAt: Date;
+  trafficLimitBytes?: bigint;
+  description: string;
+  tag: string;
+  activeInternalSquads: string[];
+  externalSquadUuid: string | null;
+  hwidDeviceLimit: number | null;
+};
+
+type RemnawaveIdentityUser = {
+  id: string;
+  email: string;
+  remnawaveUuid: string | null;
+  remnawaveUsername: string | null;
+  remnawaveShortUuid?: string | null;
 };
 
 function toPayloadRecord(payload: unknown) {
@@ -62,33 +87,96 @@ function parseActivationMeta(payload: unknown): ActivationMeta | null {
   };
 }
 
-function buildRemnawaveUsername(email: string, userId: string) {
-  return `${email.split("@")[0]?.replace(/[^a-z0-9]/gi, "").slice(0, 12) ?? "user"}-${userId.slice(-6)}`;
+async function persistRemnawaveIdentity(userId: string, remote: {
+  uuid: string;
+  username: string;
+  shortUuid?: string | null;
+}) {
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      remnawaveUuid: remote.uuid,
+      remnawaveUsername: remote.username,
+      remnawaveShortUuid: remote.shortUuid ?? null
+    }
+  });
 }
 
-async function ensureRemnawaveIdentity(user: {
-  id: string;
-  email: string;
-  remnawaveUuid: string | null;
-  remnawaveUsername: string | null;
-}, seed: {
-  expireAt: Date;
-  trafficLimitBytes?: bigint;
-  description: string;
-  tag: string;
-  activeInternalSquads: string[];
-  externalSquadUuid: string | null;
-  hwidDeviceLimit: number | null;
-}) {
-  if (user.remnawaveUuid) {
+async function getLinkedRemnawaveUuids(userId: string) {
+  const linkedUsers = await prisma.user.findMany({
+    where: {
+      id: { not: userId },
+      remnawaveUuid: { not: null }
+    },
+    select: {
+      remnawaveUuid: true
+    }
+  });
+
+  return new Set(
+    linkedUsers
+      .map((linkedUser) => linkedUser.remnawaveUuid)
+      .filter((uuid): uuid is string => Boolean(uuid))
+  );
+}
+
+async function getOptionalRemnawaveUserByUsername(username: string) {
+  try {
+    return await getRemnawaveUserByUsername(username);
+  } catch (error) {
+    if (isRemnawaveNotFoundError(error)) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+async function attachOrCreateRemnawaveIdentity(
+  user: RemnawaveIdentityUser,
+  seed: RemnawaveIdentitySeed
+) {
+  const primaryUsername = buildPrimaryProjectUsername(user.email);
+  const [usernameHit, emailHits, linkedRemoteUuids] = await Promise.all([
+    getOptionalRemnawaveUserByUsername(primaryUsername),
+    listRemnawaveUsersByEmail(user.email),
+    getLinkedRemnawaveUuids(user.id)
+  ]);
+
+  const decision = resolveRemnawaveIdentityLookup({
+    userId: user.id,
+    localEmail: user.email,
+    usernameHit: usernameHit
+      ? {
+          uuid: usernameHit.uuid,
+          username: usernameHit.username,
+          email: usernameHit.email
+        }
+      : null,
+    emailHits: emailHits.map((remote) => ({
+      uuid: remote.uuid,
+      username: remote.username,
+      email: remote.email
+    })),
+    linkedRemoteUuids
+  });
+
+  if (decision.action === "skip") {
+    throw new Error(`Safe Remnawave identity lookup blocked: ${decision.reason}`);
+  }
+
+  if (decision.action === "attach") {
+    await persistRemnawaveIdentity(user.id, decision.remoteUser);
+
     return {
-      uuid: user.remnawaveUuid,
-      username: user.remnawaveUsername ?? buildRemnawaveUsername(user.email, user.id)
+      uuid: decision.remoteUser.uuid,
+      username: decision.remoteUser.username,
+      shortUuid: null
     };
   }
 
   const created = await createRemnawaveUser({
-    username: buildRemnawaveUsername(user.email, user.id),
+    username: decision.username,
     expireAt: seed.expireAt.toISOString(),
     status: "ACTIVE",
     trafficLimitBytes: Number(seed.trafficLimitBytes ?? BigInt(0)),
@@ -101,18 +189,65 @@ async function ensureRemnawaveIdentity(user: {
     hwidDeviceLimit: seed.hwidDeviceLimit
   });
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      remnawaveUuid: created.uuid,
-      remnawaveUsername: created.username,
-      remnawaveShortUuid: created.shortUuid ?? null
-    }
-  });
+  await persistRemnawaveIdentity(user.id, created);
 
   return {
     uuid: created.uuid,
-    username: created.username
+    username: created.username,
+    shortUuid: created.shortUuid ?? null
+  };
+}
+
+async function ensureRemnawaveIdentity(
+  user: RemnawaveIdentityUser,
+  seed: RemnawaveIdentitySeed
+) {
+  if (user.remnawaveUuid) {
+    try {
+      const snapshot = await getRemnawaveUser(user.remnawaveUuid);
+
+      await persistRemnawaveIdentity(user.id, snapshot);
+
+      return {
+        uuid: snapshot.uuid,
+        username: snapshot.username,
+        shortUuid: snapshot.shortUuid ?? null
+      };
+    } catch (error) {
+      if (!isRemnawaveNotFoundError(error)) {
+        throw error;
+      }
+    }
+  }
+
+  return attachOrCreateRemnawaveIdentity(user, seed);
+}
+
+function buildSyncRecoverySeed(user: {
+  subscription: {
+    expiresAt: Date | null;
+    trafficLimitBytes: bigint | null;
+    plan: {
+      name: string;
+      slug: string;
+      remnawaveInternalSquadUuids: string[];
+      remnawaveExternalSquadUuid: string | null;
+      remnawaveHwidDeviceLimit: number | null;
+    } | null;
+  } | null;
+}): RemnawaveIdentitySeed | null {
+  if (!user.subscription?.plan || !user.subscription.expiresAt) {
+    return null;
+  }
+
+  return {
+    expireAt: user.subscription.expiresAt,
+    trafficLimitBytes: user.subscription.trafficLimitBytes ?? BigInt(0),
+    description: `Sync recovery: ${user.subscription.plan.name}`,
+    tag: slugToRemnawaveTag(user.subscription.plan.slug),
+    activeInternalSquads: user.subscription.plan.remnawaveInternalSquadUuids,
+    externalSquadUuid: user.subscription.plan.remnawaveExternalSquadUuid,
+    hwidDeviceLimit: user.subscription.plan.remnawaveHwidDeviceLimit
   };
 }
 
@@ -209,6 +344,7 @@ export async function activateSubscriptionFromPayment(paymentId: string) {
       externalSquadUuid: payment.plan.remnawaveExternalSquadUuid,
       hwidDeviceLimit: payment.plan.remnawaveHwidDeviceLimit
     });
+    await persistRemnawaveIdentity(payment.user.id, snapshot);
     await enableRemnawaveUser(remnawave.uuid);
 
     const subscription = existingSubscription
@@ -311,12 +447,28 @@ export async function syncUserSubscription(userId: string) {
   }
 
   try {
-    const snapshot = await getRemnawaveUser(user.remnawaveUuid);
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        remnawaveShortUuid: snapshot.shortUuid ?? user.remnawaveShortUuid
+    let snapshot: Awaited<ReturnType<typeof getRemnawaveUser>>;
+
+    try {
+      snapshot = await getRemnawaveUser(user.remnawaveUuid);
+    } catch (error) {
+      if (!isRemnawaveNotFoundError(error)) {
+        throw error;
       }
+
+      const recoverySeed = buildSyncRecoverySeed(user);
+      if (!recoverySeed) {
+        throw error;
+      }
+
+      const recoveredIdentity = await ensureRemnawaveIdentity(user, recoverySeed);
+      snapshot = await getRemnawaveUser(recoveredIdentity.uuid);
+    }
+
+    await persistRemnawaveIdentity(user.id, {
+      uuid: snapshot.uuid,
+      username: snapshot.username,
+      shortUuid: snapshot.shortUuid ?? user.remnawaveShortUuid ?? null
     });
 
     if (user.subscription) {
@@ -484,7 +636,7 @@ export async function grantSubscriptionByAdmin(input: {
     externalSquadUuid: plan.remnawaveExternalSquadUuid,
     hwidDeviceLimit: plan.remnawaveHwidDeviceLimit
   });
-  await updateRemnawaveUser(remnawave.uuid, {
+  const snapshot = await updateRemnawaveUser(remnawave.uuid, {
     expireAt: expiresAt.toISOString(),
     trafficLimitBytes: Number(trafficLimitBytes),
     status: "ACTIVE",
@@ -494,6 +646,7 @@ export async function grantSubscriptionByAdmin(input: {
     externalSquadUuid: plan.remnawaveExternalSquadUuid,
     hwidDeviceLimit: plan.remnawaveHwidDeviceLimit
   });
+  await persistRemnawaveIdentity(user.id, snapshot);
   await enableRemnawaveUser(remnawave.uuid);
 
   const subscription = current

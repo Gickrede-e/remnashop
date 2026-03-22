@@ -11,6 +11,24 @@ type SelectSafeAttachCandidateInput = {
   linkedRemoteUuids: ReadonlySet<string>;
 };
 
+type ResolveRemnawaveIdentityLookupInput = SelectSafeAttachCandidateInput & {
+  userId: string;
+};
+
+export type RemnawaveIdentityLookupDecision =
+  | {
+      action: "attach";
+      remoteUser: RemnawaveLookupUser;
+    }
+  | {
+      action: "create";
+      username: string;
+    }
+  | {
+      action: "skip";
+      reason: "conflicting-remote-email-match";
+    };
+
 const PROJECT_USERNAME_PREFIX = "gs_";
 const REMNAWAVE_USERNAME_LIMIT = 36;
 const FALLBACK_SUFFIX_LENGTH = 10;
@@ -97,4 +115,45 @@ export function selectSafeAttachCandidate({
   }
 
   return eligibleEmailHits[0] ?? null;
+}
+
+export function resolveRemnawaveIdentityLookup({
+  userId,
+  localEmail,
+  usernameHit,
+  emailHits,
+  linkedRemoteUuids
+}: ResolveRemnawaveIdentityLookupInput): RemnawaveIdentityLookupDecision {
+  const attachCandidate = selectSafeAttachCandidate({
+    localEmail,
+    usernameHit,
+    emailHits,
+    linkedRemoteUuids
+  });
+
+  if (attachCandidate) {
+    return {
+      action: "attach",
+      remoteUser: attachCandidate
+    };
+  }
+
+  if (emailHits.length > 0) {
+    return {
+      action: "skip",
+      reason: "conflicting-remote-email-match"
+    };
+  }
+
+  if (usernameHit) {
+    return {
+      action: "create",
+      username: buildFallbackProjectUsername(localEmail, userId)
+    };
+  }
+
+  return {
+    action: "create",
+    username: buildPrimaryProjectUsername(localEmail)
+  };
 }

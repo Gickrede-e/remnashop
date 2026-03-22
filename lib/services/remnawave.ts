@@ -3,6 +3,7 @@ import { env } from "@/lib/env";
 export type RemnawaveUserSnapshot = {
   uuid: string;
   username: string;
+  email?: string | null;
   shortUuid?: string | null;
   status?: string | null;
   expireAt?: string | null;
@@ -16,6 +17,16 @@ type RemnawaveEnvelope<T> = {
   data?: T;
   result?: T;
 };
+
+class RemnawaveRequestError extends Error {
+  status: number;
+
+  constructor(status: number, body: string) {
+    super(`Remnawave request failed: ${status} ${body}`);
+    this.name = "RemnawaveRequestError";
+    this.status = status;
+  }
+}
 
 function toOptionalString(value: unknown) {
   return typeof value === "string" && value.length > 0 ? value : null;
@@ -52,6 +63,7 @@ function normalizeUser(payload: Record<string, unknown>): RemnawaveUserSnapshot 
   return {
     uuid: String(payload.uuid ?? payload.id ?? ""),
     username: String(payload.username ?? ""),
+    email: toOptionalString(payload.email),
     shortUuid,
     status: payload.status ? String(payload.status) : null,
     expireAt: toOptionalString(payload.expireAt) ?? toOptionalString(payload.expire_at),
@@ -82,10 +94,14 @@ async function remnawaveRequest<T>(path: string, init?: RequestInit) {
   const json = text ? (JSON.parse(text) as unknown) : null;
 
   if (!response.ok) {
-    throw new Error(`Remnawave request failed: ${response.status} ${text}`);
+    throw new RemnawaveRequestError(response.status, text);
   }
 
   return unwrap<T>(json as RemnawaveEnvelope<T>);
+}
+
+export function isRemnawaveNotFoundError(error: unknown) {
+  return error instanceof RemnawaveRequestError && error.status === 404;
 }
 
 export async function createRemnawaveUser(input: {
@@ -113,8 +129,22 @@ export async function getRemnawaveUser(uuid: string) {
   return normalizeUser(data);
 }
 
+export async function getRemnawaveUserByUsername(username: string) {
+  const data = await remnawaveRequest<Record<string, unknown>>(
+    `/api/users/by-username/${encodeURIComponent(username)}`
+  );
+  return normalizeUser(data);
+}
+
 export async function listRemnawaveUsers() {
   const data = await remnawaveRequest<Array<Record<string, unknown>>>("/api/users");
+  return data.map(normalizeUser);
+}
+
+export async function listRemnawaveUsersByEmail(email: string) {
+  const data = await remnawaveRequest<Array<Record<string, unknown>>>(
+    `/api/users/by-email/${encodeURIComponent(email)}`
+  );
   return data.map(normalizeUser);
 }
 
