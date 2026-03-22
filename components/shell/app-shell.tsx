@@ -31,6 +31,7 @@ import {
 
 type AppShellProps = {
   area: AppShellArea;
+  canAccessAdmin?: boolean;
   children: React.ReactNode;
 };
 
@@ -66,29 +67,24 @@ function decorateItems(area: AppShellArea, items: AppNavItem[], pathname: string
   }));
 }
 
-export function AppShell({ area, children }: AppShellProps) {
+export function AppShell({ area, canAccessAdmin = false, children }: AppShellProps) {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const moreSheetId = `${area}-more-sheet`;
 
-  const secondaryItems = decorateItems(area, getSecondaryNavItems(area), pathname, false);
+  const secondaryItems = decorateItems(area, getSecondaryNavItems(area, { canAccessAdmin }), pathname, false);
 
   const isMoreActive = secondaryItems.some((item) => item.active);
 
   const primaryItems = decorateItems(area, getPrimaryNavItems(area), pathname, isMoreActive);
 
-  const currentLabel =
-    [...secondaryItems, ...primaryItems.filter((item) => item.href !== "#more")].find((item) => item.active)?.label ??
-    primaryItems[0]?.label ??
-    "Обзор";
-
   const topbarPrimaryItems = primaryItems.filter((item) => item.href !== "#more");
+  const homeHref = area === "admin" ? "/admin" : "/dashboard";
 
   return (
     <div className="app-shell">
       <AppTopbar
-        area={area}
-        currentLabel={currentLabel}
+        homeHref={homeHref}
         primaryItems={topbarPrimaryItems}
         isMoreActive={isMoreActive}
         moreOpen={moreOpen}

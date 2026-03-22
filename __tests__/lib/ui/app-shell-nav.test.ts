@@ -24,6 +24,13 @@ describe("app shell nav", () => {
 
   it("moves referrals into dashboard secondary nav", () => {
     expect(getSecondaryNavItems("dashboard").map((item) => item.href)).toContain("/dashboard/referrals");
+    expect(getSecondaryNavItems("dashboard").map((item) => item.href)).not.toContain("/admin");
+  });
+
+  it("adds an admin shortcut to dashboard secondary nav only for admin sessions", () => {
+    expect(getSecondaryNavItems("dashboard", { canAccessAdmin: true }).map((item) => item.href)).toContain("/admin");
+    expect(getSecondaryNavItems("dashboard", { canAccessAdmin: true }).map((item) => item.label)).toContain("Админка");
+    expect(getSecondaryNavItems("dashboard", { canAccessAdmin: false }).map((item) => item.href)).not.toContain("/admin");
   });
 
   it("marks nested admin edit routes active under their parent section", () => {

@@ -6,6 +6,10 @@ export type AppNavItem = {
   slot: "primary" | "secondary";
 };
 
+type SecondaryNavOptions = {
+  canAccessAdmin?: boolean;
+};
+
 const dashboardPrimaryNavItems: AppNavItem[] = [
   { href: "/dashboard", label: "Обзор", slot: "primary" },
   { href: "/dashboard/buy", label: "Купить", slot: "primary" },
@@ -37,8 +41,14 @@ export function getPrimaryNavItems(area: AppShellArea): AppNavItem[] {
   return area === "dashboard" ? dashboardPrimaryNavItems : adminPrimaryNavItems;
 }
 
-export function getSecondaryNavItems(area: AppShellArea): AppNavItem[] {
-  return area === "dashboard" ? dashboardSecondaryNavItems : adminSecondaryNavItems;
+export function getSecondaryNavItems(area: AppShellArea, options: SecondaryNavOptions = {}): AppNavItem[] {
+  if (area === "dashboard") {
+    return options.canAccessAdmin
+      ? [...dashboardSecondaryNavItems, { href: "/admin", label: "Админка", slot: "secondary" }]
+      : dashboardSecondaryNavItems;
+  }
+
+  return adminSecondaryNavItems;
 }
 
 export function isNavItemActive(pathname: string, href: string) {

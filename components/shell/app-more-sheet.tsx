@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, type LucideIcon } from "lucide-react";
 
+import { LogoutButton } from "@/components/shared/logout-button";
 import { ScreenHeader } from "@/components/shell/screen-header";
 import {
   Dialog,
@@ -68,6 +69,10 @@ export function AppMoreSheet({ area, items, open, contentId, onOpenChange }: App
               <ArrowRight className="h-4 w-4 shrink-0 text-zinc-500" />
             </Link>
           ))}
+        </div>
+
+        <div className="border-t border-white/10 px-5 py-5 sm:px-6 sm:py-6">
+          <LogoutButton className="w-full justify-center" />
         </div>
       </DialogContent>
     </Dialog>

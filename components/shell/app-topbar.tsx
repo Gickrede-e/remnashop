@@ -3,10 +3,9 @@
 import Link from "next/link";
 import { Menu, type LucideIcon } from "lucide-react";
 
+import { LogoutButton } from "@/components/shared/logout-button";
 import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
-import { ScreenHeader } from "@/components/shell/screen-header";
-import type { AppShellArea } from "@/lib/ui/app-shell-nav";
 import { cn } from "@/lib/utils";
 
 type AppTopbarItem = {
@@ -17,8 +16,7 @@ type AppTopbarItem = {
 };
 
 type AppTopbarProps = {
-  area: AppShellArea;
-  currentLabel: string;
+  homeHref: string;
   primaryItems: AppTopbarItem[];
   isMoreActive: boolean;
   moreOpen: boolean;
@@ -26,59 +24,23 @@ type AppTopbarProps = {
   onOpenMore: () => void;
 };
 
-const areaMeta = {
-  dashboard: {
-    eyebrow: "Личный кабинет",
-    href: "/dashboard"
-  },
-  admin: {
-    eyebrow: "Админ-панель",
-    href: "/admin"
-  }
-} satisfies Record<AppShellArea, { eyebrow: string; href: string }>;
-
 export function AppTopbar({
-  area,
-  currentLabel,
+  homeHref,
   primaryItems,
   isMoreActive,
   moreOpen,
   moreSheetId,
   onOpenMore
 }: AppTopbarProps) {
-  const meta = areaMeta[area];
-
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[color-mix(in_srgb,var(--app-bg)_92%,transparent)]">
       <div className="container py-3">
-        <div className="grid gap-3 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:gap-6">
-          <div className="flex items-center justify-between gap-3">
-            <Logo compact href={meta.href} />
-            <Button
-              type="button"
-              variant="secondary"
-              size="icon"
-              className="md:hidden"
-              onClick={onOpenMore}
-              aria-label="Открыть меню разделов"
-              aria-haspopup="dialog"
-              aria-expanded={moreOpen}
-              aria-controls={moreSheetId}
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
+        <div className="flex items-center justify-between gap-3 md:gap-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <Logo compact href={homeHref} />
           </div>
 
-          <ScreenHeader
-            compact
-            eyebrow={meta.eyebrow}
-            title={currentLabel}
-            titleAs="p"
-            className="min-w-0"
-            titleClassName="truncate"
-          />
-
-          <nav className="hidden items-center gap-2 md:flex">
+          <nav className="hidden min-w-0 flex-1 items-center justify-center gap-2 md:flex">
             {primaryItems.map((item) => (
               <Link
                 key={item.href}
@@ -109,6 +71,23 @@ export function AppTopbar({
               Ещё
             </Button>
           </nav>
+
+          <div className="flex items-center gap-2">
+            <LogoutButton className="hidden md:inline-flex" />
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon"
+              className="md:hidden"
+              onClick={onOpenMore}
+              aria-label="Открыть меню разделов"
+              aria-haspopup="dialog"
+              aria-expanded={moreOpen}
+              aria-controls={moreSheetId}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </div>
     </header>

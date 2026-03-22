@@ -15,5 +15,5 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect("/dashboard");
   }
 
-  return <AppShell area="admin">{children}</AppShell>;
+  return <AppShell area="admin" canAccessAdmin>{children}</AppShell>;
 }
