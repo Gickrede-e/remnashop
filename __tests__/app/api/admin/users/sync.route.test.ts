@@ -96,5 +96,40 @@ describe("POST /api/admin/users/sync", () => {
         ]
       }
     });
+    expect(mockLogAdminAction).toHaveBeenCalledTimes(1);
+    expect(mockLogAdminAction).toHaveBeenCalledWith({
+      adminId: "admin-1",
+      action: "SYNC_ACTIVE_USERS",
+      targetType: "USER",
+      targetId: "active-subscriptions",
+      details: {
+        counts: {
+          totalCandidates: 2,
+          created: 1,
+          attached: 0,
+          alreadyLinked: 1,
+          skipped: 1,
+          failed: 0
+        },
+        skippedUserIds: ["user-2"],
+        failedUserIds: []
+      }
+    });
+  });
+
+  it("converts bulk sync failures into apiError responses", async () => {
+    mockRequireApiAdminSession.mockResolvedValue({ userId: "admin-1", role: "ADMIN" });
+    mockSyncActiveSubscriptionsToRemnawave.mockRejectedValue(new Error("sync exploded"));
+
+    const response = await POST(new Request("http://localhost/api/admin/users/sync"));
+    const payload = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(payload).toEqual({
+      ok: false,
+      error: "sync exploded",
+      details: undefined
+    });
+    expect(mockLogAdminAction).not.toHaveBeenCalled();
   });
 });
