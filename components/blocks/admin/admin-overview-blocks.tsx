@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, type LucideIcon } from "lucide-react";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { ProviderStatusRow } from "@/lib/services/provider-status";
 import { cn } from "@/lib/utils";
 
@@ -37,7 +38,7 @@ type AdminOverviewBlocksProps = {
   primaryMetrics: AdminOverviewMetric[];
   contextRows: AdminOverviewContextRow[];
   sections: AdminOverviewSection[];
-  providerStatuses: ProviderStatusRow[];
+  providerStatusSlot: ReactNode;
   quickActions: AdminOverviewAction[];
   chart?: ReactNode;
   chartTitle?: string;
@@ -146,7 +147,7 @@ function DetailSection({ section }: { section: AdminOverviewSection }) {
   );
 }
 
-function ProviderStatusSection({ statuses }: { statuses: ProviderStatusRow[] }) {
+export function AdminProviderStatusSection({ statuses }: { statuses: ProviderStatusRow[] }) {
   return (
     <Card>
       <CardHeader className="p-5 pb-4 sm:p-6 sm:pb-5">
@@ -186,6 +187,32 @@ function ProviderStatusSection({ statuses }: { statuses: ProviderStatusRow[] }) 
   );
 }
 
+export function AdminProviderStatusFallback() {
+  return (
+    <Card>
+      <CardHeader className="p-5 pb-4 sm:p-6 sm:pb-5">
+        <CardTitle className="text-lg text-white sm:text-xl">Статусы модулей</CardTitle>
+        <CardDescription className="text-sm leading-6 text-zinc-400">
+          Быстрая серверная проверка интеграций без перехода в отдельные журналы и ручные refresh-действия.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-3 p-5 pt-0 sm:p-6 sm:pt-0">
+        {[0, 1, 2].map((index) => (
+          <div key={index} className="rounded-[22px] border border-white/10 bg-white/[0.03] px-4 py-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <Skeleton className="h-4 w-24 bg-white/10" />
+                <Skeleton className="mt-2 h-3 w-32 bg-white/10" />
+              </div>
+              <Skeleton className="h-7 w-20 rounded-full bg-white/10" />
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
 function ChartSection({ title, description, children }: { title: string; description: string; children: ReactNode }) {
   return (
     <Card>
@@ -204,7 +231,7 @@ export function AdminOverviewBlocks({
   primaryMetrics,
   contextRows,
   sections,
-  providerStatuses,
+  providerStatusSlot,
   quickActions,
   chart,
   chartTitle = "Доход за 30 дней",
@@ -221,7 +248,7 @@ export function AdminOverviewBlocks({
         {sections.map((section) => (
           <DetailSection key={section.title} section={section} />
         ))}
-        <ProviderStatusSection statuses={providerStatuses} />
+        {providerStatusSlot}
       </div>
 
       {chart ? <ChartSection title={chartTitle} description={chartDescription}>{chart}</ChartSection> : null}

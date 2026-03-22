@@ -2,7 +2,11 @@ import { Suspense } from "react";
 import nextDynamic from "next/dynamic";
 import { ClipboardList, CreditCard, UserCog, Users } from "lucide-react";
 
-import { AdminOverviewBlocks } from "@/components/blocks/admin/admin-overview-blocks";
+import {
+  AdminOverviewBlocks,
+  AdminProviderStatusFallback,
+  AdminProviderStatusSection
+} from "@/components/blocks/admin/admin-overview-blocks";
 import { ScreenHeader } from "@/components/shell/screen-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getProviderStatuses } from "@/lib/services/provider-status";
@@ -19,10 +23,7 @@ const RevenueChart = nextDynamic(
 );
 
 export default async function AdminDashboardPage() {
-  const [stats, providerStatuses] = await Promise.all([
-    getAdminStats(),
-    getProviderStatuses()
-  ]);
+  const stats = await getAdminStats();
 
   return (
     <div className="grid gap-4 sm:gap-6">
@@ -56,7 +57,11 @@ export default async function AdminDashboardPage() {
             ]
           }
         ]}
-        providerStatuses={providerStatuses}
+        providerStatusSlot={
+          <Suspense fallback={<AdminProviderStatusFallback />}>
+            <AdminProviderStatusBlock />
+          </Suspense>
+        }
         quickActions={[
           {
             href: "/admin/users",
@@ -97,6 +102,12 @@ async function AdminRevenueChart() {
   const chart = await getRevenueChartData();
 
   return <RevenueChart data={chart} />;
+}
+
+async function AdminProviderStatusBlock() {
+  const providerStatuses = await getProviderStatuses();
+
+  return <AdminProviderStatusSection statuses={providerStatuses} />;
 }
 
 function RevenueChartFallback() {
