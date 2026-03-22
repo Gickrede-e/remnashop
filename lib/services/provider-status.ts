@@ -40,12 +40,16 @@ class ProbeTimeoutError extends Error {
   }
 }
 
+function getCheckedAt() {
+  return new Date().toISOString();
+}
+
 function buildStatus(
   label: string,
   status: ProviderStatus,
   summary: string,
   detail: string,
-  checkedAt: string
+  checkedAt = getCheckedAt()
 ): ProviderStatusRow {
   return {
     label,
@@ -56,11 +60,11 @@ function buildStatus(
   };
 }
 
-function buildNotConfiguredRow(label: string, checkedAt: string) {
-  return buildStatus(label, "not_configured", "Не настроен", "placeholder config", checkedAt);
+function buildNotConfiguredRow(label: string) {
+  return buildStatus(label, "not_configured", "Не настроен", "placeholder config");
 }
 
-function buildUnavailableRow(label: string, detail: string, checkedAt: string) {
+function buildUnavailableRow(label: string, detail: string, checkedAt?: string) {
   return buildStatus(label, "unavailable", "Недоступен", detail, checkedAt);
 }
 
@@ -177,9 +181,11 @@ async function withTimeout<T>(
 ): Promise<T> {
   const controller = new AbortController();
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  let didTimeout = false;
 
   const timeoutPromise = new Promise<never>((_, reject) => {
     timeoutId = setTimeout(() => {
+      didTimeout = true;
       controller.abort();
       reject(new ProbeTimeoutError(timeoutMs));
     }, timeoutMs);
@@ -187,6 +193,12 @@ async function withTimeout<T>(
 
   try {
     return await Promise.race([run(controller.signal), timeoutPromise]);
+  } catch (error) {
+    if (didTimeout && isAbortError(error)) {
+      throw new ProbeTimeoutError(timeoutMs);
+    }
+
+    throw error;
   } finally {
     if (timeoutId) {
       clearTimeout(timeoutId);
@@ -194,50 +206,48 @@ async function withTimeout<T>(
   }
 }
 
-function normalizeProbeError(label: string, error: unknown, checkedAt: string): ProviderStatusRow {
+function isAbortError(error: unknown) {
+  return error instanceof Error && error.name === "AbortError";
+}
+
+function normalizeProbeError(label: string, error: unknown): ProviderStatusRow {
   if (error instanceof ProbeTimeoutError) {
-    return buildStatus(label, "timeout", "Таймаут", error.message, checkedAt);
+    return buildStatus(label, "timeout", "Таймаут", error.message);
   }
 
   if (error instanceof Error) {
-    return buildUnavailableRow(label, error.message, checkedAt);
+    return buildUnavailableRow(label, error.message);
   }
 
-  return buildUnavailableRow(label, String(error), checkedAt);
+  return buildUnavailableRow(label, String(error));
 }
 
 async function probeWithTimeout(
   label: string,
   run: (signal: AbortSignal) => Promise<Response>,
-  timeoutMs: number,
-  checkedAt: string
+  timeoutMs: number
 ): Promise<ProviderStatusRow> {
   try {
     const response = await withTimeout(run, timeoutMs);
 
     return response.ok
-      ? buildStatus(label, "available", "Доступен", "auth ok", checkedAt)
-      : buildUnavailableRow(
-          label,
-          `${response.status} ${response.statusText}`.trim(),
-          checkedAt
-        );
+      ? buildStatus(label, "available", "Доступен", "auth ok")
+      : buildUnavailableRow(label, `${response.status} ${response.statusText}`.trim());
   } catch (error) {
-    return normalizeProbeError(label, error, checkedAt);
+    return normalizeProbeError(label, error);
   }
 }
 
 export async function getProviderStatuses(
   options: GetProviderStatusesOptions = {}
 ): Promise<ProviderStatusRow[]> {
-  const checkedAt = new Date().toISOString();
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const probes = createProviderProbes();
   const settled = await Promise.allSettled(
     probes.map((probe) =>
       probe.isConfigured
-        ? probeWithTimeout(probe.label, probe.run, timeoutMs, checkedAt)
-        : Promise.resolve(buildNotConfiguredRow(probe.label, checkedAt))
+        ? probeWithTimeout(probe.label, probe.run, timeoutMs)
+        : Promise.resolve(buildNotConfiguredRow(probe.label))
     )
   );
 
@@ -248,6 +258,6 @@ export async function getProviderStatuses(
 
     const label = probes[index]?.label ?? "Unknown";
     const detail = result.reason instanceof Error ? result.reason.message : String(result.reason);
-    return buildUnavailableRow(label, detail, checkedAt);
+    return buildUnavailableRow(label, detail);
   });
 }

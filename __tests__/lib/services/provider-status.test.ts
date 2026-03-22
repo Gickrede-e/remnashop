@@ -45,6 +45,7 @@ function configureAllProviders() {
 describe("getProviderStatuses", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.useRealTimers();
     envReads.length = 0;
     mockEnv.REMNAWAVE_BASE_URL = "https://your-panel.example.com";
     mockEnv.REMNAWAVE_API_TOKEN = "placeholder_token";
@@ -104,8 +105,6 @@ describe("getProviderStatuses", () => {
         checkedAt: expect.any(String)
       }
     ]);
-    expect(result[0]?.checkedAt).toBe(result[1]?.checkedAt);
-    expect(result[1]?.checkedAt).toBe(result[2]?.checkedAt);
   });
 
   it("marks providers as not_configured without probing when required values are empty", async () => {
@@ -168,6 +167,80 @@ describe("getProviderStatuses", () => {
       summary: "Таймаут",
       detail: "request timed out after 1ms"
     });
+  });
+
+  it("keeps timeout classification when fetch rejects with AbortError after internal timeout abort", async () => {
+    mockEnv.REMNAWAVE_BASE_URL = "https://panel.example.com";
+    mockEnv.REMNAWAVE_API_TOKEN = "real-token";
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((_, init?: RequestInit) => {
+        const signal = init?.signal;
+
+        return new Promise((_, reject) => {
+          signal?.addEventListener(
+            "abort",
+            () => {
+              const error = new Error("The operation was aborted.");
+              error.name = "AbortError";
+              reject(error);
+            },
+            { once: true }
+          );
+        });
+      })
+    );
+
+    const result = await getProviderStatuses({ timeoutMs: 1 });
+
+    expect(result.find((item) => item.label === "Remnawave")).toMatchObject({
+      status: "timeout",
+      summary: "Таймаут",
+      detail: "request timed out after 1ms"
+    });
+  });
+
+  it("records checkedAt when each probe finishes instead of reusing one batch timestamp", async () => {
+    configureAllProviders();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-22T10:00:00.000Z"));
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        const url = String(input);
+        const delay = url.includes("panel.example.com")
+          ? 10
+          : url.includes("yookassa.ru")
+            ? 20
+            : 30;
+
+        return new Promise<Response>((resolve) => {
+          setTimeout(() => {
+            resolve(new Response("{}", { status: 200 }));
+          }, delay);
+        });
+      })
+    );
+
+    const resultPromise = getProviderStatuses();
+
+    await vi.advanceTimersByTimeAsync(30);
+
+    const result = await resultPromise;
+    const remnawave = result.find((item) => item.label === "Remnawave");
+    const yookassa = result.find((item) => item.label === "YooKassa");
+    const platega = result.find((item) => item.label === "Platega");
+
+    expect(remnawave?.checkedAt).not.toBe(yookassa?.checkedAt);
+    expect(yookassa?.checkedAt).not.toBe(platega?.checkedAt);
+    expect(Date.parse(remnawave?.checkedAt ?? "")).toBeLessThan(
+      Date.parse(yookassa?.checkedAt ?? "")
+    );
+    expect(Date.parse(yookassa?.checkedAt ?? "")).toBeLessThan(
+      Date.parse(platega?.checkedAt ?? "")
+    );
   });
 
   it("maps auth and transport failures to unavailable without crashing the aggregate", async () => {
