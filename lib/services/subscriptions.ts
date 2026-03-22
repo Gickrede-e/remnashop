@@ -97,6 +97,11 @@ type ActiveSubscriptionSyncCandidate = {
   user: RemnawaveIdentityUser;
 };
 
+type LinkedRemnawaveUuidRegistry = {
+  getLinkedRemoteUuids(userId: string): ReadonlySet<string>;
+  reserve(uuid: string, userId: string): boolean;
+};
+
 class RemnawaveIdentitySkipError extends Error {
   constructor(public reason: "conflicting-remote-email-match") {
     super(`Safe Remnawave identity lookup blocked: ${reason}`);
@@ -198,14 +203,17 @@ async function attachOrCreateRemnawaveIdentity(
   seed: RemnawaveIdentitySeed,
   options?: {
     recovered?: boolean;
+    linkedUuidRegistry?: LinkedRemnawaveUuidRegistry;
   }
 ): Promise<RemnawaveIdentityResolution> {
   const primaryUsername = buildPrimaryProjectUsername(user.email);
-  const [usernameHit, emailHits, linkedRemoteUuids] = await Promise.all([
+  const [usernameHit, emailHits] = await Promise.all([
     getOptionalRemnawaveUserByUsername(primaryUsername),
-    listRemnawaveUsersByEmail(user.email),
-    getLinkedRemnawaveUuids(user.id)
+    listRemnawaveUsersByEmail(user.email)
   ]);
+  const linkedRemoteUuids = options?.linkedUuidRegistry
+    ? options.linkedUuidRegistry.getLinkedRemoteUuids(user.id)
+    : await getLinkedRemnawaveUuids(user.id);
 
   const decision = resolveRemnawaveIdentityLookup({
     userId: user.id,
@@ -230,6 +238,13 @@ async function attachOrCreateRemnawaveIdentity(
   }
 
   if (decision.action === "attach") {
+    if (
+      options?.linkedUuidRegistry &&
+      !options.linkedUuidRegistry.reserve(decision.remoteUser.uuid, user.id)
+    ) {
+      throw new RemnawaveIdentitySkipError("conflicting-remote-email-match");
+    }
+
     await persistRemnawaveIdentity(user.id, decision.remoteUser);
 
     return {
@@ -255,6 +270,7 @@ async function attachOrCreateRemnawaveIdentity(
     hwidDeviceLimit: seed.hwidDeviceLimit
   });
 
+  options?.linkedUuidRegistry?.reserve(created.uuid, user.id);
   await persistRemnawaveIdentity(user.id, created);
 
   return {
@@ -268,7 +284,10 @@ async function attachOrCreateRemnawaveIdentity(
 
 async function ensureRemnawaveIdentity(
   user: RemnawaveIdentityUser,
-  seed: RemnawaveIdentitySeed
+  seed: RemnawaveIdentitySeed,
+  options?: {
+    linkedUuidRegistry?: LinkedRemnawaveUuidRegistry;
+  }
 ): Promise<RemnawaveIdentityResolution> {
   if (user.remnawaveUuid) {
     try {
@@ -291,7 +310,8 @@ async function ensureRemnawaveIdentity(
   }
 
   return attachOrCreateRemnawaveIdentity(user, seed, {
-    recovered: Boolean(user.remnawaveUuid)
+    recovered: Boolean(user.remnawaveUuid),
+    linkedUuidRegistry: options?.linkedUuidRegistry
   });
 }
 
@@ -372,6 +392,44 @@ async function mapWithConcurrency<T, TResult>(
   return results;
 }
 
+async function loadLinkedRemnawaveUuidRegistry(): Promise<LinkedRemnawaveUuidRegistry> {
+  const linkedUsers = await prisma.user.findMany({
+    where: {
+      remnawaveUuid: { not: null }
+    },
+    select: {
+      id: true,
+      remnawaveUuid: true
+    }
+  });
+  const linkedByUuid = new Map<string, string>();
+
+  for (const linkedUser of linkedUsers) {
+    if (linkedUser.remnawaveUuid) {
+      linkedByUuid.set(linkedUser.remnawaveUuid, linkedUser.id);
+    }
+  }
+
+  return {
+    getLinkedRemoteUuids(userId: string) {
+      return new Set(
+        Array.from(linkedByUuid.entries())
+          .filter(([, linkedUserId]) => linkedUserId !== userId)
+          .map(([uuid]) => uuid)
+      );
+    },
+    reserve(uuid: string, userId: string) {
+      const linkedUserId = linkedByUuid.get(uuid);
+      if (linkedUserId && linkedUserId !== userId) {
+        return false;
+      }
+
+      linkedByUuid.set(uuid, userId);
+      return true;
+    }
+  };
+}
+
 function toSyncMessage(
   outcome: RemnawaveIdentityResolutionOutcome | "skipped" | "failed",
   recovered: boolean,
@@ -401,7 +459,8 @@ function toSyncMessage(
 }
 
 async function syncActiveSubscriptionCandidate(
-  candidate: ActiveSubscriptionSyncCandidate
+  candidate: ActiveSubscriptionSyncCandidate,
+  linkedUuidRegistry?: LinkedRemnawaveUuidRegistry
 ): Promise<ActiveSubscriptionSyncItem> {
   try {
     const seed = buildSubscriptionIdentitySeed(candidate);
@@ -409,7 +468,9 @@ async function syncActiveSubscriptionCandidate(
       throw new Error("Subscription plan missing");
     }
 
-    const remnawave = await ensureRemnawaveIdentity(candidate.user, seed);
+    const remnawave = await ensureRemnawaveIdentity(candidate.user, seed, {
+      linkedUuidRegistry
+    });
     const snapshot = await updateRemnawaveUser(remnawave.uuid, {
       expireAt: seed.expireAt.toISOString(),
       trafficLimitBytes: Number(seed.trafficLimitBytes ?? BigInt(0)),
@@ -481,11 +542,12 @@ export async function syncActiveSubscriptionsToRemnawave(): Promise<ActiveSubscr
       }
     }
   });
+  const linkedUuidRegistry = await loadLinkedRemnawaveUuidRegistry();
 
   const items = await mapWithConcurrency(
     candidates as ActiveSubscriptionSyncCandidate[],
     ACTIVE_SUBSCRIPTION_SYNC_CONCURRENCY,
-    syncActiveSubscriptionCandidate
+    async (candidate) => syncActiveSubscriptionCandidate(candidate, linkedUuidRegistry)
   );
 
   return items.reduce<ActiveSubscriptionsSyncSummary>(

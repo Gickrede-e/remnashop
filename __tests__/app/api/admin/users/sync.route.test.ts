@@ -30,7 +30,7 @@ describe("POST /api/admin/users/sync", () => {
   it("requires an admin session", async () => {
     mockRequireApiAdminSession.mockRejectedValue(new Error("Требуется авторизация"));
 
-    const response = await POST(new Request("http://localhost/api/admin/users/sync"));
+    const response = await POST();
     const payload = await response.json();
 
     expect(response.status).toBe(400);
@@ -67,7 +67,7 @@ describe("POST /api/admin/users/sync", () => {
       ]
     });
 
-    const response = await POST(new Request("http://localhost/api/admin/users/sync"));
+    const response = await POST();
     const payload = await response.json();
 
     expect(response.status).toBe(200);
@@ -121,7 +121,7 @@ describe("POST /api/admin/users/sync", () => {
     mockRequireApiAdminSession.mockResolvedValue({ userId: "admin-1", role: "ADMIN" });
     mockSyncActiveSubscriptionsToRemnawave.mockRejectedValue(new Error("sync exploded"));
 
-    const response = await POST(new Request("http://localhost/api/admin/users/sync"));
+    const response = await POST();
     const payload = await response.json();
 
     expect(response.status).toBe(400);
@@ -131,5 +131,51 @@ describe("POST /api/admin/users/sync", () => {
       details: undefined
     });
     expect(mockLogAdminAction).not.toHaveBeenCalled();
+  });
+
+  it("returns the sync summary even if the admin log write fails", async () => {
+    mockRequireApiAdminSession.mockResolvedValue({ userId: "admin-1", role: "ADMIN" });
+    mockSyncActiveSubscriptionsToRemnawave.mockResolvedValue({
+      totalCandidates: 1,
+      created: 1,
+      attached: 0,
+      alreadyLinked: 0,
+      skipped: 0,
+      failed: 0,
+      items: [
+        {
+          userId: "user-1",
+          email: "user-1@example.com",
+          outcome: "created",
+          message: "Created Remnawave user"
+        }
+      ]
+    });
+    mockLogAdminAction.mockRejectedValue(new Error("log exploded"));
+
+    const response = await POST();
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toEqual({
+      ok: true,
+      data: {
+        totalCandidates: 1,
+        created: 1,
+        attached: 0,
+        alreadyLinked: 0,
+        skipped: 0,
+        failed: 0,
+        items: [
+          {
+            userId: "user-1",
+            email: "user-1@example.com",
+            outcome: "created",
+            message: "Created Remnawave user"
+          }
+        ]
+      }
+    });
+    expect(mockLogAdminAction).toHaveBeenCalledTimes(1);
   });
 });

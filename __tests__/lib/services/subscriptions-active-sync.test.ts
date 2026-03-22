@@ -312,4 +312,41 @@ describe("syncActiveSubscriptionsToRemnawave", () => {
       message: expect.stringContaining("Recovered stale link")
     }));
   });
+
+  it("preloads linked remote uuids once for the whole batch", async () => {
+    mockPrisma.subscription.findMany.mockResolvedValue([
+      buildCandidate({
+        userId: "user-created-1",
+        email: "created-1@example.com",
+        expiresAt: new Date("2026-04-25T12:00:00.000Z")
+      }),
+      buildCandidate({
+        userId: "user-created-2",
+        email: "created-2@example.com",
+        expiresAt: new Date("2026-04-26T12:00:00.000Z")
+      })
+    ]);
+    mockPrisma.user.findMany.mockResolvedValue([
+      {
+        id: "already-linked",
+        remnawaveUuid: "remote-reserved"
+      }
+    ]);
+
+    mockRemnawave.getRemnawaveUserByUsername.mockRejectedValue(new Error("not-found"));
+    mockRemnawave.listRemnawaveUsersByEmail.mockResolvedValue([]);
+    mockRemnawave.createRemnawaveUser.mockImplementation(async ({ email, username }: {
+      email?: string | null;
+      username: string;
+    }) => ({
+      uuid: `created-${email}`,
+      username,
+      shortUuid: `short-${email}`
+    }));
+
+    const summary = await syncActiveSubscriptionsToRemnawave();
+
+    expect(summary.created).toBe(2);
+    expect(mockPrisma.user.findMany).toHaveBeenCalledTimes(1);
+  });
 });
