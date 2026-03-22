@@ -91,12 +91,12 @@ async function remnawaveRequest<T>(path: string, init?: RequestInit) {
   });
 
   const text = await response.text();
-  const json = text ? (JSON.parse(text) as unknown) : null;
 
   if (!response.ok) {
     throw new RemnawaveRequestError(response.status, text);
   }
 
+  const json = text ? (JSON.parse(text) as unknown) : null;
   return unwrap<T>(json as RemnawaveEnvelope<T>);
 }
 
