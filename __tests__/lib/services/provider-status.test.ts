@@ -107,6 +107,27 @@ describe("getProviderStatuses", () => {
     ]);
   });
 
+  it("treats the documented Remnawave example token as not_configured", async () => {
+    mockEnv.REMNAWAVE_BASE_URL = "https://panel.example.com";
+    mockEnv.REMNAWAVE_API_TOKEN = "your_remnawave_api_token";
+    mockEnv.YOOKASSA_SHOP_ID = "shop-id";
+    mockEnv.YOOKASSA_SECRET_KEY = "";
+    mockEnv.PLATEGA_API_KEY = "";
+    mockEnv.PLATEGA_WEBHOOK_SECRET = "";
+    mockEnv.PLATEGA_MERCHANT_ID = "";
+
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    const result = await getProviderStatuses();
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(result.find((item) => item.label === "Remnawave")).toMatchObject({
+      status: "not_configured",
+      summary: "Не настроен",
+      detail: "placeholder config"
+    });
+  });
+
   it("marks providers as not_configured without probing when required values are empty", async () => {
     mockEnv.REMNAWAVE_BASE_URL = "https://panel.example.com";
     mockEnv.REMNAWAVE_API_TOKEN = "";

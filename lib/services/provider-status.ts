@@ -26,7 +26,7 @@ const DEFAULT_TIMEOUT_MS = 2500;
 
 const placeholderConfig = {
   remnawaveBaseUrls: ["https://your-panel.example.com"],
-  remnawaveApiTokens: ["placeholder_token"],
+  remnawaveApiTokens: ["placeholder_token", "your_remnawave_api_token"],
   yookassaShopIds: ["123456"],
   yookassaSecretKeys: ["test_secret_key"],
   plategaApiKeys: ["platega_placeholder_key", "your_platega_api_key"],
