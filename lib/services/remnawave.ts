@@ -20,11 +20,13 @@ type RemnawaveEnvelope<T> = {
 
 class RemnawaveRequestError extends Error {
   status: number;
+  body: string;
 
   constructor(status: number, body: string) {
     super(`Remnawave request failed: ${status} ${body}`);
     this.name = "RemnawaveRequestError";
     this.status = status;
+    this.body = body;
   }
 }
 
@@ -46,6 +48,17 @@ function unwrap<T>(value: RemnawaveEnvelope<T> | T): T {
     return maybeEnvelope.response ?? maybeEnvelope.data ?? maybeEnvelope.result ?? (value as T);
   }
   return value as T;
+}
+
+function withOptionalHwidDeviceLimit<T extends { hwidDeviceLimit?: number | null }>(input: T) {
+  const { hwidDeviceLimit, ...rest } = input;
+
+  return hwidDeviceLimit == null
+    ? rest
+    : {
+        ...rest,
+        hwidDeviceLimit
+      };
 }
 
 function normalizeUser(payload: Record<string, unknown>): RemnawaveUserSnapshot {
@@ -104,6 +117,14 @@ export function isRemnawaveNotFoundError(error: unknown) {
   return error instanceof RemnawaveRequestError && error.status === 404;
 }
 
+export function isRemnawaveRecoverableIdentityError(error: unknown) {
+  return isRemnawaveNotFoundError(error) || (
+    error instanceof RemnawaveRequestError &&
+    error.status === 400 &&
+    /invalid uuid/i.test(error.body)
+  );
+}
+
 export async function createRemnawaveUser(input: {
   username: string;
   expireAt: string;
@@ -119,7 +140,7 @@ export async function createRemnawaveUser(input: {
 }) {
   const data = await remnawaveRequest<Record<string, unknown>>("/api/users", {
     method: "POST",
-    body: JSON.stringify(input)
+    body: JSON.stringify(withOptionalHwidDeviceLimit(input))
   });
   return normalizeUser(data);
 }
@@ -166,7 +187,7 @@ export async function updateRemnawaveUser(
     method: "PATCH",
     body: JSON.stringify({
       uuid,
-      ...input
+      ...withOptionalHwidDeviceLimit(input)
     })
   });
   return normalizeUser(data);

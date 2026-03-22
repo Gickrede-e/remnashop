@@ -13,6 +13,7 @@ import {
   getRemnawaveUser,
   getRemnawaveUserByUsername,
   isRemnawaveNotFoundError,
+  isRemnawaveRecoverableIdentityError,
   listRemnawaveUsersByEmail,
   updateRemnawaveUser
 } from "@/lib/services/remnawave";
@@ -111,6 +112,11 @@ class RemnawaveIdentitySkipError extends Error {
 
 const ACTIVE_SUBSCRIPTION_SYNC_CONCURRENCY = 3;
 const FAR_FUTURE_REMNAWAVE_EXPIRY = new Date("2099-12-31T23:59:59.000Z");
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function hasValidRemnawaveUuid(value: string | null | undefined): value is string {
+  return typeof value === "string" && UUID_PATTERN.test(value);
+}
 
 function toPayloadRecord(payload: unknown) {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
@@ -289,9 +295,10 @@ async function ensureRemnawaveIdentity(
     linkedUuidRegistry?: LinkedRemnawaveUuidRegistry;
   }
 ): Promise<RemnawaveIdentityResolution> {
-  if (user.remnawaveUuid) {
+  const storedUuid = user.remnawaveUuid;
+  if (hasValidRemnawaveUuid(storedUuid)) {
     try {
-      const snapshot = await getRemnawaveUser(user.remnawaveUuid);
+      const snapshot = await getRemnawaveUser(storedUuid);
 
       await persistRemnawaveIdentity(user.id, snapshot);
 
@@ -303,7 +310,7 @@ async function ensureRemnawaveIdentity(
         recovered: false
       };
     } catch (error) {
-      if (!isRemnawaveNotFoundError(error)) {
+      if (!isRemnawaveRecoverableIdentityError(error)) {
         throw error;
       }
     }
@@ -328,12 +335,12 @@ function buildSyncRecoverySeed(user: {
     } | null;
   } | null;
 }): RemnawaveIdentitySeed | null {
-  if (!user.subscription?.plan || !user.subscription.expiresAt) {
+  if (!user.subscription?.plan) {
     return null;
   }
 
   return {
-    expireAt: user.subscription.expiresAt,
+    expireAt: user.subscription.expiresAt ?? FAR_FUTURE_REMNAWAVE_EXPIRY,
     trafficLimitBytes: user.subscription.trafficLimitBytes ?? BigInt(0),
     description: `Sync recovery: ${user.subscription.plan.name}`,
     tag: slugToRemnawaveTag(user.subscription.plan.slug),
@@ -484,7 +491,6 @@ async function syncActiveSubscriptionCandidate(
 
     await Promise.all([
       persistRemnawaveIdentity(candidate.user.id, snapshot),
-      enableRemnawaveUser(remnawave.uuid),
       prisma.subscription.update({
         where: { id: candidate.id },
         data: {
@@ -672,7 +678,6 @@ export async function activateSubscriptionFromPayment(paymentId: string) {
       hwidDeviceLimit: payment.plan.remnawaveHwidDeviceLimit
     });
     await persistRemnawaveIdentity(payment.user.id, snapshot);
-    await enableRemnawaveUser(remnawave.uuid);
 
     const subscription = existingSubscription
       ? await prisma.subscription.update({
@@ -774,18 +779,22 @@ export async function syncUserSubscription(userId: string) {
   }
 
   try {
-    let snapshot: Awaited<ReturnType<typeof getRemnawaveUser>>;
+    let snapshot: Awaited<ReturnType<typeof getRemnawaveUser>> | null = null;
 
-    try {
-      snapshot = await getRemnawaveUser(user.remnawaveUuid);
-    } catch (error) {
-      if (!isRemnawaveNotFoundError(error)) {
-        throw error;
+    if (hasValidRemnawaveUuid(user.remnawaveUuid)) {
+      try {
+        snapshot = await getRemnawaveUser(user.remnawaveUuid);
+      } catch (error) {
+        if (!isRemnawaveRecoverableIdentityError(error)) {
+          throw error;
+        }
       }
+    }
 
+    if (!snapshot) {
       const recoverySeed = buildSyncRecoverySeed(user);
       if (!recoverySeed) {
-        throw error;
+        throw new Error("Recovery seed missing");
       }
 
       const recoveredIdentity = await ensureRemnawaveIdentity(user, recoverySeed);
@@ -974,7 +983,6 @@ export async function grantSubscriptionByAdmin(input: {
     hwidDeviceLimit: plan.remnawaveHwidDeviceLimit
   });
   await persistRemnawaveIdentity(user.id, snapshot);
-  await enableRemnawaveUser(remnawave.uuid);
 
   const subscription = current
     ? await prisma.subscription.update({

@@ -19,6 +19,7 @@ const { mockPrisma, mockRemnawave } = vi.hoisted(() => ({
     getRemnawaveUser: vi.fn(),
     getRemnawaveUserByUsername: vi.fn(),
     isRemnawaveNotFoundError: vi.fn(),
+    isRemnawaveRecoverableIdentityError: vi.fn(),
     listRemnawaveUsersByEmail: vi.fn(),
     updateRemnawaveUser: vi.fn()
   }
@@ -85,6 +86,9 @@ function buildCandidate(input: {
 
 describe("syncActiveSubscriptionsToRemnawave", () => {
   const now = new Date("2026-03-22T12:00:00.000Z");
+  const linkedUuid = "11111111-1111-4111-8111-111111111111";
+  const staleUuid = "22222222-2222-4222-8222-222222222222";
+  const attachedUuid = "33333333-3333-4333-8333-333333333333";
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -105,11 +109,18 @@ describe("syncActiveSubscriptionsToRemnawave", () => {
     mockRemnawave.getRemnawaveUser.mockReset();
     mockRemnawave.getRemnawaveUserByUsername.mockReset();
     mockRemnawave.isRemnawaveNotFoundError.mockReset();
+    mockRemnawave.isRemnawaveRecoverableIdentityError.mockReset();
     mockRemnawave.listRemnawaveUsersByEmail.mockReset();
     mockRemnawave.updateRemnawaveUser.mockReset();
 
     mockRemnawave.isRemnawaveNotFoundError.mockImplementation(
       (error: unknown) => error instanceof Error && error.message === "not-found"
+    );
+    mockRemnawave.isRemnawaveRecoverableIdentityError.mockImplementation(
+      (error: unknown) => error instanceof Error && (
+        error.message === "not-found" ||
+        error.message === "invalid-uuid"
+      )
     );
     mockRemnawave.updateRemnawaveUser.mockImplementation(async (uuid: string) => ({
       uuid,
@@ -127,14 +138,14 @@ describe("syncActiveSubscriptionsToRemnawave", () => {
       buildCandidate({
         userId: "user-linked",
         email: "linked@example.com",
-        remnawaveUuid: "remote-linked",
+        remnawaveUuid: linkedUuid,
         remnawaveUsername: "gs_linked",
         expiresAt: new Date("2026-04-21T12:00:00.000Z")
       }),
       buildCandidate({
         userId: "user-recover",
         email: "recover@example.com",
-        remnawaveUuid: "remote-stale",
+        remnawaveUuid: staleUuid,
         remnawaveUsername: "gs_recover",
         expiresAt: new Date("2026-04-25T12:00:00.000Z")
       }),
@@ -156,7 +167,7 @@ describe("syncActiveSubscriptionsToRemnawave", () => {
     ]);
 
     mockRemnawave.getRemnawaveUser.mockImplementation(async (uuid: string) => {
-      if (uuid === "remote-linked") {
+      if (uuid === linkedUuid) {
         return {
           uuid,
           username: "gs_linked",
@@ -167,7 +178,7 @@ describe("syncActiveSubscriptionsToRemnawave", () => {
         };
       }
 
-      if (uuid === "remote-stale") {
+      if (uuid === staleUuid) {
         throw new Error("not-found");
       }
 
@@ -177,7 +188,7 @@ describe("syncActiveSubscriptionsToRemnawave", () => {
     mockRemnawave.getRemnawaveUserByUsername.mockImplementation(async (username: string) => {
       if (username === "gs_recover") {
         return {
-          uuid: "remote-attached",
+          uuid: attachedUuid,
           username,
           email: "recover@example.com"
         };
@@ -190,7 +201,7 @@ describe("syncActiveSubscriptionsToRemnawave", () => {
       if (email === "recover@example.com") {
         return [
           {
-            uuid: "remote-attached",
+            uuid: attachedUuid,
             username: "gs_recover",
             email
           }
@@ -275,14 +286,14 @@ describe("syncActiveSubscriptionsToRemnawave", () => {
       buildCandidate({
         userId: "user-recover",
         email: "recover@example.com",
-        remnawaveUuid: "remote-stale",
+        remnawaveUuid: staleUuid,
         remnawaveUsername: "gs_recover",
         expiresAt: new Date("2026-04-25T12:00:00.000Z")
       })
     ]);
 
     mockRemnawave.getRemnawaveUser.mockImplementation(async (uuid: string) => {
-      if (uuid === "remote-stale") {
+      if (uuid === staleUuid) {
         throw new Error("not-found");
       }
 
@@ -290,13 +301,13 @@ describe("syncActiveSubscriptionsToRemnawave", () => {
     });
 
     mockRemnawave.getRemnawaveUserByUsername.mockResolvedValue({
-      uuid: "remote-attached",
+      uuid: attachedUuid,
       username: "gs_recover",
       email: "recover@example.com"
     });
     mockRemnawave.listRemnawaveUsersByEmail.mockResolvedValue([
       {
-        uuid: "remote-attached",
+        uuid: attachedUuid,
         username: "gs_recover",
         email: "recover@example.com"
       }
@@ -348,5 +359,33 @@ describe("syncActiveSubscriptionsToRemnawave", () => {
 
     expect(summary.created).toBe(2);
     expect(mockPrisma.user.findMany).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not fail the bulk sync when the remote user is already active after update", async () => {
+    mockPrisma.subscription.findMany.mockResolvedValue([
+      buildCandidate({
+        userId: "user-created",
+        email: "created@example.com",
+        expiresAt: new Date("2026-04-25T12:00:00.000Z")
+      })
+    ]);
+
+    mockRemnawave.getRemnawaveUserByUsername.mockRejectedValue(new Error("not-found"));
+    mockRemnawave.listRemnawaveUsersByEmail.mockResolvedValue([]);
+    mockRemnawave.createRemnawaveUser.mockResolvedValue({
+      uuid: "created-remote",
+      username: "gs_created",
+      shortUuid: "short-created"
+    });
+    mockRemnawave.enableRemnawaveUser.mockRejectedValue(new Error("User already enabled"));
+
+    const summary = await syncActiveSubscriptionsToRemnawave();
+
+    expect(summary.created).toBe(1);
+    expect(summary.failed).toBe(0);
+    expect(summary.items).toContainEqual(expect.objectContaining({
+      userId: "user-created",
+      outcome: "created"
+    }));
   });
 });
