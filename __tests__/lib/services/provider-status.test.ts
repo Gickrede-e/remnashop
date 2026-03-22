@@ -88,4 +88,38 @@ describe("getProviderStatuses", () => {
     expect(result[0]?.checkedAt).toBe(result[1]?.checkedAt);
     expect(result[1]?.checkedAt).toBe(result[2]?.checkedAt);
   });
+
+  it("marks configured providers as unavailable until probe logic exists", async () => {
+    mockEnv.REMNAWAVE_BASE_URL = "https://panel.example.com";
+    mockEnv.REMNAWAVE_API_TOKEN = "real-token";
+
+    const result = await getProviderStatuses();
+
+    expect(result).toEqual([
+      {
+        label: "Remnawave",
+        status: "unavailable",
+        summary: "Недоступен",
+        detail: "probe pending",
+        checkedAt: expect.stringMatching(
+          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/
+        )
+      },
+      {
+        label: "YooKassa",
+        status: "not_configured",
+        summary: "Не настроен",
+        detail: "placeholder config",
+        checkedAt: expect.any(String)
+      },
+      {
+        label: "Platega",
+        status: "not_configured",
+        summary: "Не настроен",
+        detail: "placeholder config",
+        checkedAt: expect.any(String)
+      }
+    ]);
+    expect(result[0]?.status).not.toBe("not_configured");
+  });
 });

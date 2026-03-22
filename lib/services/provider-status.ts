@@ -30,6 +30,16 @@ function buildNotConfiguredRow(label: string, checkedAt: string): ProviderStatus
   };
 }
 
+function buildPendingRow(label: string, checkedAt: string): ProviderStatusRow {
+  return {
+    label,
+    status: "unavailable",
+    summary: "Недоступен",
+    detail: "probe pending",
+    checkedAt
+  };
+}
+
 function isPlaceholderConfig() {
   const remnawaveBaseUrl = env.REMNAWAVE_BASE_URL;
   const remnawaveApiToken = env.REMNAWAVE_API_TOKEN;
@@ -58,8 +68,14 @@ export async function getProviderStatuses(): Promise<ProviderStatusRow[]> {
   const placeholderFlags = isPlaceholderConfig();
 
   return [
-    { label: "Remnawave", placeholder: placeholderFlags.remnawave },
-    { label: "YooKassa", placeholder: placeholderFlags.yookassa },
-    { label: "Platega", placeholder: placeholderFlags.platega }
-  ].map(({ label }) => buildNotConfiguredRow(label, checkedAt));
+    placeholderFlags.remnawave
+      ? buildNotConfiguredRow("Remnawave", checkedAt)
+      : buildPendingRow("Remnawave", checkedAt),
+    placeholderFlags.yookassa
+      ? buildNotConfiguredRow("YooKassa", checkedAt)
+      : buildPendingRow("YooKassa", checkedAt),
+    placeholderFlags.platega
+      ? buildNotConfiguredRow("Platega", checkedAt)
+      : buildPendingRow("Platega", checkedAt)
+  ];
 }
