@@ -5,6 +5,7 @@ import { ClipboardList, CreditCard, UserCog, Users } from "lucide-react";
 import { AdminOverviewBlocks } from "@/components/blocks/admin/admin-overview-blocks";
 import { ScreenHeader } from "@/components/shell/screen-header";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getProviderStatuses } from "@/lib/services/provider-status";
 import { getAdminStats, getRevenueChartData } from "@/lib/services/stats";
 import { formatPrice } from "@/lib/utils";
 
@@ -18,7 +19,10 @@ const RevenueChart = nextDynamic(
 );
 
 export default async function AdminDashboardPage() {
-  const stats = await getAdminStats();
+  const [stats, providerStatuses] = await Promise.all([
+    getAdminStats(),
+    getProviderStatuses()
+  ]);
 
   return (
     <div className="grid gap-4 sm:gap-6">
@@ -50,17 +54,9 @@ export default async function AdminDashboardPage() {
               { label: "За месяц", value: formatPrice(stats.revenueMonth) },
               { label: "За всё время", value: formatPrice(stats.revenueTotal) }
             ]
-          },
-          {
-            title: "Что проверять дальше",
-            description: "Операционные зоны, куда чаще всего нужно проваливаться после overview.",
-            items: [
-              { label: "Пользователи", value: "Синхронизация и ручная выдача доступа", hint: "Идите сюда, если нужно вмешательство по аккаунту." },
-              { label: "Платежи", value: "Pending и ручная проверка статусов", hint: "Здесь же быстрый переход к refresh-операциям." },
-              { label: "Логи", value: "Проверка действий и системных изменений", hint: "Удобно для сверки спорных кейсов." }
-            ]
           }
         ]}
+        providerStatuses={providerStatuses}
         quickActions={[
           {
             href: "/admin/users",

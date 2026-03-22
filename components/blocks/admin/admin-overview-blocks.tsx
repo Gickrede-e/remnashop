@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, type LucideIcon } from "lucide-react";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import type { ProviderStatusRow } from "@/lib/services/provider-status";
 import { cn } from "@/lib/utils";
 
 export type AdminOverviewMetric = {
@@ -36,6 +37,7 @@ type AdminOverviewBlocksProps = {
   primaryMetrics: AdminOverviewMetric[];
   contextRows: AdminOverviewContextRow[];
   sections: AdminOverviewSection[];
+  providerStatuses: ProviderStatusRow[];
   quickActions: AdminOverviewAction[];
   chart?: ReactNode;
   chartTitle?: string;
@@ -144,6 +146,46 @@ function DetailSection({ section }: { section: AdminOverviewSection }) {
   );
 }
 
+function ProviderStatusSection({ statuses }: { statuses: ProviderStatusRow[] }) {
+  return (
+    <Card>
+      <CardHeader className="p-5 pb-4 sm:p-6 sm:pb-5">
+        <CardTitle className="text-lg text-white sm:text-xl">Статусы модулей</CardTitle>
+        <CardDescription className="text-sm leading-6 text-zinc-400">
+          Быстрая серверная проверка интеграций без перехода в отдельные журналы и ручные refresh-действия.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-3 p-5 pt-0 sm:p-6 sm:pt-0">
+        {statuses.map((item) => (
+          <div
+            key={item.label}
+            data-status={item.status}
+            className="rounded-[22px] border border-white/10 bg-white/[0.03] px-4 py-3"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-white">{item.label}</p>
+                <p className="mt-1 text-xs leading-5 text-zinc-500">{item.detail}</p>
+              </div>
+              <span
+                className={cn(
+                  "shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em]",
+                  item.status === "available" && "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
+                  item.status === "unavailable" && "border-rose-500/30 bg-rose-500/10 text-rose-200",
+                  item.status === "timeout" && "border-amber-500/30 bg-amber-500/10 text-amber-100",
+                  item.status === "not_configured" && "border-zinc-500/30 bg-zinc-500/10 text-zinc-200"
+                )}
+              >
+                {item.summary}
+              </span>
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
 function ChartSection({ title, description, children }: { title: string; description: string; children: ReactNode }) {
   return (
     <Card>
@@ -162,6 +204,7 @@ export function AdminOverviewBlocks({
   primaryMetrics,
   contextRows,
   sections,
+  providerStatuses,
   quickActions,
   chart,
   chartTitle = "Доход за 30 дней",
@@ -178,6 +221,7 @@ export function AdminOverviewBlocks({
         {sections.map((section) => (
           <DetailSection key={section.title} section={section} />
         ))}
+        <ProviderStatusSection statuses={providerStatuses} />
       </div>
 
       {chart ? <ChartSection title={chartTitle} description={chartDescription}>{chart}</ChartSection> : null}
