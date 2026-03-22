@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { AdminSidebar } from "@/components/admin/sidebar-nav";
+import { AppShell } from "@/components/shell/app-shell";
 import { getSession } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
@@ -15,12 +15,5 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect("/dashboard");
   }
 
-  return (
-    <div className="container overflow-x-hidden py-4 sm:py-6 md:py-8 lg:py-10">
-      <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-        <AdminSidebar />
-        <div className="grid min-w-0 gap-6">{children}</div>
-      </div>
-    </div>
-  );
+  return <AppShell area="admin" canAccessAdmin>{children}</AppShell>;
 }

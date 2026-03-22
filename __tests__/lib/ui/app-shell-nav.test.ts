@@ -1,0 +1,73 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  getPrimaryNavItems,
+  getSecondaryNavItems,
+  isNavItemActive
+} from "@/lib/ui/app-shell-nav";
+
+describe("app shell nav", () => {
+  it("keeps dashboard primary nav limited to four mobile destinations", () => {
+    expect(getPrimaryNavItems("dashboard").map((item) => item.href)).toEqual([
+      "/dashboard",
+      "/dashboard/buy",
+      "/dashboard/history",
+      "#more"
+    ]);
+    expect(getPrimaryNavItems("dashboard").map((item) => item.label)).toEqual([
+      "Обзор",
+      "Купить",
+      "История",
+      "Ещё"
+    ]);
+  });
+
+  it("moves referrals into dashboard secondary nav", () => {
+    expect(getSecondaryNavItems("dashboard").map((item) => item.href)).toContain("/dashboard/referrals");
+    expect(getSecondaryNavItems("dashboard").map((item) => item.href)).not.toContain("/admin");
+  });
+
+  it("adds an admin shortcut to dashboard secondary nav only for admin sessions", () => {
+    expect(getSecondaryNavItems("dashboard", { canAccessAdmin: true }).map((item) => item.href)).toContain("/admin");
+    expect(getSecondaryNavItems("dashboard", { canAccessAdmin: true }).map((item) => item.label)).toContain("Админка");
+    expect(getSecondaryNavItems("dashboard", { canAccessAdmin: false }).map((item) => item.href)).not.toContain("/admin");
+  });
+
+  it("marks nested admin edit routes active under their parent section", () => {
+    expect(isNavItemActive("/admin/plans/[id]/edit", "/admin/plans")).toBe(true);
+    expect(isNavItemActive("/admin/promos/[id]/edit", "/admin/promos")).toBe(true);
+  });
+
+  it("keeps admin nav inventory complete and root paths exact", () => {
+    expect(getPrimaryNavItems("admin").map((item) => item.href)).toEqual([
+      "/admin",
+      "/admin/users",
+      "/admin/payments",
+      "#more"
+    ]);
+    expect(getPrimaryNavItems("admin").map((item) => item.label)).toEqual([
+      "Обзор",
+      "Пользователи",
+      "Платежи",
+      "Ещё"
+    ]);
+    expect(getSecondaryNavItems("admin").map((item) => item.href)).toEqual([
+      "/admin/plans",
+      "/admin/promos",
+      "/admin/referrals",
+      "/admin/logs",
+      "/admin/export",
+      "/dashboard"
+    ]);
+    expect(getSecondaryNavItems("admin").map((item) => item.label)).toEqual([
+      "Тарифы",
+      "Промокоды",
+      "Рефералы",
+      "Логи",
+      "Экспорт",
+      "Личный кабинет"
+    ]);
+    expect(isNavItemActive("/admin/plans", "/admin")).toBe(false);
+    expect(isNavItemActive("/dashboard/buy", "/dashboard")).toBe(false);
+  });
+});

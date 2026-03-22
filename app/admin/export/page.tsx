@@ -1,45 +1,57 @@
-import Link from "next/link";
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AdminRecordCard, AdminRecordList } from "@/components/blocks/admin/admin-record-list";
+import { ScreenHeader } from "@/components/shell/screen-header";
+import { Button } from "@/components/ui/button";
 
 const exports = [
-  { href: "/api/admin/export/users", label: "Пользователи" },
-  { href: "/api/admin/export/payments", label: "Платежи" },
-  { href: "/api/admin/export/subscriptions", label: "Подписки" }
+  {
+    href: "/api/admin/export/users",
+    label: "Пользователи",
+    description: "Аккаунты, роли и статус доступа для ручной сверки или выгрузки поддержки."
+  },
+  {
+    href: "/api/admin/export/payments",
+    label: "Платежи",
+    description: "История транзакций и статусов для бухгалтерии или проверки спорных оплат."
+  },
+  {
+    href: "/api/admin/export/subscriptions",
+    label: "Подписки",
+    description: "Текущие доступы, сроки действия и остатки трафика в одном CSV."
+  }
 ];
 
 export default function AdminExportPage() {
   return (
-    <div className="grid gap-6">
-      <section className="surface-feature p-5 sm:p-7">
-        <p className="section-kicker">Экспорт</p>
-        <h1 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">Выгрузка данных в CSV</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-300 sm:text-base">
-          Скачайте пользователей, платежи или подписки в формате CSV. Файлы экспортируются в UTF-8 BOM
-          для корректного открытия в Excel.
-        </p>
-      </section>
+    <div className="grid gap-4 sm:gap-6">
+      <ScreenHeader
+        eyebrow="Админка"
+        title="Экспорт"
+        description="Готовые CSV-выгрузки без лишних декоративных секций и с быстрым действием прямо из списка."
+      />
 
-      <div className="grid gap-4 md:grid-cols-3">
-        {exports.map((item) => (
-          <Card key={item.href} className="surface-soft">
-            <CardHeader className="p-5 sm:p-6">
-              <CardTitle>{item.label}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 p-5 pt-0 sm:p-6 sm:pt-0">
-              <p className="text-sm leading-6 text-zinc-400">
-                Скачать актуальную выгрузку по разделу «{item.label.toLowerCase()}».
-              </p>
-              <Link
-                href={item.href}
-                className="inline-flex min-h-11 items-center rounded-2xl bg-gradient-to-r from-violet-500 to-blue-500 px-4 py-3 text-sm text-white"
-              >
-                Скачать CSV
-              </Link>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <AdminRecordList
+        title="Наборы для выгрузки"
+        description="Файлы отдаются в CSV с кодировкой UTF-8 BOM, чтобы без проблем открываться в Excel."
+      >
+        <div className="grid gap-3">
+          {exports.map((item) => (
+            <AdminRecordCard
+              key={item.href}
+              title={item.label}
+              subtitle={item.description}
+              metadata={[
+                { label: "Формат", value: "CSV" },
+                { label: "Кодировка", value: "UTF-8 BOM" }
+              ]}
+              actions={
+                <Button asChild className="w-full sm:w-auto">
+                  <a href={item.href}>Скачать CSV</a>
+                </Button>
+              }
+            />
+          ))}
+        </div>
+      </AdminRecordList>
     </div>
   );
 }

@@ -1,7 +1,9 @@
 import Link from "next/link";
 
 import { AsyncActionButton } from "@/components/admin/async-action-button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AdminRecordCard, AdminRecordEmptyState, AdminRecordList } from "@/components/blocks/admin/admin-record-list";
+import { ScreenHeader } from "@/components/shell/screen-header";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { listPromoCodes } from "@/lib/services/promos";
 import { formatDateTime } from "@/lib/utils";
@@ -10,121 +12,129 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminPromosPage() {
   const promos = await listPromoCodes();
+  const activePromos = promos.filter((promo) => promo.isActive).length;
 
   return (
-    <Card>
-      <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <CardTitle>Промокоды</CardTitle>
-          <p className="mt-1 text-sm text-zinc-400">Скидки, бонусные дни и трафик с привязкой к тарифам.</p>
-        </div>
-        <Link
-          href="/admin/promos/new"
-          className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-gradient-to-r from-violet-500 to-blue-500 px-4 py-3 text-sm text-white"
-        >
-          Создать промокод
-        </Link>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-4 md:hidden">
-          {promos.map((promo) => (
-            <div key={promo.id} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <p className="break-all text-lg font-semibold text-white">{promo.code}</p>
-                  <p className="break-words text-sm text-zinc-400">{promo.type}</p>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Значение</p>
-                    <p className="mt-2 text-sm text-white">{promo.value}</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Использований</p>
-                    <p className="mt-2 text-sm text-white">
-                      {promo.currentUsages}/{promo.maxUsages ?? "∞"}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Статус</p>
-                    <p className="mt-2 text-sm text-white">{promo.isActive ? "Активен" : "Отключен"}</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Истекает</p>
-                    <p className="mt-2 text-sm text-white">{formatDateTime(promo.expiresAt)}</p>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Link
-                    href={`/admin/promos/${promo.id}/edit`}
-                    className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-white/10 px-4 py-3 text-sm text-white"
-                  >
-                    Редактировать
-                  </Link>
-                  {promo.isActive ? (
-                    <AsyncActionButton
-                      label="Отключить"
-                      pendingLabel="..."
-                      variant="destructive"
-                      endpoint={`/api/admin/promos/${promo.id}`}
-                      method="DELETE"
-                    />
-                  ) : null}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+    <div className="grid gap-4 sm:gap-6">
+      <ScreenHeader
+        eyebrow="Админка"
+        title="Промокоды"
+        description="Список промокодов в card-first представлении для быстрых решений на телефоне."
+        actions={
+          <Button asChild>
+            <Link href="/admin/promos/new">Создать промокод</Link>
+          </Button>
+        }
+      />
 
-        <div className="hidden md:block">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Код</TableHead>
-                <TableHead>Тип</TableHead>
-                <TableHead>Значение</TableHead>
-                <TableHead>Использований</TableHead>
-                <TableHead>Истекает</TableHead>
-                <TableHead>Статус</TableHead>
-                <TableHead>Действия</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+      <AdminRecordList
+        title="Каталог промокодов"
+        description="В первом экране оставляем только тип, значение, лимиты и срок действия, чтобы быстрее понимать, что открывать или отключать."
+        summary={
+          <div className="surface-soft grid gap-3 p-4 sm:grid-cols-3">
+            <SummaryItem label="Всего кодов" value={String(promos.length)} />
+            <SummaryItem label="Активных" value={String(activePromos)} />
+            <SummaryItem label="Отключенных" value={String(promos.length - activePromos)} />
+          </div>
+        }
+      >
+        {promos.length === 0 ? (
+          <AdminRecordEmptyState
+            title="Промокоды ещё не созданы"
+            description="Создайте первый промокод, чтобы он появился в списке и стал доступен в checkout."
+          />
+        ) : (
+          <>
+            <div className="grid gap-3 xl:hidden">
               {promos.map((promo) => (
-                <TableRow key={promo.id}>
-                  <TableCell>{promo.code}</TableCell>
-                  <TableCell>{promo.type}</TableCell>
-                  <TableCell>{promo.value}</TableCell>
-                  <TableCell>
-                    {promo.currentUsages}/{promo.maxUsages ?? "∞"}
-                  </TableCell>
-                  <TableCell>{formatDateTime(promo.expiresAt)}</TableCell>
-                  <TableCell>{promo.isActive ? "Активен" : "Отключен"}</TableCell>
-                  <TableCell className="min-w-[220px]">
-                    <div className="flex flex-wrap gap-2">
-                      <Link
-                        href={`/admin/promos/${promo.id}/edit`}
-                        className="rounded-2xl border border-white/10 px-3 py-2 text-sm text-white"
-                      >
-                        Редактировать
-                      </Link>
+                <AdminRecordCard
+                  key={promo.id}
+                  title={promo.code}
+                  subtitle={promo.type}
+                  metadata={[
+                    { label: "Значение", value: String(promo.value) },
+                    { label: "Использований", value: `${promo.currentUsages}/${promo.maxUsages ?? "∞"}` },
+                    { label: "Истекает", value: formatDateTime(promo.expiresAt) },
+                    { label: "Статус", value: promo.isActive ? "Активен" : "Отключен" }
+                  ]}
+                  actions={
+                    <div className="grid gap-2 sm:justify-items-end">
+                      <Button asChild variant="outline" className="w-full sm:w-auto">
+                        <Link href={`/admin/promos/${promo.id}/edit`}>Редактировать</Link>
+                      </Button>
                       {promo.isActive ? (
                         <AsyncActionButton
                           label="Отключить"
-                          pendingLabel="..."
+                          pendingLabel="Отключаем..."
                           variant="destructive"
                           endpoint={`/api/admin/promos/${promo.id}`}
                           method="DELETE"
                         />
                       ) : null}
                     </div>
-                  </TableCell>
-                </TableRow>
+                  }
+                />
               ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+            </div>
+
+            <div className="hidden xl:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Код</TableHead>
+                    <TableHead>Тип</TableHead>
+                    <TableHead>Значение</TableHead>
+                    <TableHead>Использований</TableHead>
+                    <TableHead>Истекает</TableHead>
+                    <TableHead>Статус</TableHead>
+                    <TableHead>Действия</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {promos.map((promo) => (
+                    <TableRow key={promo.id}>
+                      <TableCell className="font-medium text-white">{promo.code}</TableCell>
+                      <TableCell>{promo.type}</TableCell>
+                      <TableCell>{promo.value}</TableCell>
+                      <TableCell>
+                        {promo.currentUsages}/{promo.maxUsages ?? "∞"}
+                      </TableCell>
+                      <TableCell>{formatDateTime(promo.expiresAt)}</TableCell>
+                      <TableCell>{promo.isActive ? "Активен" : "Отключен"}</TableCell>
+                      <TableCell className="min-w-[220px]">
+                        <div className="flex flex-wrap gap-2">
+                          <Button asChild variant="outline" className="h-9 px-3">
+                            <Link href={`/admin/promos/${promo.id}/edit`}>Редактировать</Link>
+                          </Button>
+                          {promo.isActive ? (
+                            <AsyncActionButton
+                              label="Отключить"
+                              pendingLabel="Отключаем..."
+                              variant="destructive"
+                              endpoint={`/api/admin/promos/${promo.id}`}
+                              method="DELETE"
+                              className="h-9"
+                            />
+                          ) : null}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
+        )}
+      </AdminRecordList>
+    </div>
+  );
+}
+
+function SummaryItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="space-y-1">
+      <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{label}</p>
+      <p className="text-sm font-medium text-white">{value}</p>
+    </div>
   );
 }

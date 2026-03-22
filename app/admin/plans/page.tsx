@@ -1,7 +1,9 @@
 import Link from "next/link";
 
 import { AsyncActionButton } from "@/components/admin/async-action-button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AdminRecordCard, AdminRecordEmptyState, AdminRecordList } from "@/components/blocks/admin/admin-record-list";
+import { ScreenHeader } from "@/components/shell/screen-header";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getAllPlans } from "@/lib/services/plans";
 import { formatPrice, slugToRemnawaveTag } from "@/lib/utils";
@@ -10,137 +12,57 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminPlansPage() {
   const plans = await getAllPlans();
+  const activePlans = plans.filter((plan) => plan.isActive).length;
 
   return (
-    <Card>
-      <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <CardTitle>Тарифы</CardTitle>
-          <p className="mt-1 text-sm text-zinc-400">Конфигуратор тарифной сетки, Remnawave-сквадов и мягкого отключения планов.</p>
-        </div>
-        <Link
-          href="/admin/plans/new"
-          className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-gradient-to-r from-violet-500 to-blue-500 px-4 py-3 text-sm text-white"
-        >
-          Создать тариф
-        </Link>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-4 md:hidden">
-          {plans.map((plan) => (
-            <div key={plan.id} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <p className="break-words text-lg font-semibold text-white">{plan.name}</p>
-                  <p className="break-all text-xs text-zinc-500">
-                    {plan.slug} • {slugToRemnawaveTag(plan.slug)}
-                  </p>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Цена</p>
-                    <p className="mt-2 text-sm text-white">{formatPrice(plan.price)}</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Трафик и срок</p>
-                    <p className="mt-2 text-sm text-white">
-                      {plan.trafficGB} ГБ • {plan.durationDays} дней
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Сквады</p>
-                    <p className="mt-2 text-sm text-white">
-                      {plan.remnawaveInternalSquadUuids.length} вн. / {plan.remnawaveExternalSquadUuid ? "1 внеш." : "0 внеш."}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Устройства</p>
-                    <p className="mt-2 text-sm text-white">{plan.remnawaveHwidDeviceLimit ?? "—"}</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Метка</p>
-                    <p className="mt-2 break-words text-sm text-white">{plan.highlight ?? "—"}</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Порядок</p>
-                    <p className="mt-2 text-sm text-white">{plan.sortOrder}</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Статус</p>
-                    <p className="mt-2 text-sm text-white">{plan.isActive ? "Активен" : "Отключен"}</p>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Link
-                    href={`/admin/plans/${plan.id}/edit`}
-                    className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-white/10 px-4 py-3 text-sm text-white"
-                  >
-                    Редактировать
-                  </Link>
-                  {plan.isActive ? (
-                    <AsyncActionButton
-                      label="Удалить"
-                      pendingLabel="Удаляем..."
-                      variant="destructive"
-                      endpoint={`/api/admin/plans/${plan.id}`}
-                      method="DELETE"
-                      confirmMessage="Удалить тариф? Он останется в базе, но пропадёт из публичной продажи."
-                    />
-                  ) : (
-                    <AsyncActionButton
-                      label="Восстановить"
-                      pendingLabel="..."
-                      variant="secondary"
-                      endpoint={`/api/admin/plans/${plan.id}`}
-                      method="POST"
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+    <div className="grid gap-4 sm:gap-6">
+      <ScreenHeader
+        eyebrow="Админка"
+        title="Тарифы"
+        description="Сетка тарифов и ключевые статусы без desktop-heavy таблицы в первом экране."
+        actions={
+          <Button asChild>
+            <Link href="/admin/plans/new">Создать тариф</Link>
+          </Button>
+        }
+      />
 
-        <div className="hidden md:block">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Название</TableHead>
-                <TableHead>Цена</TableHead>
-                <TableHead>Tag</TableHead>
-                <TableHead>Трафик</TableHead>
-                <TableHead>Длительность</TableHead>
-                <TableHead>Сквады</TableHead>
-                <TableHead>Устройства</TableHead>
-                <TableHead>Метка</TableHead>
-                <TableHead>Порядок</TableHead>
-                <TableHead>Статус</TableHead>
-                <TableHead>Действия</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+      <AdminRecordList
+        title="Тарифная сетка"
+        description="На телефоне показываем только данные, которые нужны, чтобы решить: открыть редактирование, отключить или восстановить тариф."
+        summary={
+          <div className="surface-soft grid gap-3 p-4 sm:grid-cols-3">
+            <SummaryItem label="Всего тарифов" value={String(plans.length)} />
+            <SummaryItem label="Активных" value={String(activePlans)} />
+            <SummaryItem label="Отключенных" value={String(plans.length - activePlans)} />
+          </div>
+        }
+      >
+        {plans.length === 0 ? (
+          <AdminRecordEmptyState
+            title="Тарифы ещё не созданы"
+            description="Создайте первый тариф, чтобы он появился в списке и стал доступен для продажи."
+          />
+        ) : (
+          <>
+            <div className="grid gap-3 xl:hidden">
               {plans.map((plan) => (
-                <TableRow key={plan.id}>
-                  <TableCell>
-                    <div className="font-medium text-white">{plan.name}</div>
-                    <div className="text-xs text-zinc-500">{plan.slug}</div>
-                  </TableCell>
-                  <TableCell>{formatPrice(plan.price)}</TableCell>
-                  <TableCell>{slugToRemnawaveTag(plan.slug)}</TableCell>
-                  <TableCell>{plan.trafficGB} ГБ</TableCell>
-                  <TableCell>{plan.durationDays} дней</TableCell>
-                  <TableCell>
-                    {plan.remnawaveInternalSquadUuids.length} вн. / {plan.remnawaveExternalSquadUuid ? "1 внеш." : "0 внеш."}
-                  </TableCell>
-                  <TableCell>{plan.remnawaveHwidDeviceLimit ?? "—"}</TableCell>
-                  <TableCell>{plan.highlight ?? "—"}</TableCell>
-                  <TableCell>{plan.sortOrder}</TableCell>
-                  <TableCell>{plan.isActive ? "Активен" : "Отключен"}</TableCell>
-                  <TableCell className="min-w-[240px]">
-                    <div className="flex flex-wrap gap-2">
-                      <Link href={`/admin/plans/${plan.id}/edit`} className="rounded-2xl border border-white/10 px-3 py-2 text-sm text-white">
-                        Редактировать
-                      </Link>
+                <AdminRecordCard
+                  key={plan.id}
+                  title={plan.name}
+                  subtitle={`${plan.slug} • ${slugToRemnawaveTag(plan.slug)}`}
+                  metadata={[
+                    { label: "Цена", value: formatPrice(plan.price) },
+                    { label: "Срок", value: `${plan.durationDays} дней` },
+                    { label: "Трафик", value: `${plan.trafficGB} ГБ` },
+                    { label: "Сквады", value: `${plan.remnawaveInternalSquadUuids.length} вн. / ${plan.remnawaveExternalSquadUuid ? "1 внеш." : "0 внеш."}` },
+                    { label: "Статус", value: plan.isActive ? "Активен" : "Отключен" }
+                  ]}
+                  actions={
+                    <div className="grid gap-2 sm:justify-items-end">
+                      <Button asChild variant="outline" className="w-full sm:w-auto">
+                        <Link href={`/admin/plans/${plan.id}/edit`}>Редактировать</Link>
+                      </Button>
                       {plan.isActive ? (
                         <AsyncActionButton
                           label="Удалить"
@@ -153,20 +75,91 @@ export default async function AdminPlansPage() {
                       ) : (
                         <AsyncActionButton
                           label="Восстановить"
-                          pendingLabel="..."
+                          pendingLabel="Восстанавливаем..."
                           variant="secondary"
                           endpoint={`/api/admin/plans/${plan.id}`}
                           method="POST"
                         />
                       )}
                     </div>
-                  </TableCell>
-                </TableRow>
+                  }
+                />
               ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+            </div>
+
+            <div className="hidden xl:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Название</TableHead>
+                    <TableHead>Цена</TableHead>
+                    <TableHead>Срок</TableHead>
+                    <TableHead>Трафик</TableHead>
+                    <TableHead>Сквады</TableHead>
+                    <TableHead>Статус</TableHead>
+                    <TableHead>Действия</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {plans.map((plan) => (
+                    <TableRow key={plan.id}>
+                      <TableCell>
+                        <div className="font-medium text-white">{plan.name}</div>
+                        <div className="text-xs text-zinc-500">
+                          {plan.slug} • {slugToRemnawaveTag(plan.slug)}
+                        </div>
+                      </TableCell>
+                      <TableCell>{formatPrice(plan.price)}</TableCell>
+                      <TableCell>{plan.durationDays} дней</TableCell>
+                      <TableCell>{plan.trafficGB} ГБ</TableCell>
+                      <TableCell>
+                        {plan.remnawaveInternalSquadUuids.length} вн. / {plan.remnawaveExternalSquadUuid ? "1 внеш." : "0 внеш."}
+                      </TableCell>
+                      <TableCell>{plan.isActive ? "Активен" : "Отключен"}</TableCell>
+                      <TableCell className="min-w-[240px]">
+                        <div className="flex flex-wrap gap-2">
+                          <Button asChild variant="outline" className="h-9 px-3">
+                            <Link href={`/admin/plans/${plan.id}/edit`}>Редактировать</Link>
+                          </Button>
+                          {plan.isActive ? (
+                            <AsyncActionButton
+                              label="Удалить"
+                              pendingLabel="Удаляем..."
+                              variant="destructive"
+                              endpoint={`/api/admin/plans/${plan.id}`}
+                              method="DELETE"
+                              confirmMessage="Удалить тариф? Он останется в базе, но пропадёт из публичной продажи."
+                              className="h-9"
+                            />
+                          ) : (
+                            <AsyncActionButton
+                              label="Восстановить"
+                              pendingLabel="Восстанавливаем..."
+                              variant="secondary"
+                              endpoint={`/api/admin/plans/${plan.id}`}
+                              method="POST"
+                              className="h-9"
+                            />
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
+        )}
+      </AdminRecordList>
+    </div>
+  );
+}
+
+function SummaryItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="space-y-1">
+      <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{label}</p>
+      <p className="text-sm font-medium text-white">{value}</p>
+    </div>
   );
 }

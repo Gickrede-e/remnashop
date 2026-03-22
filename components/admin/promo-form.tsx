@@ -4,8 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { PromoCodeType, type Plan } from "@prisma/client";
 
+import { FormSection } from "@/components/blocks/forms/form-section";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -86,11 +86,11 @@ export function PromoForm({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{mode === "create" ? "Новый промокод" : "Редактирование промокода"}</CardTitle>
-      </CardHeader>
-      <CardContent className="grid gap-4">
+    <div className="grid gap-4">
+      <FormSection
+        title="Идентичность промокода"
+        description="Код и тип бонуса, по которым админ сразу понимает, как этот промо работает в checkout."
+      >
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="promo-code">Код</Label>
@@ -115,7 +115,13 @@ export function PromoForm({
             </select>
           </div>
         </div>
-        <div className="grid gap-4 md:grid-cols-4">
+      </FormSection>
+
+      <FormSection
+        title="Поведение скидки"
+        description="Собираем числовые правила в одном месте, чтобы не растягивать форму по четырём строкам."
+      >
+        <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="promo-value">Значение</Label>
             <Input
@@ -123,31 +129,6 @@ export function PromoForm({
               type="number"
               value={values.value}
               onChange={(event) => setValues((current) => ({ ...current, value: Number(event.target.value) }))}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="promo-max">Общий лимит</Label>
-            <Input
-              id="promo-max"
-              type="number"
-              value={values.maxUsages ?? ""}
-              onChange={(event) =>
-                setValues((current) => ({
-                  ...current,
-                  maxUsages: event.target.value ? Number(event.target.value) : null
-                }))
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="promo-user-limit">Лимит на пользователя</Label>
-            <Input
-              id="promo-user-limit"
-              type="number"
-              value={values.maxUsagesPerUser}
-              onChange={(event) =>
-                setValues((current) => ({ ...current, maxUsagesPerUser: Number(event.target.value) }))
-              }
             />
           </div>
           <div className="space-y-2">
@@ -165,6 +146,12 @@ export function PromoForm({
             />
           </div>
         </div>
+      </FormSection>
+
+      <FormSection
+        title="Окно активации"
+        description="Период действия вынесен отдельно, чтобы его можно было проверить перед публикацией промокода."
+      >
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="promo-start">Активен с</Label>
@@ -185,34 +172,73 @@ export function PromoForm({
             />
           </div>
         </div>
-        <div className="space-y-3">
-          <Label>Тарифы</Label>
-          <div className="grid gap-2 md:grid-cols-2">
-            {plans.map((plan) => {
-              const checked = values.applicablePlanIds.includes(plan.id);
-              return (
-                <label
-                  key={plan.id}
-                  className="flex min-h-11 items-center gap-3 rounded-2xl border border-white/10 px-4 py-3 text-sm text-zinc-300"
-                >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={(event) =>
-                      setValues((current) => ({
-                        ...current,
-                        applicablePlanIds: event.target.checked
-                          ? [...current.applicablePlanIds, plan.id]
-                          : current.applicablePlanIds.filter((id) => id !== plan.id)
-                      }))
-                    }
-                  />
-                  {plan.name}
-                </label>
-              );
-            })}
+      </FormSection>
+
+      <FormSection
+        title="Применимость и лимиты"
+        description="Задаём, где промокод работает и сколько раз его можно использовать."
+      >
+        <div className="grid gap-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="promo-max">Общий лимит</Label>
+              <Input
+                id="promo-max"
+                type="number"
+                value={values.maxUsages ?? ""}
+                onChange={(event) =>
+                  setValues((current) => ({
+                    ...current,
+                    maxUsages: event.target.value ? Number(event.target.value) : null
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="promo-user-limit">Лимит на пользователя</Label>
+              <Input
+                id="promo-user-limit"
+                type="number"
+                value={values.maxUsagesPerUser}
+                onChange={(event) =>
+                  setValues((current) => ({ ...current, maxUsagesPerUser: Number(event.target.value) }))
+                }
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <Label>Тарифы</Label>
+            <div className="grid gap-2 md:grid-cols-2">
+              {plans.map((plan) => {
+                const checked = values.applicablePlanIds.includes(plan.id);
+                return (
+                  <label
+                    key={plan.id}
+                    className="flex min-h-11 items-center gap-3 rounded-2xl border border-white/10 px-4 py-3 text-sm text-zinc-300"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(event) =>
+                        setValues((current) => ({
+                          ...current,
+                          applicablePlanIds: event.target.checked
+                            ? [...current.applicablePlanIds, plan.id]
+                            : current.applicablePlanIds.filter((id) => id !== plan.id)
+                        }))
+                      }
+                    />
+                    {plan.name}
+                  </label>
+                );
+              })}
+            </div>
           </div>
         </div>
+      </FormSection>
+
+      <div className="grid gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-4 sm:p-5">
         <label className="flex items-center gap-3 rounded-2xl border border-white/10 px-4 py-3 text-sm text-zinc-300">
           <input
             type="checkbox"
@@ -221,7 +247,9 @@ export function PromoForm({
           />
           Промокод активен
         </label>
+
         {message ? <p className="text-sm text-red-300">{message}</p> : null}
+
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button type="button" className="w-full sm:w-auto" onClick={submit} disabled={pending}>
             {pending ? "Сохраняем..." : "Сохранить"}
@@ -235,7 +263,7 @@ export function PromoForm({
             Отмена
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

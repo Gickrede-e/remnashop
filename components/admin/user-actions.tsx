@@ -33,49 +33,69 @@ export function AdminUserActions({
     [grantState.planId, plans]
   );
 
-  const runAction = (action: () => Promise<void>) => {
+  const runAction = (action: () => Promise<Response>) => {
     startTransition(async () => {
-      await action();
-      router.refresh();
+      try {
+        const response = await action();
+
+        if (!response.ok) {
+          const payload = (await response.json().catch(() => null)) as
+            | { error?: string | { message?: string } }
+            | null;
+          const error =
+            typeof payload?.error === "string"
+              ? payload.error
+              : payload?.error?.message ?? "Не удалось выполнить действие";
+
+          window.alert(error);
+          return;
+        }
+
+        router.refresh();
+      } catch {
+        window.alert("Не удалось выполнить действие");
+      }
     });
   };
 
   const fieldId = (name: string) => `${idPrefix}-${name}-${userId}`;
 
   return (
-    <div className="flex min-w-0 flex-col gap-2">
-      <div className="flex flex-wrap gap-2">
+    <div className="flex min-w-0 flex-col gap-3">
+      <div className="grid gap-2 sm:grid-cols-2">
         <Button
           type="button"
           size="sm"
-          className="flex-1 sm:flex-none"
+          className="w-full"
           variant="secondary"
           disabled={pending}
           onClick={() =>
             runAction(async () => {
-              await fetch(`/api/admin/users/${userId}/sync`, { method: "POST" });
+              return fetch(`/api/admin/users/${userId}/sync`, { method: "POST" });
             })
           }
         >
-          Sync
+          Синхронизировать
         </Button>
         <Button
           type="button"
           size="sm"
-          className="flex-1 sm:flex-none"
+          className="w-full"
           variant="outline"
           disabled={pending}
-          onClick={() => runAction(async () => {
-            await fetch(`/api/admin/users/${userId}/toggle`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                enabled: !currentlyEnabled
-              })
-            });
-          })}
+          onClick={() =>
+            runAction(async () => {
+              return fetch(`/api/admin/users/${userId}/toggle`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                  enabled: !currentlyEnabled
+                })
+              });
+            })
+          }
         >
           {currentlyEnabled ? "Отключить" : "Включить"}
         </Button>
@@ -83,12 +103,14 @@ export function AdminUserActions({
           <Button
             type="button"
             size="sm"
-            className="w-full sm:w-auto"
+            className="w-full sm:col-span-2"
             variant="destructive"
             disabled={pending}
-            onClick={() => runAction(async () => {
-              await fetch(`/api/admin/subscriptions/${subscriptionId}/revoke`, { method: "POST" });
-            })}
+            onClick={() =>
+              runAction(async () => {
+                return fetch(`/api/admin/subscriptions/${subscriptionId}/revoke`, { method: "POST" });
+              })
+            }
           >
             Отозвать
           </Button>
@@ -104,6 +126,7 @@ export function AdminUserActions({
             <Label htmlFor={fieldId("grant-plan")}>Тариф</Label>
             <select
               id={fieldId("grant-plan")}
+              disabled={pending}
               className="flex h-11 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 text-sm text-white"
               value={selectedPlanId}
               onChange={(event) => setGrantState((current) => ({ ...current, planId: event.target.value }))}
@@ -121,6 +144,7 @@ export function AdminUserActions({
               <Input
                 id={fieldId("grant-days")}
                 type="number"
+                disabled={pending}
                 value={grantState.durationDays}
                 onChange={(event) => setGrantState((current) => ({ ...current, durationDays: event.target.value }))}
               />
@@ -130,6 +154,7 @@ export function AdminUserActions({
               <Input
                 id={fieldId("grant-traffic")}
                 type="number"
+                disabled={pending}
                 value={grantState.trafficGB}
                 onChange={(event) => setGrantState((current) => ({ ...current, trafficGB: event.target.value }))}
               />
@@ -139,6 +164,7 @@ export function AdminUserActions({
             <Label htmlFor={fieldId("grant-note")}>Комментарий</Label>
             <Input
               id={fieldId("grant-note")}
+              disabled={pending}
               value={grantState.note}
               onChange={(event) => setGrantState((current) => ({ ...current, note: event.target.value }))}
             />
@@ -148,21 +174,23 @@ export function AdminUserActions({
             size="sm"
             className="w-full sm:w-auto"
             disabled={pending}
-            onClick={() => runAction(async () => {
-              await fetch("/api/admin/subscriptions/grant", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                  userId,
-                  planId: selectedPlanId,
-                  durationDays: grantState.durationDays ? Number(grantState.durationDays) : undefined,
-                  trafficGB: grantState.trafficGB ? Number(grantState.trafficGB) : undefined,
-                  note: grantState.note || undefined
-                })
-              });
-            })}
+            onClick={() =>
+              runAction(async () => {
+                return fetch("/api/admin/subscriptions/grant", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json"
+                  },
+                  body: JSON.stringify({
+                    userId,
+                    planId: selectedPlanId,
+                    durationDays: grantState.durationDays ? Number(grantState.durationDays) : undefined,
+                    trafficGB: grantState.trafficGB ? Number(grantState.trafficGB) : undefined,
+                    note: grantState.note || undefined
+                  })
+                });
+              })
+            }
           >
             {pending ? "Сохраняем..." : "Выдать"}
           </Button>

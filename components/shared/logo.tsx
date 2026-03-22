@@ -5,17 +5,24 @@ import { cn } from "@/lib/utils";
 
 export function Logo({
   className,
-  href = "/"
+  href = "/",
+  compact = false
 }: {
   className?: string;
   href?: string;
+  compact?: boolean;
 }) {
   return (
     <Link href={href} className={cn("inline-flex items-center gap-3", className)}>
-      <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 via-blue-500 to-cyan-400 text-white shadow-glow">
+      <span
+        className={cn(
+          "flex items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 via-blue-500 to-cyan-400 text-white shadow-sm shadow-black/20",
+          compact ? "h-9 w-9" : "h-10 w-10"
+        )}
+      >
         <Shield className="h-5 w-5" />
       </span>
-      <span className="text-lg font-semibold tracking-wide text-white">GickVPN</span>
+      <span className={cn("font-semibold tracking-wide text-white", compact ? "text-base" : "text-lg")}>GickVPN</span>
     </Link>
   );
 }

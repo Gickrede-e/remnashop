@@ -1,7 +1,15 @@
+import { Suspense } from "react";
 import nextDynamic from "next/dynamic";
+import { ClipboardList, CreditCard, UserCog, Users } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AdminOverviewBlocks,
+  AdminProviderStatusFallback,
+  AdminProviderStatusSection
+} from "@/components/blocks/admin/admin-overview-blocks";
+import { ScreenHeader } from "@/components/shell/screen-header";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getProviderStatuses } from "@/lib/services/provider-status";
 import { getAdminStats, getRevenueChartData } from "@/lib/services/stats";
 import { formatPrice } from "@/lib/utils";
 
@@ -10,73 +18,98 @@ export const dynamic = "force-dynamic";
 const RevenueChart = nextDynamic(
   () => import("@/components/admin/revenue-chart").then((module) => module.RevenueChart),
   {
-    loading: () => <Skeleton className="h-[260px] w-full md:h-[300px]" />
+    loading: RevenueChartFallback
   }
 );
 
 export default async function AdminDashboardPage() {
-  const [stats, chart] = await Promise.all([getAdminStats(), getRevenueChartData()]);
-
-  const items = [
-    { label: "Доход сегодня", value: formatPrice(stats.revenueToday) },
-    { label: "Доход за неделю", value: formatPrice(stats.revenueWeek) },
-    { label: "Доход за месяц", value: formatPrice(stats.revenueMonth) },
-    { label: "Доход за всё время", value: formatPrice(stats.revenueTotal) },
-    { label: "Активные подписки", value: String(stats.activeSubscriptions) },
-    { label: "Пользователи", value: String(stats.totalUsers) },
-    { label: "Конверсия", value: `${stats.conversion}%` }
-  ];
+  const stats = await getAdminStats();
 
   return (
-    <div className="grid gap-6">
-      <section className="surface-feature p-5 sm:p-7">
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.85fr)] xl:items-end">
-          <div className="space-y-3">
-            <p className="section-kicker">Админка</p>
-            <h1 className="text-3xl font-semibold text-white sm:text-4xl">Дашборд GickVPN</h1>
-            <p className="max-w-2xl text-sm leading-6 text-zinc-300 sm:text-base">
-              Основные показатели продаж, активности пользователей и подписок собраны на одном экране.
-            </p>
-          </div>
-
-          <div className="surface-soft grid min-w-0 gap-3 p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-zinc-400">Активные подписки</span>
-              <span className="text-right text-base font-semibold text-white">{stats.activeSubscriptions}</span>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-zinc-400">Пользователи</span>
-              <span className="text-right text-base font-semibold text-white">{stats.totalUsers}</span>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-zinc-400">Конверсия</span>
-              <span className="text-right text-base font-semibold text-white">{stats.conversion}%</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {items.map((item) => (
-          <Card key={item.label}>
-            <CardHeader className="p-5 sm:p-6">
-              <CardTitle className="text-base text-zinc-300">{item.label}</CardTitle>
-            </CardHeader>
-            <CardContent className="break-words p-5 pt-0 text-2xl font-semibold leading-tight text-white sm:p-6 sm:pt-0 sm:text-3xl">
-              {item.value}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Card>
-        <CardHeader className="p-5 sm:p-6">
-          <CardTitle>Доход по дням за 30 дней</CardTitle>
-        </CardHeader>
-        <CardContent className="p-5 pt-0 sm:p-6 sm:pt-0">
-          <RevenueChart data={chart} />
-        </CardContent>
-      </Card>
+    <div className="grid gap-4 sm:gap-6">
+      <ScreenHeader
+        eyebrow="Админка"
+        title="Обзор"
+        description="Ключевые KPI, финансовый срез и ближайший операционный фокус без desktop-heavy перегруза."
+      />
+      <AdminOverviewBlocks
+        summaryTitle="Ключевой срез"
+        summaryDescription="Основные показатели по выручке, пользователям и активным подпискам без desktop-heavy перегруза."
+        primaryMetrics={[
+          { label: "Доход сегодня", value: formatPrice(stats.revenueToday), hint: "Самый быстрый сигнал по текущему дню." },
+          { label: "Активные подписки", value: String(stats.activeSubscriptions), hint: "Текущее число пользователей с доступом." },
+          { label: "Пользователи", value: String(stats.totalUsers), hint: "Всего зарегистрированных аккаунтов." },
+          { label: "Конверсия", value: `${stats.conversion}%`, hint: "Доля пользователей, дошедших до оплаты." }
+        ]}
+        contextRows={[
+          { label: "Доход за неделю", value: formatPrice(stats.revenueWeek) },
+          { label: "Доход за месяц", value: formatPrice(stats.revenueMonth) },
+          { label: "Доход за всё время", value: formatPrice(stats.revenueTotal) }
+        ]}
+        sections={[
+          {
+            title: "Фокус по выручке",
+            description: "Держим быстрый финансовый контекст рядом с KPI, но не в первом экране.",
+            items: [
+              { label: "За неделю", value: formatPrice(stats.revenueWeek) },
+              { label: "За месяц", value: formatPrice(stats.revenueMonth) },
+              { label: "За всё время", value: formatPrice(stats.revenueTotal) }
+            ]
+          }
+        ]}
+        providerStatusSlot={
+          <Suspense fallback={<AdminProviderStatusFallback />}>
+            <AdminProviderStatusBlock />
+          </Suspense>
+        }
+        quickActions={[
+          {
+            href: "/admin/users",
+            label: "Пользователи",
+            description: "Открыть список пользователей, синхронизацию и ручную выдачу подписок.",
+            icon: Users
+          },
+          {
+            href: "/admin/payments",
+            label: "Платежи",
+            description: "Перейти к pending-операциям и ручной проверке платёжных статусов.",
+            icon: CreditCard
+          },
+          {
+            href: "/admin/referrals",
+            label: "Рефералы",
+            description: "Посмотреть воронку приглашений и начисленные награды.",
+            icon: UserCog
+          },
+          {
+            href: "/admin/logs",
+            label: "Логи",
+            description: "Проверить действия админов и служебные события без поиска по коду.",
+            icon: ClipboardList
+          }
+        ]}
+        chart={
+          <Suspense fallback={<RevenueChartFallback />}>
+            <AdminRevenueChart />
+          </Suspense>
+        }
+      />
     </div>
   );
+}
+
+async function AdminRevenueChart() {
+  const chart = await getRevenueChartData();
+
+  return <RevenueChart data={chart} />;
+}
+
+async function AdminProviderStatusBlock() {
+  const providerStatuses = await getProviderStatuses();
+
+  return <AdminProviderStatusSection statuses={providerStatuses} />;
+}
+
+function RevenueChartFallback() {
+  return <Skeleton className="h-[260px] w-full md:h-[300px]" />;
 }

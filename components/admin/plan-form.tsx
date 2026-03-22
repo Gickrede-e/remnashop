@@ -3,8 +3,8 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
+import { FormSection } from "@/components/blocks/forms/form-section";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -54,8 +54,6 @@ export function PlanForm({
   const remnawaveTag = useMemo(() => slugToRemnawaveTag(values.slug), [values.slug]);
   const internalSquadsText = useMemo(() => values.remnawaveInternalSquadUuids.join("\n"), [values.remnawaveInternalSquadUuids]);
 
-  const previewPrice = useMemo(() => `${values.priceRubles.toFixed(0)} ₽`, [values.priceRubles]);
-
   const submit = () => {
     startTransition(async () => {
       setMessage(null);
@@ -83,12 +81,12 @@ export function PlanForm({
   };
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-      <Card>
-        <CardHeader>
-          <CardTitle>{mode === "create" ? "Новый тариф" : "Редактирование тарифа"}</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4">
+    <div className="grid gap-4">
+      <FormSection
+        title="Идентичность тарифа"
+        description="Название, slug и витринные тексты, по которым тариф будут узнавать в интерфейсе."
+      >
+        <div className="grid gap-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="plan-name">Название</Label>
@@ -125,61 +123,77 @@ export function PlanForm({
               onChange={(event) => setValues((current) => ({ ...current, description: event.target.value }))}
             />
           </div>
-          <div className="grid gap-4 md:grid-cols-4">
-            <div className="space-y-2">
-              <Label htmlFor="plan-duration">Дней</Label>
-              <Input
-                id="plan-duration"
-                type="number"
-                value={values.durationDays}
-                onChange={(event) => setValues((current) => ({ ...current, durationDays: Number(event.target.value) }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="plan-traffic">Трафик, ГБ</Label>
-              <Input
-                id="plan-traffic"
-                type="number"
-                value={values.trafficGB}
-                onChange={(event) => setValues((current) => ({ ...current, trafficGB: Number(event.target.value) }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="plan-price">Цена, ₽</Label>
-              <Input
-                id="plan-price"
-                type="number"
-                value={values.priceRubles}
-                onChange={(event) => setValues((current) => ({ ...current, priceRubles: Number(event.target.value) }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="plan-sort">Порядок</Label>
-              <Input
-                id="plan-sort"
-                type="number"
-                value={values.sortOrder}
-                onChange={(event) => setValues((current) => ({ ...current, sortOrder: Number(event.target.value) }))}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="plan-highlight">Метка</Label>
+            <Input
+              id="plan-highlight"
+              value={values.highlight ?? ""}
+              onChange={(event) => setValues((current) => ({ ...current, highlight: event.target.value }))}
+            />
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="plan-highlight">Метка</Label>
-              <Input
-                id="plan-highlight"
-                value={values.highlight ?? ""}
-                onChange={(event) => setValues((current) => ({ ...current, highlight: event.target.value }))}
-              />
-            </div>
-            <label className="flex items-center gap-3 rounded-2xl border border-white/10 px-4 py-3 text-sm text-zinc-300">
-              <input
-                type="checkbox"
-                checked={values.isActive}
-                onChange={(event) => setValues((current) => ({ ...current, isActive: event.target.checked }))}
-              />
-              Активный тариф
-            </label>
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="Ценообразование"
+        description="Оставляем в одном месте только коммерческие параметры и порядок показа тарифа."
+      >
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="plan-price">Цена, ₽</Label>
+            <Input
+              id="plan-price"
+              type="number"
+              value={values.priceRubles}
+              onChange={(event) => setValues((current) => ({ ...current, priceRubles: Number(event.target.value) }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="plan-sort">Порядок на витрине</Label>
+            <Input
+              id="plan-sort"
+              type="number"
+              value={values.sortOrder}
+              onChange={(event) => setValues((current) => ({ ...current, sortOrder: Number(event.target.value) }))}
+            />
+          </div>
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="Лимиты и доступ"
+        description="Основные пользовательские ограничения, которые видны и в checkout, и в личном кабинете."
+      >
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="plan-duration">Дней</Label>
+            <Input
+              id="plan-duration"
+              type="number"
+              value={values.durationDays}
+              onChange={(event) => setValues((current) => ({ ...current, durationDays: Number(event.target.value) }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="plan-traffic">Трафик, ГБ</Label>
+            <Input
+              id="plan-traffic"
+              type="number"
+              value={values.trafficGB}
+              onChange={(event) => setValues((current) => ({ ...current, trafficGB: Number(event.target.value) }))}
+            />
+          </div>
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="Remnawave и выдача"
+        description="Все параметры provisioning собраны отдельно, чтобы они не конкурировали с ценой и лимитами."
+      >
+        <div className="grid gap-4">
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-zinc-300">
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Текущий tag</p>
+            <p className="mt-2 break-all text-sm text-white">{remnawaveTag || "—"}</p>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
@@ -206,29 +220,47 @@ export function PlanForm({
                 }
               />
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="plan-internal-squads">Внутренние сквады Remnawave</Label>
-            <Textarea
-              id="plan-internal-squads"
-              placeholder={"По одному UUID на строку или через запятую"}
-              value={internalSquadsText}
-              onChange={(event) =>
-                setValues((current) => ({
-                  ...current,
-                  remnawaveInternalSquadUuids: Array.from(
-                    new Set(
-                      event.target.value
-                        .split(/[\n,]+/)
-                        .map((item) => item.trim())
-                        .filter(Boolean)
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="plan-internal-squads">Внутренние сквады Remnawave</Label>
+              <Textarea
+                id="plan-internal-squads"
+                placeholder="По одному UUID на строку или через запятую"
+                value={internalSquadsText}
+                onChange={(event) =>
+                  setValues((current) => ({
+                    ...current,
+                    remnawaveInternalSquadUuids: Array.from(
+                      new Set(
+                        event.target.value
+                          .split(/[\n,]+/)
+                          .map((item) => item.trim())
+                          .filter(Boolean)
+                      )
                     )
-                  )
-                }))
-              }
-            />
+                  }))
+                }
+              />
+            </div>
           </div>
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="Публикация и действия"
+        description="Статус публикации и сохранение оставляем последним шагом, чтобы форма читалась сверху вниз."
+      >
+        <div className="grid gap-4">
+          <label className="flex items-center gap-3 rounded-2xl border border-white/10 px-4 py-3 text-sm text-zinc-300">
+            <input
+              type="checkbox"
+              checked={values.isActive}
+              onChange={(event) => setValues((current) => ({ ...current, isActive: event.target.checked }))}
+            />
+            Активный тариф
+          </label>
+
           {message ? <p className="text-sm text-red-300">{message}</p> : null}
+
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button type="button" className="w-full sm:w-auto" onClick={submit} disabled={pending}>
               {pending ? "Сохраняем..." : "Сохранить"}
@@ -242,28 +274,8 @@ export function PlanForm({
               Отмена
             </Button>
           </div>
-        </CardContent>
-      </Card>
-
-      <Card className="h-fit min-w-0">
-        <CardHeader>
-          <CardTitle>Предпросмотр</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-xl font-semibold text-white">{values.name || "Новый тариф"}</p>
-          <p className="text-3xl font-semibold text-white">{previewPrice}</p>
-          <p className="break-words text-sm text-zinc-400">{values.description || "Описание тарифа появится здесь."}</p>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-zinc-300">
-            <p>{values.durationDays} дней доступа</p>
-            <p>{values.trafficGB} ГБ трафика</p>
-            <p className="break-words">{values.highlight || "Без highlight-метки"}</p>
-            <p className="break-all">Tag Remnawave: {remnawaveTag || "—"}</p>
-            <p>Лимит устройств: {values.remnawaveHwidDeviceLimit || "без лимита"}</p>
-            <p>Внутренние сквады: {values.remnawaveInternalSquadUuids.length || 0}</p>
-            <p>Внешний сквад: {values.remnawaveExternalSquadUuid || "—"}</p>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </FormSection>
     </div>
   );
 }

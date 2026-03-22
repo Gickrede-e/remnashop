@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export function AsyncActionButton({
   label,
@@ -11,7 +12,8 @@ export function AsyncActionButton({
   variant = "secondary",
   endpoint,
   method = "POST",
-  confirmMessage
+  confirmMessage,
+  className
 }: {
   label: string;
   pendingLabel: string;
@@ -19,6 +21,7 @@ export function AsyncActionButton({
   endpoint: string;
   method?: "POST" | "PATCH" | "DELETE";
   confirmMessage?: string;
+  className?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -28,21 +31,33 @@ export function AsyncActionButton({
       type="button"
       size="sm"
       variant={variant}
-      className="w-full sm:w-auto"
+      className={cn("w-full justify-center sm:min-w-[9.5rem] sm:w-auto", className)}
       disabled={pending}
       onClick={() =>
         startTransition(async () => {
-          if (confirmMessage && !window.confirm(confirmMessage)) {
-            return;
-          }
+          try {
+            if (confirmMessage && !window.confirm(confirmMessage)) {
+              return;
+            }
 
-          const response = await fetch(endpoint, { method });
-          if (!response.ok) {
-            const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-            window.alert(payload?.error ?? "Не удалось выполнить действие");
-            return;
+            const response = await fetch(endpoint, { method });
+            if (!response.ok) {
+              const payload = (await response.json().catch(() => null)) as
+                | { error?: string | { message?: string } }
+                | null;
+              const error =
+                typeof payload?.error === "string"
+                  ? payload.error
+                  : payload?.error?.message ?? "Не удалось выполнить действие";
+
+              window.alert(error);
+              return;
+            }
+
+            router.refresh();
+          } catch {
+            window.alert("Не удалось выполнить действие");
           }
-          router.refresh();
         })
       }
     >
