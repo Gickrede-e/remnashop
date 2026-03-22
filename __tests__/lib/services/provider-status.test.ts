@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockEnv } = vi.hoisted(() => ({
-  mockEnv: {
+const { mockEnv, envReads } = vi.hoisted(() => {
+  const state = {
     REMNAWAVE_BASE_URL: "https://your-panel.example.com",
     REMNAWAVE_API_TOKEN: "placeholder_token",
     YOOKASSA_SHOP_ID: "123456",
@@ -9,8 +9,22 @@ const { mockEnv } = vi.hoisted(() => ({
     PLATEGA_API_KEY: "platega_placeholder_key",
     PLATEGA_WEBHOOK_SECRET: "platega_placeholder_secret",
     PLATEGA_MERCHANT_ID: ""
-  }
-}));
+  };
+  const reads: string[] = [];
+
+  return {
+    envReads: reads,
+    mockEnv: new Proxy(state, {
+      get(target, property, receiver) {
+        if (typeof property === "string") {
+          reads.push(property);
+        }
+
+        return Reflect.get(target, property, receiver);
+      }
+    })
+  };
+});
 
 vi.mock("@/lib/env", () => ({ env: mockEnv }));
 
@@ -19,6 +33,7 @@ import { getProviderStatuses } from "@/lib/services/provider-status";
 describe("getProviderStatuses", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    envReads.length = 0;
     mockEnv.REMNAWAVE_BASE_URL = "https://your-panel.example.com";
     mockEnv.REMNAWAVE_API_TOKEN = "placeholder_token";
     mockEnv.YOOKASSA_SHOP_ID = "123456";
@@ -34,10 +49,43 @@ describe("getProviderStatuses", () => {
     const result = await getProviderStatuses();
 
     expect(fetchSpy).not.toHaveBeenCalled();
-    expect(result.map((item) => item.status)).toEqual([
-      "not_configured",
-      "not_configured",
-      "not_configured"
+    expect(envReads).toEqual(
+      expect.arrayContaining([
+        "REMNAWAVE_BASE_URL",
+        "REMNAWAVE_API_TOKEN",
+        "YOOKASSA_SHOP_ID",
+        "YOOKASSA_SECRET_KEY",
+        "PLATEGA_API_KEY",
+        "PLATEGA_WEBHOOK_SECRET",
+        "PLATEGA_MERCHANT_ID"
+      ])
+    );
+    expect(result).toEqual([
+      {
+        label: "Remnawave",
+        status: "not_configured",
+        summary: "Не настроен",
+        detail: "placeholder config",
+        checkedAt: expect.stringMatching(
+          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/
+        )
+      },
+      {
+        label: "YooKassa",
+        status: "not_configured",
+        summary: "Не настроен",
+        detail: "placeholder config",
+        checkedAt: expect.any(String)
+      },
+      {
+        label: "Platega",
+        status: "not_configured",
+        summary: "Не настроен",
+        detail: "placeholder config",
+        checkedAt: expect.any(String)
+      }
     ]);
+    expect(result[0]?.checkedAt).toBe(result[1]?.checkedAt);
+    expect(result[1]?.checkedAt).toBe(result[2]?.checkedAt);
   });
 });
