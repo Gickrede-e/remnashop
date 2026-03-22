@@ -108,6 +108,27 @@ describe("getProviderStatuses", () => {
     expect(result[1]?.checkedAt).toBe(result[2]?.checkedAt);
   });
 
+  it("marks providers as not_configured without probing when required values are empty", async () => {
+    mockEnv.REMNAWAVE_BASE_URL = "https://panel.example.com";
+    mockEnv.REMNAWAVE_API_TOKEN = "";
+    mockEnv.YOOKASSA_SHOP_ID = "shop-id";
+    mockEnv.YOOKASSA_SECRET_KEY = "";
+    mockEnv.PLATEGA_API_KEY = "";
+    mockEnv.PLATEGA_WEBHOOK_SECRET = "platega-real-secret";
+    mockEnv.PLATEGA_MERCHANT_ID = "merchant-1";
+
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    const result = await getProviderStatuses();
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(result.map((item) => item.status)).toEqual([
+      "not_configured",
+      "not_configured",
+      "not_configured"
+    ]);
+  });
+
   it("marks a provider as available when the probe returns ok", async () => {
     mockEnv.REMNAWAVE_BASE_URL = "https://panel.example.com";
     mockEnv.REMNAWAVE_API_TOKEN = "real-token";

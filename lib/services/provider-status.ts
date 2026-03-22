@@ -68,6 +68,10 @@ function hasPlaceholderValue(value: string, placeholders: readonly string[]) {
   return placeholders.includes(value);
 }
 
+function isMissingValue(value: string) {
+  return value.trim().length === 0;
+}
+
 function stripTrailingSlash(value: string) {
   return value.replace(/\/+$/, "");
 }
@@ -91,12 +95,19 @@ function getPlaceholderFlags() {
 
   return {
     remnawave:
+      isMissingValue(remnawaveBaseUrl) ||
+      isMissingValue(remnawaveApiToken) ||
       hasPlaceholderValue(remnawaveBaseUrl, placeholderConfig.remnawaveBaseUrls) ||
       hasPlaceholderValue(remnawaveApiToken, placeholderConfig.remnawaveApiTokens),
     yookassa:
+      isMissingValue(yookassaShopId) ||
+      isMissingValue(yookassaSecretKey) ||
       hasPlaceholderValue(yookassaShopId, placeholderConfig.yookassaShopIds) ||
       hasPlaceholderValue(yookassaSecretKey, placeholderConfig.yookassaSecretKeys),
     platega:
+      isMissingValue(plategaApiKey) ||
+      isMissingValue(plategaWebhookSecret) ||
+      isMissingValue(plategaMerchantId) ||
       hasPlaceholderValue(plategaApiKey, placeholderConfig.plategaApiKeys) ||
       hasPlaceholderValue(plategaWebhookSecret, placeholderConfig.plategaWebhookSecrets) ||
       !plategaMerchantId
