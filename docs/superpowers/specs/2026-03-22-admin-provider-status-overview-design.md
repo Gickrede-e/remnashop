@@ -51,6 +51,8 @@ Each provider row returns:
 - `detail`: concise technical explanation;
 - `checkedAt`: ISO timestamp for when the probe completed.
 
+`checkedAt` is helper metadata for logging, tests, and future refresh UX. It is not rendered in the first version of the admin overview block.
+
 Display labels:
 
 - `available` -> `Доступен`
@@ -67,13 +69,20 @@ Common rules:
 - short hard timeout per provider;
 - `cache: "no-store"`;
 - explicit classification for config, auth, network, timeout, and unknown failures;
-- placeholder or empty environment values should yield `not_configured` without making a remote request.
+- placeholder or empty environment values should yield `not_configured` without making a remote request;
+- if a provider does not already have a safe, known read-only probe in the current codebase, the implementation plan must include provider-doc lookup and explicit endpoint selection before coding starts.
 
 Provider rules:
 
 - `Remnawave`: authenticated lightweight read request against the Remnawave API.
 - `YooKassa`: authenticated lightweight read request against the official YooKassa API using the existing Basic auth pattern.
 - `Platega`: authenticated lightweight read request against the Platega API using the existing auth pattern.
+
+Known `not_configured` heuristics must be explicit rather than inferred ad hoc:
+
+- `Remnawave`: empty values, `https://your-panel.example.com`, or `placeholder_token`.
+- `YooKassa`: empty values, `123456`, or `test_secret_key`.
+- `Platega`: empty values or placeholder defaults such as `platega_placeholder_key` and `platega_placeholder_secret`.
 
 ### UI Changes
 
