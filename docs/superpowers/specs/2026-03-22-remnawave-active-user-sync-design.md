@@ -57,13 +57,22 @@ Base algorithm:
 3. Replace characters outside `[a-z0-9_-]` with `_`.
 4. Collapse repeated underscores.
 5. Trim leading and trailing underscores.
-6. Prefix with `gs_`.
+6. If the normalized value is empty, use `user`.
+7. Build the primary username as `gs_{normalizedLocalPart}`.
+8. If the primary username is longer than `36` characters, trim only the local-part segment so the final string remains within the limit.
 
-If the result is empty, too short, too long, or collides with an existing Remnawave username, generate a safe fallback:
+Deterministic fallback:
 
-- `gs_{normalizedLocalPart}_{shortId}`
+- `shortId = user.id.slice(-10).toLowerCase()`
+- `fallback = gs_{trimmedLocalPart}_{shortId}`
 
-`shortId` is a short deterministic suffix derived from the local user id to reduce collisions.
+`trimmedLocalPart` must be shortened so the full fallback still fits within `36` characters while preserving the entire `shortId`.
+
+The fallback is used when:
+
+- the primary username is already occupied by another remote user
+- the primary username is unsafe to attach because the remote email does not match the local email
+- the primary username is otherwise invalid after normalization
 
 The generated username must always respect Remnawave constraints:
 
@@ -93,13 +102,16 @@ Expected behavior:
 
 1. If the local user already has `remnawaveUuid`, return it immediately unless the sync flow explicitly detects that the remote record no longer exists.
 2. Compute the preferred `gs_*` username from the email and local id.
-3. Try `GET /api/users/by-username/{username}` with the preferred username.
-4. If found, attach that remote user to the local user and persist `remnawaveUuid`, `remnawaveUsername`, and `remnawaveShortUuid`.
-5. If not found, try `GET /api/users/by-email/{email}`.
-6. From the email results, only consider users whose `username` starts with `gs_`.
-7. If exactly one eligible `gs_` user exists, attach it.
-8. If multiple eligible `gs_` users exist, mark the case as skipped because the match is ambiguous.
-9. If no eligible user exists, create a new user in Remnawave with the preferred username or fallback username.
+3. Try `GET /api/users/by-username/{username}` with the primary username.
+4. If the username exists, attach it only when both conditions hold:
+   - the remote `email` matches the local user email
+   - the remote `uuid` is not already linked to a different local user
+5. If the username exists but either condition fails, treat that username as occupied and do not attach it.
+6. Try `GET /api/users/by-email/{email}`.
+7. From the email results, only consider users whose `username` starts with `gs_`.
+8. If exactly one eligible `gs_` user exists, attach it only if its `uuid` is not already linked to a different local user.
+9. If multiple eligible `gs_` users exist, mark the case as skipped because the match is ambiguous.
+10. If no eligible user exists, create a new user in Remnawave with the primary username when it is available, otherwise with the deterministic fallback username.
 
 This keeps a single attach/create rule shared by:
 
@@ -122,7 +134,7 @@ In that case, the code should:
 
 ### Candidate set
 
-The new bulk sync action processes only local users whose subscription status is `ACTIVE`.
+The new bulk sync action processes only local users whose subscription status is `ACTIVE` and whose subscription is still valid at sync time.
 
 This includes users who:
 
@@ -131,6 +143,7 @@ This includes users who:
 - are already linked and need a snapshot refresh
 
 Users without an `ACTIVE` subscription are excluded entirely.
+Users whose `expiresAt` is in the past are excluded even if the local status was not yet cleaned up by another process.
 
 ### Service contract
 
@@ -209,9 +222,11 @@ These rules are mandatory to avoid cross-project contamination in Remnawave:
 
 - never rename existing non-`gs_` remote users
 - never auto-attach a non-`gs_` remote user found by email
+- never auto-attach a remote user whose email does not match the local user email
+- never attach a remote uuid that is already linked to a different local user in the site database
 - if email lookup returns multiple `gs_` matches, skip instead of guessing
 - if email lookup returns only non-`gs_` matches, skip
-- if username lookup finds a `gs_*` user, it is safe to attach
+- if username lookup finds a `gs_*` user, it is safe to attach only when email matches and the uuid is not already linked elsewhere locally
 
 ## Error Handling
 
@@ -249,13 +264,15 @@ Store counts and identifiers for skipped or failed records in the log `details`.
 Add tests for:
 
 1. username generation
-2. attach by expected `gs_*` username
+2. attach by expected `gs_*` username only when remote email matches local email
 3. attach by email only when the remote record is `gs_*`
 4. skip when email lookup returns only non-`gs_` users
 5. skip when email lookup returns multiple `gs_` matches
 6. create when nothing is found
 7. recreate or reattach when stored `remnawaveUuid` no longer resolves
 8. bulk route returns summary counts
+9. skip when a candidate remote uuid is already linked to a different local user
+10. deterministic fallback username preserves the suffix and stays within `36` characters
 
 ### Manual verification
 
