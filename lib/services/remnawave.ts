@@ -206,3 +206,74 @@ export async function getRemnawaveSubscriptionByShortUuid(shortUuid: string) {
     `/api/subscriptions/by-short-uuid/${shortUuid}`
   );
 }
+
+export type RemnawaveDevice = {
+  hwid: string;
+  platform: string | null;
+  osVersion: string | null;
+  deviceModel: string | null;
+  userAgent: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+function normalizeDevice(payload: Record<string, unknown>): RemnawaveDevice {
+  return {
+    hwid: String(payload.hwid ?? ""),
+    platform: toOptionalString(payload.platform),
+    osVersion: toOptionalString(payload.osVersion),
+    deviceModel: toOptionalString(payload.deviceModel),
+    userAgent: toOptionalString(payload.userAgent),
+    createdAt: String(payload.createdAt ?? ""),
+    updatedAt: String(payload.updatedAt ?? "")
+  };
+}
+
+export async function getUserDevices(userUuid: string): Promise<{ devices: RemnawaveDevice[]; total: number }> {
+  const data = await remnawaveRequest<{ devices: Array<Record<string, unknown>>; total: number }>(
+    `/api/hwid/devices/${userUuid}`
+  );
+  return {
+    devices: data.devices.map(normalizeDevice),
+    total: data.total
+  };
+}
+
+export async function deleteUserDevice(
+  userUuid: string,
+  hwid: string
+): Promise<{ devices: RemnawaveDevice[]; total: number }> {
+  const data = await remnawaveRequest<{ devices: Array<Record<string, unknown>>; total: number }>(
+    "/api/hwid/devices/delete",
+    {
+      method: "POST",
+      body: JSON.stringify({ userUuid, hwid })
+    }
+  );
+  return {
+    devices: data.devices.map(normalizeDevice),
+    total: data.total
+  };
+}
+
+export async function deleteAllUserDevices(userUuid: string): Promise<{ total: number }> {
+  const data = await remnawaveRequest<{ devices: Array<Record<string, unknown>>; total: number }>(
+    "/api/hwid/devices/delete-all",
+    {
+      method: "POST",
+      body: JSON.stringify({ userUuid })
+    }
+  );
+  return { total: data.total };
+}
+
+export async function revokeRemnawaveSubscription(uuid: string): Promise<RemnawaveUserSnapshot> {
+  const data = await remnawaveRequest<Record<string, unknown>>(
+    `/api/users/${uuid}/actions/revoke`,
+    {
+      method: "POST",
+      body: JSON.stringify({})
+    }
+  );
+  return normalizeUser(data);
+}
