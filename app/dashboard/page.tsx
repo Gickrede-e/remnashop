@@ -50,6 +50,7 @@ export default async function DashboardPage() {
         }
         referralLink={referralLink}
         externalSubscriptionUrl={externalSubscriptionUrl}
+        remnawaveUuid={activeUser?.remnawaveUuid ?? null}
       />
     </div>
   );

@@ -2,6 +2,7 @@ import type { ComponentProps } from "react";
 import Link from "next/link";
 import { CreditCard, ExternalLink, Share2 } from "lucide-react";
 
+import { ReissueSubscriptionButton } from "@/components/blocks/dashboard/reissue-subscription-button";
 import { SubscriptionStatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +20,7 @@ type DashboardOverviewBlocksProps = {
   } | null;
   referralLink: string;
   externalSubscriptionUrl: string | null;
+  remnawaveUuid: string | null;
 };
 
 function getSubscriptionMessage(subscription: DashboardOverviewBlocksProps["subscription"]) {
@@ -41,7 +43,7 @@ function getSubscriptionMessage(subscription: DashboardOverviewBlocksProps["subs
   return "Доступ сейчас отключён. Обновите подписку и проверьте ссылку для подключения.";
 }
 
-function SubscriptionSnapshot({ subscription, externalSubscriptionUrl }: Pick<DashboardOverviewBlocksProps, "subscription" | "externalSubscriptionUrl">) {
+function SubscriptionSnapshot({ subscription, externalSubscriptionUrl, remnawaveUuid }: Pick<DashboardOverviewBlocksProps, "subscription" | "externalSubscriptionUrl" | "remnawaveUuid">) {
   return (
     <Card className="surface-feature">
       <CardHeader className="space-y-4 p-5 sm:p-6">
@@ -93,6 +95,9 @@ function SubscriptionSnapshot({ subscription, externalSubscriptionUrl }: Pick<Da
           ) : (
             null
           )}
+          {subscription?.status === "ACTIVE" && remnawaveUuid ? (
+            <ReissueSubscriptionButton />
+          ) : null}
         </div>
       </CardContent>
     </Card>
@@ -134,7 +139,7 @@ function ReferralAccess({ referralLink }: Pick<DashboardOverviewBlocksProps, "re
 export function DashboardOverviewBlocks(props: DashboardOverviewBlocksProps) {
   return (
     <div className="grid gap-4 sm:gap-5">
-      <SubscriptionSnapshot subscription={props.subscription} externalSubscriptionUrl={props.externalSubscriptionUrl} />
+      <SubscriptionSnapshot subscription={props.subscription} externalSubscriptionUrl={props.externalSubscriptionUrl} remnawaveUuid={props.remnawaveUuid} />
       <ReferralAccess referralLink={props.referralLink} />
     </div>
   );
