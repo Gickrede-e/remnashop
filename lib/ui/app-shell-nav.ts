@@ -13,11 +13,12 @@ type SecondaryNavOptions = {
 const dashboardPrimaryNavItems: AppNavItem[] = [
   { href: "/dashboard", label: "Обзор", slot: "primary" },
   { href: "/dashboard/buy", label: "Купить", slot: "primary" },
-  { href: "/dashboard/history", label: "История", slot: "primary" },
+  { href: "/dashboard/devices", label: "Устройства", slot: "primary" },
   { href: "#more", label: "Ещё", slot: "primary" }
 ];
 
 const dashboardSecondaryNavItems: AppNavItem[] = [
+  { href: "/dashboard/history", label: "История", slot: "secondary" },
   { href: "/dashboard/referrals", label: "Рефералы", slot: "secondary" }
 ];
 
