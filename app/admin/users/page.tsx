@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { AdminRecordCard, AdminRecordEmptyState, AdminRecordList } from "@/components/blocks/admin/admin-record-list";
+import { ActiveUsersSyncButton } from "@/components/admin/active-users-sync-button";
 import { AdminUserActions } from "@/components/admin/user-actions";
 import { ScreenHeader } from "@/components/shell/screen-header";
 import { SubscriptionStatusBadge } from "@/components/shared/status-badge";
@@ -43,21 +44,24 @@ export default async function AdminUsersPage({ searchParams }: UsersPageProps) {
         title="Список пользователей"
         description="Карточки на телефоне и таблица на широких экранах используют одни и те же данные и действия."
         controls={
-          <form className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
-            <Input
-              type="text"
-              name="search"
-              defaultValue={search}
-              placeholder="Поиск по email"
-              aria-label="Поиск пользователя по email"
-            />
-            <Button type="submit" variant="secondary">
-              Найти
-            </Button>
-            <Button asChild variant="ghost">
-              <Link href="/admin/users">Сбросить</Link>
-            </Button>
-          </form>
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-start">
+            <form className="grid flex-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+              <Input
+                type="text"
+                name="search"
+                defaultValue={search}
+                placeholder="Поиск по email"
+                aria-label="Поиск пользователя по email"
+              />
+              <Button type="submit" variant="secondary">
+                Найти
+              </Button>
+              <Button asChild variant="ghost">
+                <Link href="/admin/users">Сбросить</Link>
+              </Button>
+            </form>
+            <ActiveUsersSyncButton />
+          </div>
         }
         summary={
           <div className="surface-soft grid gap-3 p-4 sm:grid-cols-2">

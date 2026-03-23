@@ -3,6 +3,7 @@ import { env } from "@/lib/env";
 export type RemnawaveUserSnapshot = {
   uuid: string;
   username: string;
+  email?: string | null;
   shortUuid?: string | null;
   status?: string | null;
   expireAt?: string | null;
@@ -16,6 +17,18 @@ type RemnawaveEnvelope<T> = {
   data?: T;
   result?: T;
 };
+
+class RemnawaveRequestError extends Error {
+  status: number;
+  body: string;
+
+  constructor(status: number, body: string) {
+    super(`Remnawave request failed: ${status} ${body}`);
+    this.name = "RemnawaveRequestError";
+    this.status = status;
+    this.body = body;
+  }
+}
 
 function toOptionalString(value: unknown) {
   return typeof value === "string" && value.length > 0 ? value : null;
@@ -37,6 +50,17 @@ function unwrap<T>(value: RemnawaveEnvelope<T> | T): T {
   return value as T;
 }
 
+function withOptionalHwidDeviceLimit<T extends { hwidDeviceLimit?: number | null }>(input: T) {
+  const { hwidDeviceLimit, ...rest } = input;
+
+  return hwidDeviceLimit == null
+    ? rest
+    : {
+        ...rest,
+        hwidDeviceLimit
+      };
+}
+
 function normalizeUser(payload: Record<string, unknown>): RemnawaveUserSnapshot {
   const userTraffic =
     typeof payload.userTraffic === "object" && payload.userTraffic !== null
@@ -52,6 +76,7 @@ function normalizeUser(payload: Record<string, unknown>): RemnawaveUserSnapshot 
   return {
     uuid: String(payload.uuid ?? payload.id ?? ""),
     username: String(payload.username ?? ""),
+    email: toOptionalString(payload.email),
     shortUuid,
     status: payload.status ? String(payload.status) : null,
     expireAt: toOptionalString(payload.expireAt) ?? toOptionalString(payload.expire_at),
@@ -79,13 +104,25 @@ async function remnawaveRequest<T>(path: string, init?: RequestInit) {
   });
 
   const text = await response.text();
-  const json = text ? (JSON.parse(text) as unknown) : null;
 
   if (!response.ok) {
-    throw new Error(`Remnawave request failed: ${response.status} ${text}`);
+    throw new RemnawaveRequestError(response.status, text);
   }
 
+  const json = text ? (JSON.parse(text) as unknown) : null;
   return unwrap<T>(json as RemnawaveEnvelope<T>);
+}
+
+export function isRemnawaveNotFoundError(error: unknown) {
+  return error instanceof RemnawaveRequestError && error.status === 404;
+}
+
+export function isRemnawaveRecoverableIdentityError(error: unknown) {
+  return isRemnawaveNotFoundError(error) || (
+    error instanceof RemnawaveRequestError &&
+    error.status === 400 &&
+    /invalid uuid/i.test(error.body)
+  );
 }
 
 export async function createRemnawaveUser(input: {
@@ -103,7 +140,7 @@ export async function createRemnawaveUser(input: {
 }) {
   const data = await remnawaveRequest<Record<string, unknown>>("/api/users", {
     method: "POST",
-    body: JSON.stringify(input)
+    body: JSON.stringify(withOptionalHwidDeviceLimit(input))
   });
   return normalizeUser(data);
 }
@@ -113,8 +150,22 @@ export async function getRemnawaveUser(uuid: string) {
   return normalizeUser(data);
 }
 
+export async function getRemnawaveUserByUsername(username: string) {
+  const data = await remnawaveRequest<Record<string, unknown>>(
+    `/api/users/by-username/${encodeURIComponent(username)}`
+  );
+  return normalizeUser(data);
+}
+
 export async function listRemnawaveUsers() {
   const data = await remnawaveRequest<Array<Record<string, unknown>>>("/api/users");
+  return data.map(normalizeUser);
+}
+
+export async function listRemnawaveUsersByEmail(email: string) {
+  const data = await remnawaveRequest<Array<Record<string, unknown>>>(
+    `/api/users/by-email/${encodeURIComponent(email)}`
+  );
   return data.map(normalizeUser);
 }
 
@@ -136,7 +187,7 @@ export async function updateRemnawaveUser(
     method: "PATCH",
     body: JSON.stringify({
       uuid,
-      ...input
+      ...withOptionalHwidDeviceLimit(input)
     })
   });
   return normalizeUser(data);
@@ -154,4 +205,75 @@ export async function getRemnawaveSubscriptionByShortUuid(shortUuid: string) {
   return remnawaveRequest<Record<string, unknown>>(
     `/api/subscriptions/by-short-uuid/${shortUuid}`
   );
+}
+
+export type RemnawaveDevice = {
+  hwid: string;
+  platform: string | null;
+  osVersion: string | null;
+  deviceModel: string | null;
+  userAgent: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+function normalizeDevice(payload: Record<string, unknown>): RemnawaveDevice {
+  return {
+    hwid: String(payload.hwid ?? ""),
+    platform: toOptionalString(payload.platform),
+    osVersion: toOptionalString(payload.osVersion),
+    deviceModel: toOptionalString(payload.deviceModel),
+    userAgent: toOptionalString(payload.userAgent),
+    createdAt: String(payload.createdAt ?? ""),
+    updatedAt: String(payload.updatedAt ?? "")
+  };
+}
+
+export async function getUserDevices(userUuid: string): Promise<{ devices: RemnawaveDevice[]; total: number }> {
+  const data = await remnawaveRequest<{ devices: Array<Record<string, unknown>>; total: number }>(
+    `/api/hwid/devices/${userUuid}`
+  );
+  return {
+    devices: data.devices.map(normalizeDevice),
+    total: data.total
+  };
+}
+
+export async function deleteUserDevice(
+  userUuid: string,
+  hwid: string
+): Promise<{ devices: RemnawaveDevice[]; total: number }> {
+  const data = await remnawaveRequest<{ devices: Array<Record<string, unknown>>; total: number }>(
+    "/api/hwid/devices/delete",
+    {
+      method: "POST",
+      body: JSON.stringify({ userUuid, hwid })
+    }
+  );
+  return {
+    devices: data.devices.map(normalizeDevice),
+    total: data.total
+  };
+}
+
+export async function deleteAllUserDevices(userUuid: string): Promise<{ total: number }> {
+  const data = await remnawaveRequest<{ devices: Array<Record<string, unknown>>; total: number }>(
+    "/api/hwid/devices/delete-all",
+    {
+      method: "POST",
+      body: JSON.stringify({ userUuid })
+    }
+  );
+  return { total: data.total };
+}
+
+export async function revokeRemnawaveSubscription(uuid: string): Promise<RemnawaveUserSnapshot> {
+  const data = await remnawaveRequest<Record<string, unknown>>(
+    `/api/users/${uuid}/actions/revoke`,
+    {
+      method: "POST",
+      body: JSON.stringify({})
+    }
+  );
+  return normalizeUser(data);
 }

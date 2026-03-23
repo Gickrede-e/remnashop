@@ -11,20 +11,22 @@ describe("app shell nav", () => {
     expect(getPrimaryNavItems("dashboard").map((item) => item.href)).toEqual([
       "/dashboard",
       "/dashboard/buy",
-      "/dashboard/history",
+      "/dashboard/devices",
       "#more"
     ]);
     expect(getPrimaryNavItems("dashboard").map((item) => item.label)).toEqual([
       "Обзор",
       "Купить",
-      "История",
+      "Устройства",
       "Ещё"
     ]);
   });
 
-  it("moves referrals into dashboard secondary nav", () => {
-    expect(getSecondaryNavItems("dashboard").map((item) => item.href)).toContain("/dashboard/referrals");
-    expect(getSecondaryNavItems("dashboard").map((item) => item.href)).not.toContain("/admin");
+  it("moves referrals and history into dashboard secondary nav", () => {
+    const hrefs = getSecondaryNavItems("dashboard").map((item) => item.href);
+    expect(hrefs).toContain("/dashboard/referrals");
+    expect(hrefs).toContain("/dashboard/history");
+    expect(hrefs).not.toContain("/admin");
   });
 
   it("adds an admin shortcut to dashboard secondary nav only for admin sessions", () => {
