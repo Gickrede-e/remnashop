@@ -66,7 +66,7 @@ export function AppMoreSheet({ area, items, open, contentId, onOpenChange }: App
                 </span>
                 <span className="min-w-0 truncate text-base font-medium text-white">{item.label}</span>
               </span>
-              <ArrowRight className="h-4 w-4 shrink-0 text-zinc-500" />
+              <ArrowRight className="h-4 w-4 shrink-0 text-zinc-400" />
             </Link>
           ))}
         </div>

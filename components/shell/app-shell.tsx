@@ -81,6 +81,9 @@ export function AppShell({ area, canAccessAdmin = false, children }: AppShellPro
   const topbarPrimaryItems = primaryItems.filter((item) => item.href !== "#more");
   const homeHref = area === "admin" ? "/admin" : "/dashboard";
 
+  const areaSwitchHref = area === "admin" ? "/dashboard" : canAccessAdmin ? "/admin" : undefined;
+  const areaSwitchLabel = area === "admin" ? "Кабинет" : canAccessAdmin ? "Админка" : undefined;
+
   return (
     <div className="app-shell">
       <AppTopbar
@@ -90,6 +93,8 @@ export function AppShell({ area, canAccessAdmin = false, children }: AppShellPro
         moreOpen={moreOpen}
         moreSheetId={moreSheetId}
         onOpenMore={() => setMoreOpen(true)}
+        areaSwitchHref={areaSwitchHref}
+        areaSwitchLabel={areaSwitchLabel}
       />
 
       <div className="container overflow-x-hidden py-4 pb-28 sm:py-6 sm:pb-32 md:pb-8 lg:py-8 lg:pb-10">

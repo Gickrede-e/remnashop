@@ -22,6 +22,8 @@ type AppTopbarProps = {
   moreOpen: boolean;
   moreSheetId?: string;
   onOpenMore: () => void;
+  areaSwitchHref?: string;
+  areaSwitchLabel?: string;
 };
 
 export function AppTopbar({
@@ -30,7 +32,9 @@ export function AppTopbar({
   isMoreActive,
   moreOpen,
   moreSheetId,
-  onOpenMore
+  onOpenMore,
+  areaSwitchHref,
+  areaSwitchLabel
 }: AppTopbarProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[color-mix(in_srgb,var(--app-bg)_92%,transparent)]">
@@ -38,6 +42,14 @@ export function AppTopbar({
         <div className="flex items-center justify-between gap-3 md:gap-6">
           <div className="flex min-w-0 items-center gap-3">
             <Logo compact href={homeHref} />
+            {areaSwitchHref && areaSwitchLabel && (
+              <Link
+                href={areaSwitchHref}
+                className="hidden items-center rounded-lg border border-white/10 px-2.5 py-1 text-xs font-medium text-zinc-400 transition hover:border-white/20 hover:text-white md:inline-flex"
+              >
+                {areaSwitchLabel}
+              </Link>
+            )}
           </div>
 
           <nav className="hidden min-w-0 flex-1 items-center justify-center gap-2 md:flex">

@@ -37,12 +37,12 @@ export default async function AdminUsersPage({ searchParams }: UsersPageProps) {
       <ScreenHeader
         eyebrow="Админка"
         title="Пользователи"
-        description="Поиск, синхронизация и ручное управление доступом в mobile-first списке."
+        description="Поиск, управление доступом и ручная выдача подписок."
       />
 
       <AdminRecordList
         title="Список пользователей"
-        description="Карточки на телефоне и таблица на широких экранах используют одни и те же данные и действия."
+        description="Все зарегистрированные пользователи с возможностью управления доступом."
         controls={
           <div className="flex flex-col gap-2 lg:flex-row lg:items-start">
             <form className="grid flex-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
@@ -154,7 +154,7 @@ export default async function AdminUsersPage({ searchParams }: UsersPageProps) {
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-1">
-      <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{label}</p>
+      <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">{label}</p>
       <p className="text-sm font-medium text-white">{value}</p>
     </div>
   );

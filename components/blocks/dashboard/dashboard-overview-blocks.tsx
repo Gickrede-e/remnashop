@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react";
 import Link from "next/link";
-import { CreditCard, ExternalLink, Share2 } from "lucide-react";
+import { CreditCard, ExternalLink, Share2, ShieldCheck, Zap, Globe } from "lucide-react";
 
 import { ReissueSubscriptionButton } from "@/components/blocks/dashboard/reissue-subscription-button";
 import { SubscriptionStatusBadge } from "@/components/shared/status-badge";
@@ -29,7 +29,7 @@ function getSubscriptionMessage(subscription: DashboardOverviewBlocksProps["subs
   }
 
   if (subscription.status === "ACTIVE") {
-    return "Доступ активен. Ниже собраны продление и быстрый переход к subscription URL.";
+    return "Доступ активен. Ниже можно продлить подписку или перейти к настройке подключения.";
   }
 
   if (subscription.status === "PENDING") {
@@ -73,8 +73,20 @@ function SubscriptionSnapshot({ subscription, externalSubscriptionUrl, remnawave
             <OverviewRow label="Использовано" value={formatBytes(subscription.trafficUsedBytes)} />
           </div>
         ) : (
-          <div className="surface-soft p-4 text-sm leading-6 text-zinc-300">
-            После оплаты здесь появятся срок действия, лимит трафика и статус доступа.
+          <div className="surface-soft grid gap-3 p-4">
+            <p className="text-sm leading-6 text-zinc-300">После оплаты здесь появятся:</p>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {[
+                { icon: ShieldCheck, text: "Срок действия" },
+                { icon: Zap, text: "Лимит трафика" },
+                { icon: Globe, text: "Статус доступа" },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-2 rounded-lg border border-white/8 bg-white/[0.02] px-3 py-2">
+                  <item.icon className="h-4 w-4 shrink-0 text-zinc-400" />
+                  <span className="text-xs text-zinc-400">{item.text}</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -88,7 +100,7 @@ function SubscriptionSnapshot({ subscription, externalSubscriptionUrl, remnawave
         {externalSubscriptionUrl ? (
           <Button asChild variant="secondary" className="w-full justify-between">
             <a href={externalSubscriptionUrl} target="_blank" rel="noreferrer">
-              Открыть subscription URL
+              Ссылка для подключения
               <ExternalLink className="h-4 w-4" />
             </a>
           </Button>
@@ -122,7 +134,7 @@ function ReferralAccess({ referralLink }: Pick<DashboardOverviewBlocksProps, "re
       </CardHeader>
       <CardContent className="grid gap-4 p-5 pt-0 sm:p-6 sm:pt-0">
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-zinc-200">
-          <p className="mb-2 text-xs uppercase tracking-[0.18em] text-zinc-500">Реферальная ссылка</p>
+          <p className="mb-2 text-xs uppercase tracking-[0.18em] text-zinc-400">Реферальная ссылка</p>
           <p className="break-all">{referralLink || "Ссылка появится после загрузки профиля."}</p>
         </div>
         <Button asChild variant="secondary" className="w-full justify-between sm:w-auto">

@@ -19,7 +19,7 @@ export default async function AdminPlansPage() {
       <ScreenHeader
         eyebrow="Админка"
         title="Тарифы"
-        description="Сетка тарифов и ключевые статусы без desktop-heavy таблицы в первом экране."
+        description="Все тарифные планы и их текущие статусы."
         actions={
           <Button asChild>
             <Link href="/admin/plans/new">Создать тариф</Link>
@@ -105,7 +105,7 @@ export default async function AdminPlansPage() {
                     <TableRow key={plan.id}>
                       <TableCell>
                         <div className="font-medium text-white">{plan.name}</div>
-                        <div className="text-xs text-zinc-500">
+                        <div className="text-xs text-zinc-400">
                           {plan.slug} • {slugToRemnawaveTag(plan.slug)}
                         </div>
                       </TableCell>
@@ -158,7 +158,7 @@ export default async function AdminPlansPage() {
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-1">
-      <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{label}</p>
+      <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">{label}</p>
       <p className="text-sm font-medium text-white">{value}</p>
     </div>
   );

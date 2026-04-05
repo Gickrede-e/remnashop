@@ -13,7 +13,7 @@ export function EmptyState({
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
-      <CardContent className="text-sm text-zinc-500">
+      <CardContent className="text-sm text-zinc-400">
         Данные появятся здесь, когда начнутся действия пользователя или администратора.
       </CardContent>
     </Card>

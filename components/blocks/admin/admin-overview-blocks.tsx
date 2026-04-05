@@ -48,7 +48,7 @@ type AdminOverviewBlocksProps = {
 function MetricTile({ item, compact = false }: { item: AdminOverviewMetric; compact?: boolean }) {
   return (
     <div className={cn("rounded-[22px] border border-white/10 bg-white/[0.03]", compact ? "p-4" : "p-4 sm:p-5")}>
-      <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{item.label}</p>
+      <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">{item.label}</p>
       <p className={cn("mt-3 break-words font-semibold text-white", compact ? "text-xl" : "text-2xl sm:text-[1.75rem]")}>
         {item.value}
       </p>
@@ -85,7 +85,7 @@ function SummaryCard({
             <div key={row.label} className="flex items-start justify-between gap-4 border-b border-white/8 pb-3 last:border-b-0 last:pb-0">
               <div className="min-w-0">
                 <p className="text-sm text-zinc-300">{row.label}</p>
-                {row.description ? <p className="mt-1 text-xs leading-5 text-zinc-500">{row.description}</p> : null}
+                {row.description ? <p className="mt-1 text-xs leading-5 text-zinc-400">{row.description}</p> : null}
               </div>
               <p className="shrink-0 text-right text-sm font-semibold text-white">{row.value}</p>
             </div>
@@ -122,7 +122,7 @@ function QuickActionsCard({ actions }: { actions: AdminOverviewAction[] }) {
                 <span className="block text-sm font-medium text-white">{action.label}</span>
                 <span className="mt-1 block text-sm leading-5 text-zinc-400">{action.description}</span>
               </span>
-              <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-zinc-500 transition group-hover:text-zinc-200" />
+              <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-zinc-400 transition group-hover:text-zinc-200" />
             </Link>
           );
         })}
@@ -153,7 +153,7 @@ export function AdminProviderStatusSection({ statuses }: { statuses: ProviderSta
       <CardHeader className="p-5 pb-4 sm:p-6 sm:pb-5">
         <CardTitle className="text-lg text-white sm:text-xl">Статусы модулей</CardTitle>
         <CardDescription className="text-sm leading-6 text-zinc-400">
-          Быстрая серверная проверка интеграций без перехода в отдельные журналы и ручные refresh-действия.
+          Текущее состояние подключённых платёжных систем и сервисов.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-3 p-5 pt-0 sm:p-6 sm:pt-0">
@@ -166,7 +166,7 @@ export function AdminProviderStatusSection({ statuses }: { statuses: ProviderSta
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium text-white">{item.label}</p>
-                <p className="mt-1 text-xs leading-5 text-zinc-500">{item.detail}</p>
+                <p className="mt-1 text-xs leading-5 text-zinc-400">{item.detail}</p>
               </div>
               <span
                 className={cn(
@@ -193,7 +193,7 @@ export function AdminProviderStatusFallback() {
       <CardHeader className="p-5 pb-4 sm:p-6 sm:pb-5">
         <CardTitle className="text-lg text-white sm:text-xl">Статусы модулей</CardTitle>
         <CardDescription className="text-sm leading-6 text-zinc-400">
-          Быстрая серверная проверка интеграций без перехода в отдельные журналы и ручные refresh-действия.
+          Текущее состояние подключённых платёжных систем и сервисов.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-3 p-5 pt-0 sm:p-6 sm:pt-0">

@@ -660,7 +660,7 @@ export async function activateSubscriptionFromPayment(paymentId: string) {
     const remnawave = await ensureRemnawaveIdentity(payment.user, {
       expireAt: expiresAt,
       trafficLimitBytes: newTrafficLimit,
-      description: `GickVPN ${payment.plan.name}`,
+      description: `GickShop ${payment.plan.name}`,
       tag: remnawaveTag,
       activeInternalSquads: payment.plan.remnawaveInternalSquadUuids,
       externalSquadUuid: payment.plan.remnawaveExternalSquadUuid,
@@ -671,7 +671,7 @@ export async function activateSubscriptionFromPayment(paymentId: string) {
       expireAt: expiresAt.toISOString(),
       trafficLimitBytes: Number(newTrafficLimit),
       status: "ACTIVE",
-      description: `GickVPN ${payment.plan.name}`,
+      description: `GickShop ${payment.plan.name}`,
       tag: remnawaveTag,
       activeInternalSquads: payment.plan.remnawaveInternalSquadUuids,
       externalSquadUuid: payment.plan.remnawaveExternalSquadUuid,

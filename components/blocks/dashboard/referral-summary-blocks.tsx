@@ -30,7 +30,7 @@ type ReferralSummaryBlocksProps = {
 function SummaryChip({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-      <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{label}</p>
+      <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">{label}</p>
       <p className="mt-2 text-sm font-medium text-white">{value}</p>
     </div>
   );
@@ -62,7 +62,7 @@ function ReferralLinkCard({ referralLink, referredUsers, rewards }: ReferralSumm
 
       <CardContent className="grid gap-4 p-5 pt-0 sm:p-6 sm:pt-0">
         <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4 text-sm text-zinc-200">
-          <p className="mb-2 text-xs uppercase tracking-[0.18em] text-zinc-500">Ссылка для приглашений</p>
+          <p className="mb-2 text-xs uppercase tracking-[0.18em] text-zinc-400">Ссылка для приглашений</p>
           <p className="break-all">{referralLink || "Ссылка недоступна"}</p>
         </div>
 
@@ -102,7 +102,7 @@ function InvitedUsersSection({ referredUsers }: Pick<ReferralSummaryBlocksProps,
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 space-y-1">
                         <p className="text-sm font-medium text-white">{maskEmail(userItem.email)}</p>
-                        <p className="text-xs text-zinc-500">{hasPayment ? "Последний платёж зафиксирован" : "Ожидает успешный платёж"}</p>
+                        <p className="text-xs text-zinc-400">{hasPayment ? "Последний платёж зафиксирован" : "Ожидает успешный платёж"}</p>
                       </div>
                       <span className="inline-flex h-8 items-center rounded-full border border-white/10 bg-white/[0.04] px-3 text-xs text-zinc-300">
                         {hasPayment ? "Оплатил" : "Без оплаты"}
@@ -166,7 +166,7 @@ function RewardsSection({ rewards }: Pick<ReferralSummaryBlocksProps, "rewards">
                 <article key={reward.id} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-white">{maskEmail(reward.referredUser.email)}</p>
-                    <p className="text-xs text-zinc-500">{formatDateTime(reward.createdAt)}</p>
+                    <p className="text-xs text-zinc-400">{formatDateTime(reward.createdAt)}</p>
                   </div>
 
                   <div className="mt-4 grid gap-3">

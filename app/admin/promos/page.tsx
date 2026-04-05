@@ -19,7 +19,7 @@ export default async function AdminPromosPage() {
       <ScreenHeader
         eyebrow="Админка"
         title="Промокоды"
-        description="Список промокодов в card-first представлении для быстрых решений на телефоне."
+        description="Управление промокодами и скидками."
         actions={
           <Button asChild>
             <Link href="/admin/promos/new">Создать промокод</Link>
@@ -133,7 +133,7 @@ export default async function AdminPromosPage() {
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-1">
-      <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{label}</p>
+      <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">{label}</p>
       <p className="text-sm font-medium text-white">{value}</p>
     </div>
   );

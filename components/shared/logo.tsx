@@ -22,7 +22,7 @@ export function Logo({
       >
         <Shield className="h-5 w-5" />
       </span>
-      <span className={cn("font-semibold tracking-wide text-white", compact ? "text-base" : "text-lg")}>GickVPN</span>
+      <span className={cn("font-semibold tracking-wide text-white", compact ? "text-base" : "text-lg")}>GickShop</span>
     </Link>
   );
 }

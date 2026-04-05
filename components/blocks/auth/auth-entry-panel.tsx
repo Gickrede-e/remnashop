@@ -33,7 +33,7 @@ export function AuthEntryPanel({
             <p className="text-xs uppercase tracking-[0.24em] text-[var(--app-muted)]">
               {publicEnv.NEXT_PUBLIC_SITE_NAME}
             </p>
-            <span className="rounded-full border border-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-zinc-500">
+            <span className="rounded-full border border-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-zinc-400">
               Auth
             </span>
           </div>

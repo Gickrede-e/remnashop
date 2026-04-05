@@ -12,7 +12,7 @@ const rawEnv = {
   JWT_SECRET: process.env.JWT_SECRET ?? "development_only_change_me_to_a_long_secret",
   ADMIN_EMAILS: process.env.ADMIN_EMAILS ?? "",
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ?? "https://vpn.example.com",
-  NEXT_PUBLIC_SITE_NAME: process.env.NEXT_PUBLIC_SITE_NAME ?? "GickVPN",
+  NEXT_PUBLIC_SITE_NAME: process.env.NEXT_PUBLIC_SITE_NAME ?? "GickShop",
   NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ?? "",
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN ?? "",
   REMNAWAVE_BASE_URL: process.env.REMNAWAVE_BASE_URL ?? "https://your-panel.example.com",
@@ -29,7 +29,7 @@ const rawEnv = {
   SMTP_SECURE: process.env.SMTP_SECURE ?? "false",
   SMTP_USER: process.env.SMTP_USER ?? "notifications@example.com",
   SMTP_PASS: process.env.SMTP_PASS ?? "change_me",
-  EMAIL_FROM: process.env.EMAIL_FROM ?? "GickVPN <notifications@example.com>",
+  EMAIL_FROM: process.env.EMAIL_FROM ?? "GickShop <notifications@example.com>",
   REFERRAL_REWARD_TYPE: process.env.REFERRAL_REWARD_TYPE ?? "FREE_DAYS",
   REFERRAL_REWARD_VALUE: process.env.REFERRAL_REWARD_VALUE ?? "3",
   CRON_SECRET: process.env.CRON_SECRET ?? "change_me_internal_cron_secret"

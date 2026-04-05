@@ -40,12 +40,12 @@ export default async function AdminPaymentsPage({ searchParams }: PaymentsPagePr
       <ScreenHeader
         eyebrow="Админка"
         title="Платежи"
-        description="Mobile-first список транзакций с быстрым фильтром и локальной проверкой pending-операций."
+        description="Список транзакций с фильтрами и проверкой незавершённых операций."
       />
 
       <AdminRecordList
         title="Платёжные операции"
-        description="Сначала показываем понятные карточки для телефона, а таблицу оставляем только для широких экранов."
+        description="Все платежи с фильтрацией по статусу и платёжной системе."
         controls={
           <form className="grid gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto]">
             <select
@@ -170,7 +170,7 @@ export default async function AdminPaymentsPage({ searchParams }: PaymentsPagePr
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-1">
-      <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{label}</p>
+      <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">{label}</p>
       <p className="text-sm font-medium text-white">{value}</p>
     </div>
   );

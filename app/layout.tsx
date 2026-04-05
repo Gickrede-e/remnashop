@@ -5,8 +5,8 @@ import { Providers } from "@/components/providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "GickVPN",
-  description: "Магазин VPN-подписок GickVPN с личным кабинетом, оплатой и админкой."
+  title: "GickShop",
+  description: "Магазин VPN-подписок GickShop с личным кабинетом, оплатой и админкой."
 };
 
 export const viewport: Viewport = {

@@ -79,9 +79,9 @@ export async function notifyPaymentSucceeded(input: {
   await Promise.allSettled([
     sendEmailNotification({
       to: input.email,
-      subject: "GickVPN: подписка активирована",
+      subject: "GickShop: подписка активирована",
       html: `<p>Подписка <strong>${input.planName}</strong> активирована.</p><p>Действует до: ${expiryText}</p>`
     }),
-    sendTelegramNotification(`GickVPN: подписка ${input.planName} активирована для ${input.email}`)
+    sendTelegramNotification(`GickShop: подписка ${input.planName} активирована для ${input.email}`)
   ]);
 }

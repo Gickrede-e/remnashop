@@ -30,11 +30,11 @@ export default async function AdminDashboardPage() {
       <ScreenHeader
         eyebrow="Админка"
         title="Обзор"
-        description="Ключевые KPI, финансовый срез и ближайший операционный фокус без desktop-heavy перегруза."
+        description="Основные показатели, финансы и быстрые действия — всё на одном экране."
       />
       <AdminOverviewBlocks
         summaryTitle="Ключевой срез"
-        summaryDescription="Основные показатели по выручке, пользователям и активным подпискам без desktop-heavy перегруза."
+        summaryDescription="Основные показатели по выручке, пользователям и активным подпискам."
         primaryMetrics={[
           { label: "Доход сегодня", value: formatPrice(stats.revenueToday), hint: "Самый быстрый сигнал по текущему дню." },
           { label: "Активные подписки", value: String(stats.activeSubscriptions), hint: "Текущее число пользователей с доступом." },
@@ -49,7 +49,7 @@ export default async function AdminDashboardPage() {
         sections={[
           {
             title: "Фокус по выручке",
-            description: "Держим быстрый финансовый контекст рядом с KPI, но не в первом экране.",
+            description: "Детальная статистика по выручке за разные периоды.",
             items: [
               { label: "За неделю", value: formatPrice(stats.revenueWeek) },
               { label: "За месяц", value: formatPrice(stats.revenueMonth) },
@@ -72,7 +72,7 @@ export default async function AdminDashboardPage() {
           {
             href: "/admin/payments",
             label: "Платежи",
-            description: "Перейти к pending-операциям и ручной проверке платёжных статусов.",
+            description: "Перейти к незавершённым операциям и ручной проверке платёжных статусов.",
             icon: CreditCard
           },
           {

@@ -17,12 +17,12 @@ export default async function AdminLogsPage() {
       <ScreenHeader
         eyebrow="Админка"
         title="Логи"
-        description="Последние действия админов и системные записи в компактном mobile-first журнале."
+        description="Последние действия администраторов и системные события."
       />
 
       <AdminRecordList
         title="Журнал действий"
-        description="Показываем последние 50 записей с ключевым контекстом, а полную таблицу оставляем только для широких экранов."
+        description="Последние 50 записей с действиями и их контекстом."
         summary={
           <div className="surface-soft grid gap-3 p-4 sm:grid-cols-2">
             <SummaryItem label="Всего записей" value={String(result.total)} />
@@ -45,8 +45,8 @@ export default async function AdminLogsPage() {
                   subtitle={formatDateTime(log.createdAt)}
                   metadata={[
                     { label: "Админ", value: log.admin?.email ? maskEmail(log.admin.email) : "Система" },
-                    { label: "Сущность", value: log.targetType },
-                    { label: "Target ID", value: log.targetId }
+                    { label: "Раздел", value: log.targetType },
+                    { label: "Идентификатор", value: log.targetId }
                   ]}
                 />
               ))}
@@ -59,8 +59,8 @@ export default async function AdminLogsPage() {
                     <TableHead>Когда</TableHead>
                     <TableHead>Админ</TableHead>
                     <TableHead>Действие</TableHead>
-                    <TableHead>Сущность</TableHead>
-                    <TableHead>Target ID</TableHead>
+                    <TableHead>Раздел</TableHead>
+                    <TableHead>Идентификатор</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -86,7 +86,7 @@ export default async function AdminLogsPage() {
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-1">
-      <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{label}</p>
+      <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">{label}</p>
       <p className="text-sm font-medium text-white">{value}</p>
     </div>
   );

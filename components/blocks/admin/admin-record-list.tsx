@@ -54,7 +54,7 @@ export function AdminRecordCard({
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 space-y-1">
               <p className="break-all text-sm font-medium text-white">{title}</p>
-              {subtitle ? <p className="text-xs text-zinc-500">{subtitle}</p> : null}
+              {subtitle ? <p className="text-xs text-zinc-400">{subtitle}</p> : null}
             </div>
             {badge ? <div className="shrink-0">{badge}</div> : null}
           </div>
@@ -65,7 +65,7 @@ export function AdminRecordCard({
                 key={item.label}
                 className="flex items-start justify-between gap-4 border-t border-white/6 pt-2.5 first:border-t-0 first:pt-0"
               >
-                <dt className="shrink-0 text-xs uppercase tracking-[0.18em] text-zinc-500">{item.label}</dt>
+                <dt className="shrink-0 text-xs uppercase tracking-[0.18em] text-zinc-400">{item.label}</dt>
                 <dd className="min-w-0 break-words text-right text-sm text-white">{item.value}</dd>
               </div>
             ))}

@@ -9,7 +9,7 @@ export default function NotFound() {
       <Card className="mx-auto max-w-2xl">
         <CardHeader>
           <CardTitle>Страница не найдена</CardTitle>
-          <CardDescription>Проверьте адрес или вернитесь на главную страницу GickVPN.</CardDescription>
+          <CardDescription>Проверьте адрес или вернитесь на главную страницу GickShop.</CardDescription>
         </CardHeader>
         <CardContent>
           <Button asChild>

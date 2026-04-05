@@ -85,7 +85,7 @@ export function LoginForm({
       </form>
 
       <div className="space-y-3">
-        <p className="text-center text-xs uppercase tracking-[0.2em] text-zinc-500">или</p>
+        <p className="text-center text-xs uppercase tracking-[0.2em] text-zinc-400">или</p>
         <TelegramLoginButton botUsername={telegramUsername} nextPath={safeNextPath} />
       </div>
 

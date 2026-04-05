@@ -40,7 +40,7 @@ function PaymentHistorySummary({ payments }: PaymentHistoryListProps) {
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-1">
-      <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{label}</p>
+      <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">{label}</p>
       <p className="text-sm font-medium text-white">{value}</p>
     </div>
   );
@@ -61,7 +61,7 @@ function PaymentHistoryCard({ payment }: { payment: PaymentHistoryItem }) {
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 space-y-1">
           <p className="text-sm font-medium text-white">{payment.plan.name}</p>
-          <p className="text-xs text-zinc-500">{formatDateTime(payment.paidAt ?? payment.createdAt)}</p>
+          <p className="text-xs text-zinc-400">{formatDateTime(payment.paidAt ?? payment.createdAt)}</p>
         </div>
         <PaymentStatusBadge status={payment.status} />
       </div>
@@ -77,7 +77,7 @@ function PaymentHistoryCard({ payment }: { payment: PaymentHistoryItem }) {
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-      <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{label}</p>
+      <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">{label}</p>
       <p className="mt-2 break-words text-sm text-white">{value}</p>
     </div>
   );

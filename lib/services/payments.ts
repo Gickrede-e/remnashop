@@ -64,7 +64,7 @@ export async function createPaymentForUser(input: {
     if (input.provider === PaymentProvider.YOOKASSA) {
       const remote = await createYooKassaPayment({
         amount,
-        description: `GickVPN — Тариф ${plan.name}`,
+        description: `GickShop — Тариф ${plan.name}`,
         paymentId: payment.id,
         returnUrl
       });
@@ -81,7 +81,7 @@ export async function createPaymentForUser(input: {
 
     const remote = await createPlategaPayment({
       amount,
-      description: `GickVPN — Тариф ${plan.name}`,
+      description: `GickShop — Тариф ${plan.name}`,
       paymentId: payment.id,
       successUrl: returnUrl,
       failUrl,

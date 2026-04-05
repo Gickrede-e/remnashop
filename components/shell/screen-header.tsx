@@ -27,7 +27,7 @@ export function ScreenHeader({
     <div className={cn("flex items-start justify-between gap-4", compact ? "flex-col" : "flex-col sm:flex-row", className)}>
       <div className="min-w-0 space-y-2">
         {eyebrow ? (
-          <p className={cn(compact ? "text-[11px] tracking-[0.22em]" : "section-kicker", "uppercase text-zinc-500")}>
+          <p className={cn(compact ? "text-[11px] tracking-[0.22em]" : "section-kicker", "uppercase text-zinc-400")}>
             {eyebrow}
           </p>
         ) : null}

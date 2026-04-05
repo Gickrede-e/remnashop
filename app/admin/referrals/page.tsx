@@ -14,7 +14,7 @@ export default async function AdminReferralsPage() {
       <ScreenHeader
         eyebrow="Админка"
         title="Рефералы"
-        description="Top referrers и недавние награды без table-first перегруза на телефонах."
+        description="Лучшие рефереры и недавние начисленные награды."
       />
 
       <div className="surface-soft grid gap-3 p-4 sm:grid-cols-3">
@@ -131,7 +131,7 @@ export default async function AdminReferralsPage() {
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-1">
-      <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{label}</p>
+      <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">{label}</p>
       <p className="text-sm font-medium text-white">{value}</p>
     </div>
   );

@@ -112,7 +112,7 @@ export function PlanForm({
                   setValues((current) => ({ ...current, slug: slugify(event.target.value).slice(0, 16) }))
                 }
               />
-              <p className="break-all text-xs text-zinc-500">Tag в Remnawave будет вычислен из slug: {remnawaveTag || "—"}</p>
+              <p className="break-all text-xs text-zinc-400">Tag в Remnawave будет вычислен из slug: {remnawaveTag || "—"}</p>
             </div>
           </div>
           <div className="space-y-2">
@@ -192,7 +192,7 @@ export function PlanForm({
       >
         <div className="grid gap-4">
           <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-zinc-300">
-            <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Текущий tag</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Текущий tag</p>
             <p className="mt-2 break-all text-sm text-white">{remnawaveTag || "—"}</p>
           </div>
           <div className="grid gap-4 md:grid-cols-2">

@@ -26,12 +26,12 @@ export default function AdminExportPage() {
       <ScreenHeader
         eyebrow="Админка"
         title="Экспорт"
-        description="Готовые CSV-выгрузки без лишних декоративных секций и с быстрым действием прямо из списка."
+        description="Скачайте данные в формате CSV для работы в Excel или Google Sheets."
       />
 
       <AdminRecordList
         title="Наборы для выгрузки"
-        description="Файлы отдаются в CSV с кодировкой UTF-8 BOM, чтобы без проблем открываться в Excel."
+        description="Файлы корректно открываются в Excel и любых табличных редакторах."
       >
         <div className="grid gap-3">
           {exports.map((item) => (
@@ -41,7 +41,7 @@ export default function AdminExportPage() {
               subtitle={item.description}
               metadata={[
                 { label: "Формат", value: "CSV" },
-                { label: "Кодировка", value: "UTF-8 BOM" }
+                { label: "Совместимость", value: "Excel, Google Sheets" }
               ]}
               actions={
                 <Button asChild className="w-full sm:w-auto">
