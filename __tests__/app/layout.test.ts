@@ -31,7 +31,8 @@ describe("root layout foundation", () => {
     expect(source).toContain(":root");
     expect(source).toContain("body.appBody");
     expect(source).toContain(".appRoot");
-    expect(source).toContain('--app-bg');
+    expect(source).toContain("--app-bg");
+    expect(source).toContain('@config "../tailwind.config.mjs";');
     expect(source).toContain('@import "tailwindcss";');
   });
 });

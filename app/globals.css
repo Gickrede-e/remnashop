@@ -1,3 +1,4 @@
+@config "../tailwind.config.mjs";
 @import "tailwindcss";
 
 :root {
@@ -7,13 +8,10 @@
   --app-surface: hsl(221 24% 11%);
   --app-surface-strong: hsl(218 28% 15%);
   --app-border: hsl(216 18% 24%);
-  --app-border-strong: hsl(200 48% 42%);
   --app-fg: hsl(210 38% 96%);
   --app-muted: hsl(214 16% 68%);
   --app-accent: hsl(192 88% 58%);
   --app-focus-ring: color-mix(in srgb, var(--app-accent) 72%, white 28%);
-  --app-radius-lg: 24px;
-  --app-radius-xl: 28px;
   --font-body: "IBM Plex Sans", "Segoe UI", sans-serif;
   --font-heading: "Space Grotesk", "Avenir Next", sans-serif;
   --background: var(--app-bg);
@@ -71,6 +69,12 @@ body.appBody {
   -webkit-font-smoothing: antialiased;
 }
 
+.appRoot {
+  position: relative;
+  min-height: 100dvh;
+  isolation: isolate;
+}
+
 a {
   color: inherit;
 }
@@ -111,56 +115,4 @@ h6 {
 
 p {
   margin: 0;
-}
-
-.appRoot {
-  position: relative;
-  min-height: 100dvh;
-  isolation: isolate;
-}
-
-.app-shell,
-.appShell {
-  min-height: 100dvh;
-}
-
-.page-surface,
-.surface-soft,
-.surface-feature {
-  border: 1px solid var(--app-border);
-  background: color-mix(in srgb, var(--app-surface) 94%, transparent);
-}
-
-.page-surface,
-.surface-feature {
-  border-radius: var(--app-radius-xl);
-}
-
-.surface-soft {
-  border-radius: var(--app-radius-lg);
-}
-
-.surface-feature {
-  border-color: color-mix(in srgb, var(--app-border-strong) 45%, var(--app-border));
-  background: color-mix(in srgb, var(--app-surface-strong) 96%, transparent);
-}
-
-.text-gradient {
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--app-fg) 88%, white 12%) 0%,
-    var(--app-accent) 55%,
-    color-mix(in srgb, var(--app-accent) 68%, white 32%) 100%
-  );
-  background-clip: text;
-  color: transparent;
-  -webkit-background-clip: text;
-}
-
-.section-kicker {
-  color: color-mix(in srgb, var(--app-muted) 88%, white 12%);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.26em;
-  text-transform: uppercase;
 }
