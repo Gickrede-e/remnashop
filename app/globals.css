@@ -1,27 +1,19 @@
+@import "tailwindcss";
+
 :root {
   color-scheme: dark;
   --app-bg: hsl(222 32% 7%);
   --app-bg-strong: hsl(222 36% 5%);
   --app-surface: hsl(221 24% 11%);
   --app-surface-strong: hsl(218 28% 15%);
-  --app-panel: hsl(218 30% 9%);
   --app-border: hsl(216 18% 24%);
   --app-border-strong: hsl(200 48% 42%);
   --app-fg: hsl(210 38% 96%);
   --app-muted: hsl(214 16% 68%);
   --app-accent: hsl(192 88% 58%);
-  --app-accent-strong: hsl(205 82% 64%);
-  --app-warning: hsl(38 88% 60%);
-  --app-danger: hsl(0 72% 56%);
   --app-focus-ring: color-mix(in srgb, var(--app-accent) 72%, white 28%);
-  --app-shadow-ambient: 0 24px 80px color-mix(in srgb, black 68%, transparent);
-  --app-shadow-panel:
-    0 18px 48px color-mix(in srgb, black 52%, transparent),
-    inset 0 1px 0 color-mix(in srgb, white 8%, transparent);
-  --app-radius-md: 18px;
   --app-radius-lg: 24px;
   --app-radius-xl: 28px;
-  --app-content-width: 1280px;
   --font-body: "IBM Plex Sans", "Segoe UI", sans-serif;
   --font-heading: "Space Grotesk", "Avenir Next", sans-serif;
   --background: var(--app-bg);
@@ -36,11 +28,11 @@
   --input: var(--app-border);
   --primary: var(--app-accent);
   --primary-foreground: hsl(210 40% 98%);
-  --secondary: var(--app-accent-strong);
-  --secondary-foreground: hsl(210 40% 98%);
+  --secondary: var(--app-surface-strong);
+  --secondary-foreground: var(--app-fg);
   --accent: var(--app-surface-strong);
   --accent-foreground: var(--app-fg);
-  --destructive: var(--app-danger);
+  --destructive: hsl(0 72% 56%);
   --destructive-foreground: hsl(210 40% 98%);
   --ring: var(--app-focus-ring);
 }
@@ -49,7 +41,6 @@
 *::before,
 *::after {
   box-sizing: border-box;
-  border-color: var(--app-border);
 }
 
 html {
@@ -122,19 +113,14 @@ p {
   margin: 0;
 }
 
-.appBody main,
-.appRoot main {
-  display: block;
-}
-
 .appRoot {
   position: relative;
   min-height: 100dvh;
   isolation: isolate;
 }
 
-.appShell,
-.app-shell {
+.app-shell,
+.appShell {
   min-height: 100dvh;
 }
 
@@ -143,35 +129,28 @@ p {
 .surface-feature {
   border: 1px solid var(--app-border);
   background: color-mix(in srgb, var(--app-surface) 94%, transparent);
-  box-shadow: var(--app-shadow-panel);
 }
 
-.page-surface {
+.page-surface,
+.surface-feature {
   border-radius: var(--app-radius-xl);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--app-surface-strong) 52%, transparent) 0%, transparent 100%),
-    color-mix(in srgb, var(--app-surface) 95%, transparent);
 }
 
 .surface-soft {
   border-radius: var(--app-radius-lg);
-  background: color-mix(in srgb, var(--app-surface) 92%, transparent);
 }
 
 .surface-feature {
-  border-color: color-mix(in srgb, var(--app-border-strong) 56%, var(--app-border));
-  border-radius: var(--app-radius-xl);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--app-accent) 8%, transparent) 0%, transparent 100%),
-    color-mix(in srgb, var(--app-surface-strong) 96%, transparent);
+  border-color: color-mix(in srgb, var(--app-border-strong) 45%, var(--app-border));
+  background: color-mix(in srgb, var(--app-surface-strong) 96%, transparent);
 }
 
 .text-gradient {
   background: linear-gradient(
     90deg,
     color-mix(in srgb, var(--app-fg) 88%, white 12%) 0%,
-    var(--app-accent-strong) 52%,
-    color-mix(in srgb, var(--app-warning) 76%, var(--app-accent)) 100%
+    var(--app-accent) 55%,
+    color-mix(in srgb, var(--app-accent) 68%, white 32%) 100%
   );
   background-clip: text;
   color: transparent;

@@ -21,18 +21,17 @@ describe("root layout foundation", () => {
 
     expect(markup).toContain("Screen body");
     expect(markup).toMatch(/<body[^>]*class="[^"]*\bappBody\b[^"]*"/);
-    expect(markup).toContain('data-testid="app-root"');
     expect(markup).toMatch(/class="[^"]*\bappRoot\b[^"]*"/);
+    expect(markup).not.toContain('data-testid="app-root"');
   });
 
-  it("defines the root foundation in plain CSS without Tailwind directives", () => {
+  it("defines the root foundation while keeping the temporary Tailwind bridge", () => {
     const source = fs.readFileSync(globalsCssPath, "utf8");
 
     expect(source).toContain(":root");
-    expect(source).toContain(".appBody");
+    expect(source).toContain("body.appBody");
     expect(source).toContain(".appRoot");
-    expect(source).not.toContain('@config "../tailwind.config.mjs";');
-    expect(source).not.toContain('@import "tailwindcss";');
-    expect(source).not.toContain("@apply");
+    expect(source).toContain('--app-bg');
+    expect(source).toContain('@import "tailwindcss";');
   });
 });
