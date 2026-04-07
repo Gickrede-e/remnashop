@@ -20,6 +20,7 @@ describe("root layout foundation", () => {
     );
 
     expect(markup).toContain("Screen body");
+    expect(markup).toMatch(/<html[^>]*class="[^"]*\bdark\b[^"]*"/);
     expect(markup).toMatch(/<body[^>]*class="[^"]*\bappBody\b[^"]*"/);
     expect(markup).toMatch(/class="[^"]*\bappRoot\b[^"]*"/);
     expect(markup).not.toContain('data-testid="app-root"');
