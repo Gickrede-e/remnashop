@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import {
@@ -28,6 +29,7 @@ import {
   type AppNavItem,
   type AppShellArea
 } from "@/lib/ui/app-shell-nav";
+import { cn } from "@/lib/utils";
 
 type AppShellProps = {
   area: AppShellArea;
@@ -67,6 +69,76 @@ function decorateItems(area: AppShellArea, items: AppNavItem[], pathname: string
   }));
 }
 
+type DecoratedNavItem = ReturnType<typeof decorateItems>[number];
+
+function AppShellNavRail({
+  area,
+  primaryItems,
+  secondaryItems
+}: {
+  area: AppShellArea;
+  primaryItems: DecoratedNavItem[];
+  secondaryItems: DecoratedNavItem[];
+}) {
+  const areaTitle = area === "admin" ? "Контур управления" : "Пульт оператора";
+  const areaDescription =
+    area === "admin"
+      ? "Метрики, пользователи, биллинг и надзорные действия."
+      : "Доступ, покупки, устройства и реферальные сценарии.";
+
+  return (
+    <aside className="appNavRail" data-testid="app-nav-rail" aria-label="Навигация разделов">
+      <div className="appNavRailSurface surface-soft">
+        <div className="appNavRailIntro">
+          <p className="appNavRailEyebrow">Контур</p>
+          <div className="appNavRailHeading">
+            <p className="appNavRailTitle">{areaTitle}</p>
+            <p className="appNavRailDescription">{areaDescription}</p>
+          </div>
+        </div>
+
+        <div className="appNavRailSection">
+          <p className="appNavRailSectionLabel">Основное</p>
+          <nav className="appNavRailNav">
+            {primaryItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={item.active ? "page" : undefined}
+                className={cn("appNavRailLink", item.active && "is-active")}
+              >
+                <span className="appNavRailLinkIcon">
+                  <item.icon className="h-4 w-4" />
+                </span>
+                <span className="appNavRailLinkText">{item.label}</span>
+              </Link>
+            ))}
+          </nav>
+        </div>
+
+        <div className="appNavRailSection">
+          <p className="appNavRailSectionLabel">Дополнительно</p>
+          <nav className="appNavRailNav">
+            {secondaryItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={item.active ? "page" : undefined}
+                className={cn("appNavRailLink appNavRailLinkSecondary", item.active && "is-active")}
+              >
+                <span className="appNavRailLinkIcon">
+                  <item.icon className="h-4 w-4" />
+                </span>
+                <span className="appNavRailLinkText">{item.label}</span>
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
 export function AppShell({ area, canAccessAdmin = false, children }: AppShellProps) {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
@@ -85,7 +157,7 @@ export function AppShell({ area, canAccessAdmin = false, children }: AppShellPro
   const areaSwitchLabel = area === "admin" ? "Кабинет" : canAccessAdmin ? "Админка" : undefined;
 
   return (
-    <div className="app-shell">
+    <div className="app-shell appShell">
       <AppTopbar
         homeHref={homeHref}
         primaryItems={topbarPrimaryItems}
@@ -97,8 +169,16 @@ export function AppShell({ area, canAccessAdmin = false, children }: AppShellPro
         areaSwitchLabel={areaSwitchLabel}
       />
 
-      <div className="container overflow-x-hidden py-4 pb-28 sm:py-6 sm:pb-32 md:pb-8 lg:py-8 lg:pb-10">
-        <div className="grid min-w-0 gap-6">{children}</div>
+      <div className="container appShellViewport">
+        <AppShellNavRail area={area} primaryItems={topbarPrimaryItems} secondaryItems={secondaryItems} />
+
+        <div className="appShellWorkspace">
+          <div className="appShellMainWrap">
+            <div data-testid="app-shell-main" className="appShellMain">
+              {children}
+            </div>
+          </div>
+        </div>
       </div>
 
       <AppBottomNav

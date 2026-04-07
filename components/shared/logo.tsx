@@ -13,16 +13,16 @@ export function Logo({
   compact?: boolean;
 }) {
   return (
-    <Link href={href} className={cn("inline-flex items-center gap-3", className)}>
-      <span
-        className={cn(
-          "flex items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 via-blue-500 to-cyan-400 text-white shadow-sm shadow-black/20",
-          compact ? "h-9 w-9" : "h-10 w-10"
-        )}
-      >
-        <Shield className="h-5 w-5" />
+    <Link href={href} className={cn("appLogo", compact && "appLogoCompact", className)}>
+      <span className="appLogoMark" aria-hidden="true">
+        <span className="appLogoMarkCore">
+          <Shield className="h-4 w-4" />
+        </span>
       </span>
-      <span className={cn("font-semibold tracking-wide text-white", compact ? "text-base" : "text-lg")}>GickShop</span>
+      <span className="appLogoBody">
+        {!compact ? <span className="appLogoEyebrow">Secure commerce</span> : null}
+        <span className="appLogoWordmark">GickShop</span>
+      </span>
     </Link>
   );
 }

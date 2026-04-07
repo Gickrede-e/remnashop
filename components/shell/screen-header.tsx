@@ -24,30 +24,19 @@ export function ScreenHeader({
   titleAs: Title = "h1"
 }: ScreenHeaderProps) {
   return (
-    <div className={cn("flex items-start justify-between gap-4", compact ? "flex-col" : "flex-col sm:flex-row", className)}>
-      <div className="min-w-0 space-y-2">
+    <div className={cn("screenHeader", compact && "screenHeaderCompact", className)}>
+      <div className="screenHeaderCopy">
         {eyebrow ? (
-          <p className={cn(compact ? "text-[11px] tracking-[0.22em]" : "section-kicker", "uppercase text-zinc-400")}>
-            {eyebrow}
-          </p>
+          <p className={cn("screenHeaderEyebrow", compact && "screenHeaderEyebrowCompact")}>{eyebrow}</p>
         ) : null}
-        <div className="min-w-0 space-y-1">
-          <Title
-            className={cn(
-              compact ? "truncate text-lg font-semibold text-white sm:text-xl" : "text-2xl font-semibold text-white sm:text-3xl",
-              titleClassName
-            )}
-          >
+        <div className="screenHeaderText">
+          <Title className={cn("screenHeaderTitle", compact && "screenHeaderTitleCompact", titleClassName)}>
             {title}
           </Title>
-          {description ? (
-            <p className={cn(compact ? "text-sm leading-5 text-zinc-400" : "max-w-2xl text-sm leading-6 text-zinc-300 sm:text-base")}>
-              {description}
-            </p>
-          ) : null}
+          {description ? <p className={cn("screenHeaderDescription", compact && "screenHeaderDescriptionCompact")}>{description}</p> : null}
         </div>
       </div>
-      {actions ? <div className="shrink-0">{actions}</div> : null}
+      {actions ? <div className="screenHeaderActions">{actions}</div> : null}
     </div>
   );
 }

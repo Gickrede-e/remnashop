@@ -161,6 +161,605 @@ p {
 }
 
 @layer components {
+  .appShellViewport {
+    display: grid;
+    gap: 1.5rem;
+    min-width: 0;
+    padding-top: 1rem;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 6.5rem);
+  }
+
+  .appShellWorkspace,
+  .appShellMainWrap {
+    min-width: 0;
+  }
+
+  .appShellMain {
+    display: grid;
+    gap: 1.5rem;
+    min-width: 0;
+  }
+
+  .appNavRail {
+    display: none;
+  }
+
+  .appNavRailSurface {
+    position: sticky;
+    top: 5.75rem;
+    display: grid;
+    gap: 1.5rem;
+    padding: 1.25rem;
+    overflow: hidden;
+    background:
+      linear-gradient(180deg, color-mix(in srgb, hsl(var(--app-surface-overlay)) 94%, transparent) 0%, color-mix(in srgb, hsl(var(--app-surface)) 98%, transparent) 100%);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 4%, transparent),
+      0 20px 34px color-mix(in srgb, hsl(var(--app-shadow)) 32%, transparent);
+  }
+
+  .appNavRailIntro,
+  .appNavRailHeading,
+  .appNavRailSection {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .appNavRailEyebrow,
+  .appNavRailSectionLabel,
+  .screenHeaderEyebrow,
+  .appLogoEyebrow {
+    color: hsl(var(--app-muted));
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  .screenHeaderEyebrowCompact {
+    font-size: 0.68rem;
+    letter-spacing: 0.24em;
+  }
+
+  .appNavRailTitle {
+    color: hsl(var(--app-fg));
+    font-family: var(--font-heading);
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+
+  .appNavRailDescription {
+    color: hsl(var(--app-muted));
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+
+  .appNavRailNav {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .appNavRailLink {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+    padding: 0.8rem 0.9rem;
+    border: 1px solid transparent;
+    border-radius: calc(var(--radius) + 0.125rem);
+    color: hsl(var(--app-muted-strong));
+    text-decoration: none;
+    background: color-mix(in srgb, hsl(var(--app-surface-soft)) 26%, transparent);
+    transition:
+      border-color 140ms ease,
+      background-color 140ms ease,
+      color 140ms ease,
+      transform 140ms ease;
+  }
+
+  .appNavRailLink:hover {
+    color: hsl(var(--app-fg));
+    border-color: color-mix(in srgb, hsl(var(--app-border-strong)) 28%, hsl(var(--app-border)));
+    background: color-mix(in srgb, hsl(var(--app-accent)) 8%, hsl(var(--app-surface-soft)));
+    transform: translateX(1px);
+  }
+
+  .appNavRailLink.is-active {
+    color: hsl(var(--app-fg));
+    border-color: color-mix(in srgb, hsl(var(--app-accent)) 30%, hsl(var(--app-border)));
+    background: linear-gradient(135deg, color-mix(in srgb, hsl(var(--app-accent)) 12%, hsl(var(--app-surface-soft))) 0%, color-mix(in srgb, hsl(var(--app-surface-strong)) 96%, transparent) 100%);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 5%, transparent);
+  }
+
+  .appNavRailLinkIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    flex: none;
+    border-radius: calc(var(--radius) - 0.05rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-overlay)) 92%, transparent);
+    color: color-mix(in srgb, hsl(var(--app-accent-strong)) 46%, white);
+  }
+
+  .appNavRailLinkText {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.92rem;
+    font-weight: 600;
+  }
+
+  .appTopbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    border-bottom: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    background:
+      linear-gradient(180deg, color-mix(in srgb, hsl(var(--app-bg)) 96%, transparent) 0%, color-mix(in srgb, hsl(var(--app-bg-strong)) 92%, transparent) 100%);
+    backdrop-filter: blur(18px) saturate(135%);
+  }
+
+  .appTopbarInner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.9rem;
+    min-width: 0;
+    padding-top: 0.9rem;
+    padding-bottom: 0.95rem;
+  }
+
+  .appTopbarIdentity,
+  .appTopbarBrandLockup,
+  .appTopbarActions {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .appTopbarIdentity {
+    gap: 0.85rem;
+  }
+
+  .appTopbarBrandLockup {
+    gap: 0.75rem;
+  }
+
+  .appTopbarAreaSwitch,
+  .appTopbarConsoleBadge {
+    display: none;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 78%, transparent);
+    border-radius: 999px;
+    padding: 0.42rem 0.8rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-decoration: none;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .appTopbarAreaSwitch {
+    color: hsl(var(--app-muted-strong));
+    background: color-mix(in srgb, hsl(var(--app-surface-soft)) 68%, transparent);
+  }
+
+  .appTopbarAreaSwitch:hover {
+    color: hsl(var(--app-fg));
+    border-color: color-mix(in srgb, hsl(var(--app-border-strong)) 34%, hsl(var(--app-border)));
+  }
+
+  .appTopbarConsoleBadge {
+    color: color-mix(in srgb, hsl(var(--app-accent-strong)) 56%, white);
+    background: color-mix(in srgb, hsl(var(--app-accent)) 10%, transparent);
+  }
+
+  .appTopbarQuickNav {
+    display: none;
+    min-width: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .appTopbarNavLink,
+  .moreTrigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    min-height: 2.75rem;
+    min-width: 0;
+    padding-inline: 0.95rem;
+    border: 1px solid transparent;
+    border-radius: calc(var(--radius) + 0.125rem);
+    color: hsl(var(--app-muted-strong));
+    text-decoration: none;
+    background: transparent;
+    cursor: pointer;
+    transition:
+      border-color 140ms ease,
+      background-color 140ms ease,
+      color 140ms ease,
+      transform 140ms ease;
+  }
+
+  .appTopbarNavLink:hover,
+  .moreTrigger:hover {
+    color: hsl(var(--app-fg));
+    border-color: color-mix(in srgb, hsl(var(--app-border-strong)) 24%, transparent);
+    background: color-mix(in srgb, hsl(var(--app-surface-soft)) 68%, transparent);
+  }
+
+  .appTopbarNavLink.is-active,
+  .appTopbarMoreButton.is-active {
+    color: hsl(var(--app-fg));
+    border-color: color-mix(in srgb, hsl(var(--app-accent)) 22%, hsl(var(--app-border)));
+    background: color-mix(in srgb, hsl(var(--app-accent)) 10%, hsl(var(--app-surface-soft)));
+  }
+
+  .appTopbarActions {
+    justify-content: flex-end;
+    gap: 0.7rem;
+  }
+
+  .appTopbarActionSummary {
+    display: none;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.12rem;
+    min-width: 0;
+  }
+
+  .appTopbarActionSummaryLabel {
+    color: hsl(var(--app-muted));
+    font-size: 0.67rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .appTopbarActionSummaryValue {
+    color: hsl(var(--app-fg));
+    font-size: 0.88rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .appTopbarLogout {
+    display: none;
+  }
+
+  .appTopbarMenuButton {
+    flex: none;
+  }
+
+  .appBottomNav {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 40;
+    padding: 0.75rem 0.75rem calc(env(safe-area-inset-bottom) + 0.8rem);
+    background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, hsl(var(--app-bg-strong)) 94%, transparent) 24%, hsl(var(--app-bg-strong)) 100%);
+  }
+
+  .appBottomNavFrame {
+    display: flex;
+    align-items: stretch;
+    gap: 0.35rem;
+    max-width: 33rem;
+    margin: 0 auto;
+    padding: 0.35rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 82%, transparent);
+    border-radius: calc(var(--radius) + 0.7rem);
+    background:
+      linear-gradient(180deg, color-mix(in srgb, hsl(var(--app-surface-overlay)) 96%, transparent) 0%, color-mix(in srgb, hsl(var(--app-surface)) 98%, transparent) 100%);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 5%, transparent),
+      0 18px 34px color-mix(in srgb, hsl(var(--app-shadow)) 48%, transparent);
+  }
+
+  .appBottomNavLink {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    min-width: 0;
+    min-height: 4rem;
+    padding: 0.55rem 0.45rem;
+    border: 1px solid transparent;
+    border-radius: calc(var(--radius) + 0.4rem);
+    color: hsl(var(--app-muted));
+    background: transparent;
+    text-decoration: none;
+  }
+
+  .appBottomNavLink.is-active {
+    color: hsl(var(--app-fg));
+    border-color: color-mix(in srgb, hsl(var(--app-accent)) 18%, transparent);
+    background: color-mix(in srgb, hsl(var(--app-accent)) 9%, hsl(var(--app-surface-soft)));
+  }
+
+  .appBottomNavIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: inherit;
+  }
+
+  .appBottomNavLabel {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .appMoreSheet {
+    background:
+      linear-gradient(180deg, color-mix(in srgb, hsl(var(--app-surface-strong)) 98%, transparent) 0%, color-mix(in srgb, hsl(var(--app-surface-overlay)) 98%, transparent) 100%);
+  }
+
+  .appMoreSheetHeader {
+    margin-bottom: 0;
+    padding: 1.25rem 1.25rem 1rem;
+    border-bottom: 1px solid color-mix(in srgb, hsl(var(--app-border)) 86%, transparent);
+  }
+
+  .appMoreSheetHeading {
+    gap: 0.8rem;
+  }
+
+  .appMoreSheetBody {
+    display: grid;
+    gap: 0.75rem;
+    padding: 1.25rem;
+  }
+
+  .appMoreSheetLink {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.05rem;
+    color: hsl(var(--app-fg));
+    text-decoration: none;
+    transition:
+      border-color 140ms ease,
+      background-color 140ms ease,
+      transform 140ms ease;
+  }
+
+  .appMoreSheetLink:hover {
+    border-color: color-mix(in srgb, hsl(var(--app-border-strong)) 28%, hsl(var(--app-border)));
+    background: color-mix(in srgb, hsl(var(--app-accent)) 8%, hsl(var(--app-surface-soft)));
+    transform: translateY(-1px);
+  }
+
+  .appMoreSheetLink.is-active {
+    border-color: color-mix(in srgb, hsl(var(--app-accent)) 26%, hsl(var(--app-border)));
+    background: color-mix(in srgb, hsl(var(--app-accent)) 10%, hsl(var(--app-surface-soft)));
+  }
+
+  .appMoreSheetLinkGroup {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    min-width: 0;
+  }
+
+  .appMoreSheetIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex: none;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.15rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-overlay)) 88%, transparent);
+    color: color-mix(in srgb, hsl(var(--app-accent-strong)) 50%, white);
+  }
+
+  .appMoreSheetLabel {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .appMoreSheetArrow {
+    color: hsl(var(--app-muted));
+  }
+
+  .appMoreSheetFooter {
+    padding: 1.25rem;
+    border-top: 1px solid color-mix(in srgb, hsl(var(--app-border)) 86%, transparent);
+  }
+
+  .appMoreSheetLogout {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .screenHeader {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    min-width: 0;
+  }
+
+  .screenHeaderCompact {
+    gap: 0.75rem;
+  }
+
+  .screenHeaderCopy,
+  .screenHeaderText {
+    display: grid;
+    gap: 0.4rem;
+    min-width: 0;
+  }
+
+  .screenHeaderTitle {
+    color: hsl(var(--app-fg));
+    font-size: clamp(2rem, 3vw, 2.8rem);
+    font-weight: 600;
+    line-height: 1.04;
+  }
+
+  .screenHeaderTitleCompact {
+    font-size: clamp(1.2rem, 2.2vw, 1.55rem);
+    line-height: 1.15;
+  }
+
+  .screenHeaderDescription {
+    max-width: 42rem;
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.98rem;
+    line-height: 1.65;
+  }
+
+  .screenHeaderDescriptionCompact {
+    max-width: 34rem;
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+
+  .screenHeaderActions {
+    flex: none;
+  }
+
+  .appLogo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.85rem;
+    min-width: 0;
+    text-decoration: none;
+  }
+
+  .appLogoMark {
+    position: relative;
+    width: 2.7rem;
+    height: 2.7rem;
+    flex: none;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border-strong)) 32%, hsl(var(--app-border)));
+    border-radius: calc(var(--radius) + 0.35rem);
+    background:
+      linear-gradient(145deg, color-mix(in srgb, hsl(var(--app-accent)) 22%, hsl(var(--app-surface-overlay))) 0%, color-mix(in srgb, hsl(var(--app-surface-strong)) 96%, transparent) 100%);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 9%, transparent),
+      0 16px 28px color-mix(in srgb, hsl(var(--app-shadow)) 42%, transparent);
+  }
+
+  .appLogoMarkCore {
+    position: absolute;
+    inset: 0.32rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: calc(var(--radius) + 0.05rem);
+    background: linear-gradient(180deg, color-mix(in srgb, hsl(var(--app-accent-strong)) 92%, white) 0%, hsl(var(--app-accent)) 100%);
+    color: hsl(var(--app-bg-strong));
+  }
+
+  .appLogoBody {
+    display: grid;
+    gap: 0.08rem;
+    min-width: 0;
+  }
+
+  .appLogoWordmark {
+    color: hsl(var(--app-fg));
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    white-space: nowrap;
+  }
+
+  .appLogoCompact .appLogoMark {
+    width: 2.35rem;
+    height: 2.35rem;
+  }
+
+  .appLogoCompact .appLogoWordmark {
+    font-size: 1rem;
+  }
+
+  @media (min-width: 48rem) {
+    .appShellViewport {
+      padding-top: 1.25rem;
+      padding-bottom: 2.5rem;
+    }
+
+    .appTopbarInner {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 1rem;
+    }
+
+    .appTopbarAreaSwitch,
+    .appTopbarQuickNav,
+    .appTopbarActionSummary,
+    .appTopbarLogout {
+      display: inline-flex;
+    }
+
+    .appTopbarQuickNav {
+      display: flex;
+    }
+
+    .appTopbarMenuButton {
+      display: none;
+    }
+
+    .appBottomNav {
+      display: none;
+    }
+
+    .screenHeader:not(.screenHeaderCompact) {
+      flex-direction: row;
+    }
+
+    .appMoreSheetHeader,
+    .appMoreSheetBody,
+    .appMoreSheetFooter {
+      padding-inline: 1.5rem;
+    }
+  }
+
+  @media (min-width: 73.75rem) {
+    .appShellViewport {
+      grid-template-columns: minmax(15.75rem, 17.5rem) minmax(0, 1fr);
+      align-items: start;
+      gap: 1.75rem;
+      padding-top: 1.5rem;
+    }
+
+    .appNavRail {
+      display: block;
+    }
+
+    .appTopbarConsoleBadge {
+      display: inline-flex;
+    }
+
+    .appTopbarQuickNav {
+      display: none;
+    }
+  }
+
   .panel {
     border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 92%, transparent);
     border-radius: calc(var(--radius) + 0.5rem);

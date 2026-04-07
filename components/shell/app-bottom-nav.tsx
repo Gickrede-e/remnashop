@@ -21,13 +21,15 @@ type AppBottomNavProps = {
 
 export function AppBottomNav({ items, moreOpen, moreSheetId, onOpenMore }: AppBottomNavProps) {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[color-mix(in_srgb,var(--app-bg)_94%,transparent)] px-3 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] md:hidden">
-      <div className="mx-auto flex max-w-lg items-stretch gap-1 rounded-[26px] border border-white/10 bg-white/[0.04] p-1">
+    <nav className="appBottomNav" aria-label="Быстрая навигация">
+      <div className="appBottomNavFrame">
         {items.map((item) => {
           const content = (
             <>
-              <item.icon className="h-4 w-4 shrink-0" />
-              <span className="truncate">{item.label}</span>
+              <span className="appBottomNavIcon">
+                <item.icon className="h-4 w-4 shrink-0" />
+              </span>
+              <span className="appBottomNavLabel">{item.label}</span>
             </>
           );
 
@@ -36,10 +38,7 @@ export function AppBottomNav({ items, moreOpen, moreSheetId, onOpenMore }: AppBo
               <button
                 key={item.href}
                 type="button"
-                className={cn(
-                  "flex min-h-[60px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[22px] px-2 text-[11px] font-medium text-zinc-400 transition",
-                  item.active && "bg-white/[0.08] text-white"
-                )}
+                className={cn("appBottomNavLink moreTrigger", item.active && "is-active")}
                 onClick={onOpenMore}
                 aria-haspopup="dialog"
                 aria-expanded={moreOpen}
@@ -55,10 +54,7 @@ export function AppBottomNav({ items, moreOpen, moreSheetId, onOpenMore }: AppBo
               key={item.href}
               href={item.href}
               aria-current={item.active ? "page" : undefined}
-              className={cn(
-                "flex min-h-[60px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[22px] px-2 text-[11px] font-medium text-zinc-400 transition",
-                item.active && "bg-white/[0.08] text-white"
-              )}
+              className={cn("appBottomNavLink", item.active && "is-active")}
             >
               {content}
             </Link>
