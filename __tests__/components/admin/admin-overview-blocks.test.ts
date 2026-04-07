@@ -95,6 +95,8 @@ describe("AdminOverviewBlocks provider status section", () => {
     expect(markup).toContain("data-status=\"unavailable\"");
     expect(markup).toContain("data-status=\"timeout\"");
     expect(markup).toContain("data-status=\"not_configured\"");
+    expect(markup).toMatch(/\badminOverviewBlocks\b/);
+    expect(markup).toMatch(/\badminProviderStatusSection\b/);
     expect(markup).not.toContain("Что проверять дальше");
   });
 
@@ -103,7 +105,7 @@ describe("AdminOverviewBlocks provider status section", () => {
 
     expect(markup).toContain("Фокус по выручке");
     expect(markup).toContain("Держим финансовый срез рядом с overview.");
-    expect(markup).toContain("lg:grid-cols-2");
+    expect(markup).toMatch(/\badminOverviewTwoColumnGrid\b/);
     expect(markup).toContain("Проверить системные события.");
     expect(markup.indexOf("Фокус по выручке")).toBeLessThan(markup.indexOf("Статусы модулей"));
   });

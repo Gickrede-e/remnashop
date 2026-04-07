@@ -88,6 +88,7 @@ describe("ActiveUsersSyncButton", () => {
 
     expect(markup).toContain("Синхронизировать активных");
     expect(props.type).toBe("button");
+    expect(props.className).toContain("activeUsersSyncButton");
 
     await props.onClick?.();
 

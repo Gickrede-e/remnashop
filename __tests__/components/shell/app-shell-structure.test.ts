@@ -23,7 +23,7 @@ import { AppShell } from "@/components/shell/app-shell";
 const TestableAppShell = AppShell as React.ComponentType<React.PropsWithChildren<{ area: "dashboard" | "admin" }>>;
 
 describe("app shell structure", () => {
-  it("renders shell content without introducing a nested main landmark", () => {
+  it("renders shell content with the new semantic shell hooks", () => {
     const markup = renderToStaticMarkup(
       React.createElement(
         TestableAppShell,
@@ -34,5 +34,10 @@ describe("app shell structure", () => {
 
     expect(markup).not.toContain("<main");
     expect(markup).toContain("Screen body");
+    expect(markup).toMatch(/\bappTopbar\b/);
+    expect(markup).toContain('aria-label="Main navigation"');
+    expect(markup).toMatch(/\bappNavRail\b/);
+    expect(markup).toContain('data-testid="app-shell-main"');
+    expect(markup).toMatch(/\bappShellMain\b/);
   });
 });
