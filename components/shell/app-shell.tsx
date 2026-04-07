@@ -99,7 +99,7 @@ function AppShellNavRail({
 
         <div className="appNavRailSection">
           <p className="appNavRailSectionLabel">Основное</p>
-          <nav className="appNavRailNav">
+          <nav className="appNavRailNav" aria-label="Основные разделы">
             {primaryItems.map((item) => (
               <Link
                 key={item.href}
@@ -118,7 +118,7 @@ function AppShellNavRail({
 
         <div className="appNavRailSection">
           <p className="appNavRailSectionLabel">Дополнительно</p>
-          <nav className="appNavRailNav">
+          <nav className="appNavRailNav" aria-label="Дополнительные разделы">
             {secondaryItems.map((item) => (
               <Link
                 key={item.href}
@@ -151,6 +151,8 @@ export function AppShell({ area, canAccessAdmin = false, children }: AppShellPro
   const primaryItems = decorateItems(area, getPrimaryNavItems(area), pathname, isMoreActive);
 
   const topbarPrimaryItems = primaryItems.filter((item) => item.href !== "#more");
+  const activeRouteLabel =
+    [...topbarPrimaryItems, ...secondaryItems].find((item) => item.active)?.label ?? topbarPrimaryItems[0]?.label ?? "Обзор";
   const homeHref = area === "admin" ? "/admin" : "/dashboard";
 
   const areaSwitchHref = area === "admin" ? "/dashboard" : canAccessAdmin ? "/admin" : undefined;
@@ -161,6 +163,7 @@ export function AppShell({ area, canAccessAdmin = false, children }: AppShellPro
       <AppTopbar
         homeHref={homeHref}
         primaryItems={topbarPrimaryItems}
+        activeRouteLabel={activeRouteLabel}
         isMoreActive={isMoreActive}
         moreOpen={moreOpen}
         moreSheetId={moreSheetId}

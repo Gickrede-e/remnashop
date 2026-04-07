@@ -17,6 +17,7 @@ type AppTopbarItem = {
 type AppTopbarProps = {
   homeHref: string;
   primaryItems: AppTopbarItem[];
+  activeRouteLabel?: string;
   isMoreActive: boolean;
   moreOpen: boolean;
   moreSheetId?: string;
@@ -28,6 +29,7 @@ type AppTopbarProps = {
 export function AppTopbar({
   homeHref,
   primaryItems,
+  activeRouteLabel,
   isMoreActive,
   moreOpen,
   moreSheetId,
@@ -81,7 +83,7 @@ export function AppTopbar({
           <div className="appTopbarActionSummary">
             <span className="appTopbarActionSummaryLabel">Маршрут</span>
             <span className="appTopbarActionSummaryValue">
-              {primaryItems.find((item) => item.active)?.label ?? "Обзор"}
+              {activeRouteLabel ?? primaryItems.find((item) => item.active)?.label ?? "Обзор"}
             </span>
           </div>
           <LogoutButton className="appTopbarLogout" />
