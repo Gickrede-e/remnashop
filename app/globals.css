@@ -3,36 +3,36 @@
 
 :root {
   color-scheme: dark;
-  --app-bg: hsl(222 32% 7%);
-  --app-bg-strong: hsl(222 36% 5%);
-  --app-surface: hsl(221 24% 11%);
-  --app-surface-strong: hsl(218 28% 15%);
-  --app-border: hsl(216 18% 24%);
-  --app-fg: hsl(210 38% 96%);
-  --app-muted: hsl(214 16% 68%);
-  --app-accent: hsl(192 88% 58%);
-  --app-focus-ring: color-mix(in srgb, var(--app-accent) 72%, white 28%);
+  --app-bg: 222 32% 7%;
+  --app-bg-strong: 222 36% 5%;
+  --app-surface: 221 24% 11%;
+  --app-surface-strong: 218 28% 15%;
+  --app-border: 216 18% 24%;
+  --app-fg: 210 38% 96%;
+  --app-muted: 214 16% 68%;
+  --app-accent: 192 88% 58%;
   --font-body: "IBM Plex Sans", "Segoe UI", sans-serif;
   --font-heading: "Space Grotesk", "Avenir Next", sans-serif;
-  --background: var(--app-bg);
-  --foreground: var(--app-fg);
-  --muted: var(--app-surface);
-  --muted-foreground: var(--app-muted);
-  --popover: var(--app-surface);
-  --popover-foreground: var(--app-fg);
-  --card: var(--app-surface);
-  --card-foreground: var(--app-fg);
-  --border: var(--app-border);
-  --input: var(--app-border);
-  --primary: var(--app-accent);
-  --primary-foreground: hsl(210 40% 98%);
-  --secondary: var(--app-surface-strong);
-  --secondary-foreground: var(--app-fg);
-  --accent: var(--app-surface-strong);
-  --accent-foreground: var(--app-fg);
-  --destructive: hsl(0 72% 56%);
-  --destructive-foreground: hsl(210 40% 98%);
-  --ring: var(--app-focus-ring);
+  --background: 222 32% 7%;
+  --foreground: 210 38% 96%;
+  --muted: 221 24% 11%;
+  --muted-foreground: 214 16% 68%;
+  --popover: 221 24% 11%;
+  --popover-foreground: 210 38% 96%;
+  --card: 221 24% 11%;
+  --card-foreground: 210 38% 96%;
+  --border: 216 18% 24%;
+  --input: 216 18% 24%;
+  --primary: 192 88% 58%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 218 28% 15%;
+  --secondary-foreground: 210 38% 96%;
+  --accent: 218 28% 15%;
+  --accent-foreground: 210 38% 96%;
+  --destructive: 0 72% 56%;
+  --destructive-foreground: 210 40% 98%;
+  --ring: 192 88% 58%;
+  --radius: 1rem;
 }
 
 *,
@@ -43,7 +43,7 @@
 
 html {
   min-height: 100%;
-  background: var(--app-bg-strong);
+  background: hsl(var(--app-bg-strong));
 }
 
 html:focus-within {
@@ -58,10 +58,10 @@ body {
 body.appBody {
   min-height: 100dvh;
   background:
-    radial-gradient(circle at top, color-mix(in srgb, var(--app-accent) 16%, transparent) 0%, transparent 34%),
-    linear-gradient(180deg, color-mix(in srgb, var(--app-surface-strong) 42%, transparent) 0%, transparent 34%),
-    linear-gradient(180deg, var(--app-bg) 0%, var(--app-bg-strong) 100%);
-  color: var(--app-fg);
+    radial-gradient(circle at top, color-mix(in srgb, hsl(var(--app-accent)) 16%, transparent) 0%, transparent 34%),
+    linear-gradient(180deg, color-mix(in srgb, hsl(var(--app-surface-strong)) 42%, transparent) 0%, transparent 34%),
+    linear-gradient(180deg, hsl(var(--app-bg)) 0%, hsl(var(--app-bg-strong)) 100%);
+  color: hsl(var(--app-fg));
   font-family: var(--font-body);
   line-height: 1.5;
   overflow-x: hidden;
@@ -93,12 +93,12 @@ svg {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--app-accent) 34%, transparent);
-  color: var(--app-fg);
+  background: color-mix(in srgb, hsl(var(--app-accent)) 34%, transparent);
+  color: hsl(var(--app-fg));
 }
 
 :focus-visible {
-  outline: 2px solid var(--app-focus-ring);
+  outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
 }
 
@@ -115,4 +115,37 @@ h6 {
 
 p {
   margin: 0;
+}
+
+.app-shell,
+.appShell {
+  min-height: 100dvh;
+}
+
+.page-surface,
+.surface-soft,
+.surface-feature {
+  border: 1px solid hsl(var(--border));
+  background: color-mix(in srgb, hsl(var(--card)) 94%, transparent);
+}
+
+.page-surface,
+.surface-feature {
+  border-radius: calc(var(--radius) + 0.75rem);
+}
+
+.surface-soft {
+  border-radius: calc(var(--radius) + 0.5rem);
+}
+
+.surface-feature {
+  background: color-mix(in srgb, hsl(var(--accent)) 28%, hsl(var(--card)));
+}
+
+.section-kicker {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
 }
