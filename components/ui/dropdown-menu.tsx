@@ -15,7 +15,7 @@ const DropdownMenuContent = React.forwardRef<
     <DropdownMenuPrimitive.Content
       ref={ref}
       sideOffset={sideOffset}
-      className={cn("z-50 min-w-[10rem] rounded-2xl border border-white/10 bg-popover p-1 shadow-glow", className)}
+      className={cn("menuSurface dropdownMenuContent", className)}
       {...props}
     />
   </DropdownMenuPrimitive.Portal>
@@ -28,7 +28,7 @@ const DropdownMenuItem = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DropdownMenuPrimitive.Item
     ref={ref}
-    className={cn("cursor-default rounded-xl px-3 py-2 text-sm outline-none transition focus:bg-white/10", className)}
+    className={cn("menuItem dropdownMenuItem", className)}
     {...props}
   />
 ));

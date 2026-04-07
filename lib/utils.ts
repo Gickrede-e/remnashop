@@ -1,8 +1,37 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+type ClassDictionary = Record<string, boolean | null | undefined>;
+type ClassValue = string | number | false | null | undefined | ClassDictionary | ClassValue[];
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+  const classes: string[] = [];
+
+  const append = (value: ClassValue) => {
+    if (!value) {
+      return;
+    }
+
+    if (typeof value === "string" || typeof value === "number") {
+      const token = String(value).trim();
+      if (token) {
+        classes.push(token);
+      }
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach(append);
+      return;
+    }
+
+    Object.entries(value).forEach(([token, enabled]) => {
+      if (enabled && token.trim()) {
+        classes.push(token);
+      }
+    });
+  };
+
+  inputs.forEach(append);
+
+  return classes.join(" ");
 }
 
 export function formatCurrency(amountInKopecks: number) {
