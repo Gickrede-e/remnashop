@@ -52,7 +52,7 @@ describe("shared shell more triggers", () => {
     expect(markup).toContain('aria-expanded="true"');
     expect(markup).toContain('aria-controls="dashboard-more-sheet"');
     expect(markup).not.toContain("aria-pressed=");
-    expect(markup).toMatch(/\bmoreTrigger\b/);
+    expect(markup).toMatch(/class="[^"]*\bmoreTrigger\b[^"]*"/);
   });
 
   it("uses dialog trigger semantics for both topbar more buttons", () => {
@@ -72,7 +72,7 @@ describe("shared shell more triggers", () => {
     expect(markup.match(/aria-haspopup="dialog"/g)).toHaveLength(2);
     expect(markup.match(/aria-expanded="false"/g)).toHaveLength(2);
     expect(markup.match(/aria-controls="dashboard-more-sheet"/g)).toHaveLength(2);
-    expect((markup.match(/\bmoreTrigger\b/g) ?? []).length).toBe(2);
+    expect((markup.match(/class="[^"]*\bmoreTrigger\b[^"]*"/g) ?? []).length).toBe(2);
   });
 
   it("keeps the topbar free of the old left text block and mounts logout", () => {

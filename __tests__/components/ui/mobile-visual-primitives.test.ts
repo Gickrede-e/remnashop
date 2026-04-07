@@ -41,7 +41,7 @@ describe("mobile visual primitives", () => {
   it("renders the separator with a semantic separator class", () => {
     const markup = renderToStaticMarkup(React.createElement(Separator));
 
-    expect(markup).toMatch(/\bseparator\b/);
+    expect(markup).toMatch(/class="[^"]*\bseparator\b[^"]*"/);
   });
 
   it("renders the shared logo without the old glow shadow", () => {
