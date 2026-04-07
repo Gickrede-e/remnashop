@@ -18,6 +18,7 @@ import { buttonVariants } from "@/components/ui/button";
 
 const dialogPath = path.resolve(process.cwd(), "components/ui/dialog.tsx");
 const tailwindConfigPath = path.resolve(process.cwd(), "tailwind.config.mjs");
+const globalsCssPath = path.resolve(process.cwd(), "app/globals.css");
 
 describe("mobile visual primitives", () => {
   it("keeps the default button variant free of heavy glow shadows", () => {
@@ -30,6 +31,16 @@ describe("mobile visual primitives", () => {
     expect(markup).toContain("Primary");
     expect(markup).toMatch(/class="[^"]*\bbutton\b[^"]*"/);
     expect(markup).toMatch(/class="[^"]*\bbuttonPrimary\b[^"]*"/);
+  });
+
+  it("preserves caller utility overrides through the primitive layer", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(Button, { className: "w-full justify-between" }, "Primary")
+    );
+    const css = fs.readFileSync(globalsCssPath, "utf8");
+
+    expect(markup).toMatch(/class="[^"]*\bbutton\b[^"]*\bw-full\b[^"]*\bjustify-between\b[^"]*"/);
+    expect(css).toMatch(/@layer components\s*\{[\s\S]*\.button\s*\{/);
   });
 
   it("renders the input with a semantic input class", () => {
@@ -61,5 +72,13 @@ describe("mobile visual primitives", () => {
     const source = fs.readFileSync(tailwindConfigPath, "utf8");
 
     expect(source).not.toContain("0 16px 48px");
+  });
+
+  it("defines CSS for semantic hooks emitted by select and dropdown primitives", () => {
+    const source = fs.readFileSync(globalsCssPath, "utf8");
+
+    expect(source).toContain(".selectContent");
+    expect(source).toContain(".selectItemText");
+    expect(source).toContain(".dropdownMenuItem");
   });
 });
