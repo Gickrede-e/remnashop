@@ -28,14 +28,14 @@ describe("mobile visual primitives", () => {
     const markup = renderToStaticMarkup(React.createElement(Button, { variant: "default" }, "Primary"));
 
     expect(markup).toContain("Primary");
-    expect(markup).toMatch(/\bbutton\b/);
+    expect(markup).toMatch(/class="[^"]*\bbutton\b[^"]*"/);
     expect(markup).toMatch(/\bbuttonPrimary\b/);
   });
 
   it("renders the input with a semantic input class", () => {
     const markup = renderToStaticMarkup(React.createElement(Input, { "aria-label": "Search" }));
 
-    expect(markup).toMatch(/\binput\b/);
+    expect(markup).toMatch(/class="[^"]*\binput\b[^"]*"/);
   });
 
   it("renders the separator with a semantic separator class", () => {
