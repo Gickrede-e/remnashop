@@ -29,7 +29,7 @@ describe("mobile visual primitives", () => {
 
     expect(markup).toContain("Primary");
     expect(markup).toMatch(/class="[^"]*\bbutton\b[^"]*"/);
-    expect(markup).toMatch(/\bbuttonPrimary\b/);
+    expect(markup).toMatch(/class="[^"]*\bbuttonPrimary\b[^"]*"/);
   });
 
   it("renders the input with a semantic input class", () => {

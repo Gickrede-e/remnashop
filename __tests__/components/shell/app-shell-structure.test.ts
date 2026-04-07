@@ -35,6 +35,6 @@ describe("app shell structure", () => {
     expect(markup).not.toContain("<main");
     expect(markup).toContain("Screen body");
     expect(markup).toContain('data-testid="app-shell-main"');
-    expect(markup).toMatch(/\bappShellMain\b/);
+    expect(markup).toMatch(/class="[^"]*\bappShellMain\b[^"]*"/);
   });
 });
