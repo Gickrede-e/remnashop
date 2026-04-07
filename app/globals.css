@@ -1,91 +1,187 @@
-@config "../tailwind.config.mjs";
-@import "tailwindcss";
-
-@layer base {
-  :root {
-    --app-bg: hsl(222 28% 8%);
-    --app-surface: hsl(222 24% 11%);
-    --app-surface-strong: hsl(222 24% 14%);
-    --app-border: hsl(222 16% 22%);
-    --app-fg: hsl(210 40% 98%);
-    --app-muted: hsl(215 16% 72%);
-    --background: 222 28% 8%;
-    --foreground: 210 40% 98%;
-    --muted: 222 24% 11%;
-    --muted-foreground: 215 16% 72%;
-    --popover: 222 24% 11%;
-    --popover-foreground: 210 40% 98%;
-    --card: 222 24% 11%;
-    --card-foreground: 210 40% 98%;
-    --border: 222 16% 22%;
-    --input: 222 16% 22%;
-    --primary: 199 89% 60%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 214 88% 61%;
-    --secondary-foreground: 0 0% 100%;
-    --accent: 222 24% 14%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 72% 50%;
-    --destructive-foreground: 0 0% 100%;
-    --ring: 199 89% 60%;
-    --radius: 1rem;
-    --font-body: "IBM Plex Sans", "Segoe UI", sans-serif;
-    --font-heading: "Space Grotesk", "Avenir Next", sans-serif;
-  }
-
-  * {
-    @apply border-border;
-  }
-
-  html:focus-within {
-    scroll-behavior: smooth;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-    font-family: var(--font-body);
-    overflow-x: hidden;
-  }
-
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    font-family: var(--font-heading);
-  }
+:root {
+  color-scheme: dark;
+  --app-bg: hsl(222 32% 7%);
+  --app-bg-strong: hsl(222 36% 5%);
+  --app-surface: hsl(221 24% 11%);
+  --app-surface-strong: hsl(218 28% 15%);
+  --app-panel: hsl(218 30% 9%);
+  --app-border: hsl(216 18% 24%);
+  --app-border-strong: hsl(200 48% 42%);
+  --app-fg: hsl(210 38% 96%);
+  --app-muted: hsl(214 16% 68%);
+  --app-accent: hsl(192 88% 58%);
+  --app-accent-strong: hsl(205 82% 64%);
+  --app-warning: hsl(38 88% 60%);
+  --app-danger: hsl(0 72% 56%);
+  --app-focus-ring: color-mix(in srgb, var(--app-accent) 72%, white 28%);
+  --app-shadow-ambient: 0 24px 80px color-mix(in srgb, black 68%, transparent);
+  --app-shadow-panel:
+    0 18px 48px color-mix(in srgb, black 52%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 8%, transparent);
+  --app-radius-md: 18px;
+  --app-radius-lg: 24px;
+  --app-radius-xl: 28px;
+  --app-content-width: 1280px;
+  --font-body: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --font-heading: "Space Grotesk", "Avenir Next", sans-serif;
+  --background: var(--app-bg);
+  --foreground: var(--app-fg);
+  --muted: var(--app-surface);
+  --muted-foreground: var(--app-muted);
+  --popover: var(--app-surface);
+  --popover-foreground: var(--app-fg);
+  --card: var(--app-surface);
+  --card-foreground: var(--app-fg);
+  --border: var(--app-border);
+  --input: var(--app-border);
+  --primary: var(--app-accent);
+  --primary-foreground: hsl(210 40% 98%);
+  --secondary: var(--app-accent-strong);
+  --secondary-foreground: hsl(210 40% 98%);
+  --accent: var(--app-surface-strong);
+  --accent-foreground: var(--app-fg);
+  --destructive: var(--app-danger);
+  --destructive-foreground: hsl(210 40% 98%);
+  --ring: var(--app-focus-ring);
 }
 
-@layer components {
-  .app-shell {
-    min-height: 100dvh;
-    background: var(--app-bg);
-  }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  border-color: var(--app-border);
+}
 
-  .page-surface {
-    @apply rounded-[28px] border;
-    border-color: var(--app-border);
-    background: color-mix(in srgb, var(--app-surface) 96%, transparent);
-  }
+html {
+  min-height: 100%;
+  background: var(--app-bg-strong);
+}
 
-  .surface-soft {
-    @apply rounded-[24px] border;
-    border-color: color-mix(in srgb, var(--app-border) 84%, transparent);
-    background: color-mix(in srgb, var(--app-surface) 94%, transparent);
-  }
+html:focus-within {
+  scroll-behavior: smooth;
+}
 
-  .surface-feature {
-    @apply rounded-[28px] border;
-    border-color: color-mix(in srgb, var(--app-border) 92%, transparent);
-    background: color-mix(in srgb, var(--app-surface-strong) 96%, transparent);
-  }
+body {
+  margin: 0;
+  min-height: 100%;
+}
 
-  .text-gradient {
-    @apply bg-gradient-to-r from-violet-300 via-indigo-300 to-sky-300 bg-clip-text text-transparent;
-  }
+body.appBody {
+  min-height: 100dvh;
+  background:
+    radial-gradient(circle at top, color-mix(in srgb, var(--app-accent) 16%, transparent) 0%, transparent 34%),
+    linear-gradient(180deg, color-mix(in srgb, var(--app-surface-strong) 42%, transparent) 0%, transparent 34%),
+    linear-gradient(180deg, var(--app-bg) 0%, var(--app-bg-strong) 100%);
+  color: var(--app-fg);
+  font-family: var(--font-body);
+  line-height: 1.5;
+  overflow-x: hidden;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
 
-  .section-kicker {
-    @apply text-sm uppercase tracking-[0.26em] text-zinc-400;
-  }
+a {
+  color: inherit;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--app-accent) 34%, transparent);
+  color: var(--app-fg);
+}
+
+:focus-visible {
+  outline: 2px solid var(--app-focus-ring);
+  outline-offset: 2px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-family: var(--font-heading);
+  letter-spacing: -0.03em;
+}
+
+p {
+  margin: 0;
+}
+
+.appBody main,
+.appRoot main {
+  display: block;
+}
+
+.appRoot {
+  position: relative;
+  min-height: 100dvh;
+  isolation: isolate;
+}
+
+.appShell,
+.app-shell {
+  min-height: 100dvh;
+}
+
+.page-surface,
+.surface-soft,
+.surface-feature {
+  border: 1px solid var(--app-border);
+  background: color-mix(in srgb, var(--app-surface) 94%, transparent);
+  box-shadow: var(--app-shadow-panel);
+}
+
+.page-surface {
+  border-radius: var(--app-radius-xl);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--app-surface-strong) 52%, transparent) 0%, transparent 100%),
+    color-mix(in srgb, var(--app-surface) 95%, transparent);
+}
+
+.surface-soft {
+  border-radius: var(--app-radius-lg);
+  background: color-mix(in srgb, var(--app-surface) 92%, transparent);
+}
+
+.surface-feature {
+  border-color: color-mix(in srgb, var(--app-border-strong) 56%, var(--app-border));
+  border-radius: var(--app-radius-xl);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--app-accent) 8%, transparent) 0%, transparent 100%),
+    color-mix(in srgb, var(--app-surface-strong) 96%, transparent);
+}
+
+.text-gradient {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--app-fg) 88%, white 12%) 0%,
+    var(--app-accent-strong) 52%,
+    color-mix(in srgb, var(--app-warning) 76%, var(--app-accent)) 100%
+  );
+  background-clip: text;
+  color: transparent;
+  -webkit-background-clip: text;
+}
+
+.section-kicker {
+  color: color-mix(in srgb, var(--app-muted) 88%, white 12%);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
 }

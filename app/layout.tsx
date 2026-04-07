@@ -16,10 +16,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" className="dark">
-      <body className="min-h-dvh bg-[var(--app-bg)] text-[var(--app-fg)] antialiased">
+    <html lang="ru">
+      <body className="appBody">
         <Providers>
-          <div className="app-shell">
+          <div className="appRoot" data-testid="app-root">
             <main>{children}</main>
           </div>
         </Providers>
