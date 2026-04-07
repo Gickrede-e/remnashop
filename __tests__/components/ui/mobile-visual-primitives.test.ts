@@ -12,6 +12,7 @@ vi.mock("next/link", () => ({
 
 import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { buttonVariants } from "@/components/ui/button";
@@ -41,6 +42,23 @@ describe("mobile visual primitives", () => {
 
     expect(markup).toMatch(/class="[^"]*\bbutton\b[^"]*\bw-full\b[^"]*\bjustify-between\b[^"]*"/);
     expect(css).toMatch(/@layer components\s*\{[\s\S]*\.button\s*\{/);
+    expect(css).not.toMatch(/\.button\s*\{[\s\S]*!important/);
+  });
+
+  it("preserves panel primitive overrides and legacy helper classes during the bridge", () => {
+    const cardMarkup = renderToStaticMarkup(
+      React.createElement(Card, { className: "surface-soft p-5" }, "Telemetry")
+    );
+    const contentMarkup = renderToStaticMarkup(
+      React.createElement(CardContent, { className: "p-5 pt-0" }, "Rows")
+    );
+    const css = fs.readFileSync(globalsCssPath, "utf8");
+
+    expect(cardMarkup).toMatch(/class="[^"]*\bpanel\b[^"]*\bsurface-soft\b[^"]*\bp-5\b[^"]*"/);
+    expect(contentMarkup).toMatch(/class="[^"]*\bpanelBody\b[^"]*\bp-5\b[^"]*\bpt-0\b[^"]*"/);
+    expect(css).toMatch(/@layer components\s*\{[\s\S]*\.panel\s*\{/);
+    expect(css).toMatch(/@layer components\s*\{[\s\S]*\.panelBody\s*\{/);
+    expect(css).not.toMatch(/\.panel(?:Body)?\s*\{[\s\S]*!important/);
   });
 
   it("renders the input with a semantic input class", () => {
