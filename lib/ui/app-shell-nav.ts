@@ -1,4 +1,4 @@
-export type AppShellArea = "dashboard" | "admin";
+export type AppShellArea = "public" | "dashboard" | "admin";
 
 export type AppNavItem = {
   href: string;
@@ -6,9 +6,24 @@ export type AppNavItem = {
   slot: "primary" | "secondary";
 };
 
+export type AppFooterAction = {
+  label: string;
+  kind: "link" | "summary" | "command";
+  intent: "guest" | "system";
+  href?: string;
+  command?: "logout";
+};
+
 type SecondaryNavOptions = {
   canAccessAdmin?: boolean;
 };
+
+const publicPrimaryNavItems: AppNavItem[] = [
+  { href: "/", label: "Главная", slot: "primary" },
+  { href: "/pricing", label: "Тарифы", slot: "primary" },
+  { href: "/faq", label: "FAQ", slot: "primary" },
+  { href: "/terms", label: "Условия", slot: "primary" }
+];
 
 const dashboardPrimaryNavItems: AppNavItem[] = [
   { href: "/dashboard", label: "Обзор", slot: "primary" },
@@ -39,10 +54,18 @@ const adminSecondaryNavItems: AppNavItem[] = [
 ];
 
 export function getPrimaryNavItems(area: AppShellArea): AppNavItem[] {
+  if (area === "public") {
+    return publicPrimaryNavItems;
+  }
+
   return area === "dashboard" ? dashboardPrimaryNavItems : adminPrimaryNavItems;
 }
 
 export function getSecondaryNavItems(area: AppShellArea, options: SecondaryNavOptions = {}): AppNavItem[] {
+  if (area === "public") {
+    return [];
+  }
+
   if (area === "dashboard") {
     return options.canAccessAdmin
       ? [...dashboardSecondaryNavItems, { href: "/admin", label: "Админка", slot: "secondary" }]
@@ -50,6 +73,28 @@ export function getSecondaryNavItems(area: AppShellArea, options: SecondaryNavOp
   }
 
   return adminSecondaryNavItems;
+}
+
+export function getFooterActions(
+  area: AppShellArea,
+  options: { authenticated: boolean; canAccessAdmin?: boolean }
+): AppFooterAction[] {
+  if (!options.authenticated || area === "public") {
+    return [
+      { href: "/login", label: "Login", kind: "link", intent: "guest" },
+      { href: "/register", label: "Register", kind: "link", intent: "guest" }
+    ];
+  }
+
+  return [
+    { label: "Profile", kind: "summary", intent: "system" },
+    ...(area === "dashboard" && options.canAccessAdmin
+      ? [{ href: "/admin", label: "Switch role", kind: "link", intent: "system" as const }]
+      : area === "admin"
+        ? [{ href: "/dashboard", label: "Switch role", kind: "link", intent: "system" as const }]
+        : []),
+    { label: "Logout", kind: "command", command: "logout", intent: "system" }
+  ];
 }
 
 export function isNavItemActive(pathname: string, href: string) {

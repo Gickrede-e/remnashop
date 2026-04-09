@@ -1,12 +1,44 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  getFooterActions,
   getPrimaryNavItems,
   getSecondaryNavItems,
   isNavItemActive
 } from "@/lib/ui/app-shell-nav";
 
 describe("app shell nav", () => {
+  it("defines the public, dashboard, and admin navigation contract", () => {
+    expect(getPrimaryNavItems("public").map((item) => item.href)).toEqual([
+      "/",
+      "/pricing",
+      "/faq",
+      "/terms"
+    ]);
+    expect(getFooterActions("public", { authenticated: false }).map((item) => item.label)).toEqual([
+      "Login",
+      "Register"
+    ]);
+    expect(getFooterActions("public", { authenticated: false }).map((item) => item.kind)).toEqual([
+      "link",
+      "link"
+    ]);
+    expect(getFooterActions("dashboard", { authenticated: true, canAccessAdmin: true }).map((item) => item.label)).toEqual([
+      "Profile",
+      "Switch role",
+      "Logout"
+    ]);
+    expect(getFooterActions("dashboard", { authenticated: true, canAccessAdmin: true }).map((item) => item.kind)).toEqual([
+      "summary",
+      "link",
+      "command"
+    ]);
+    expect(getFooterActions("public", { authenticated: false }).flatMap((item) => item.href ?? [])).toEqual([
+      "/login",
+      "/register"
+    ]);
+  });
+
   it("keeps dashboard primary nav limited to four mobile destinations", () => {
     expect(getPrimaryNavItems("dashboard").map((item) => item.href)).toEqual([
       "/dashboard",
