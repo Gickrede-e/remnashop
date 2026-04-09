@@ -23,7 +23,7 @@ But it must remain a real product UI rather than a cloned marketing/documentatio
 ## Goals
 
 - Make the application shell visually and structurally resemble the internal pages of `overrrides.com`.
-- Use one consistent left sidebar pattern across public, auth, dashboard, and admin surfaces.
+- Use one consistent left sidebar pattern across all non-auth surfaces; `login` and `register` are explicit exceptions.
 - Simplify login into a centered card instead of the previously approved split auth layout.
 - Keep dashboard and admin operational on the right side of the shell, not gallery-like.
 - Preserve the current routes, business logic, data flow, and behavioral contracts while changing layout and styling.
@@ -67,18 +67,25 @@ The following elements should be adapted to RemnaShop:
 
 ## Global Shell Architecture
 
+Auth rule: the unified sidebar applies to all non-auth surfaces only. `login` and `register` are intentionally sidebar-free centered-card screens.
+
 ### Single Sidebar System
 
-All product areas should use the same left sidebar pattern:
+The application should use one consistent left sidebar pattern everywhere except auth.
+
+Areas inside the unified sidebar shell:
 
 - public entry pages
-- login
-- register
+- supporting public pages such as pricing, FAQ, and terms
 - dashboard
 - admin
-- supporting public pages such as pricing and FAQ if they remain in scope
 
-The shell should stop switching between unrelated navigation paradigms. The sidebar becomes the primary spatial anchor of the whole application.
+Explicit exceptions:
+
+- login
+- register
+
+The shell should stop switching between unrelated navigation paradigms. The sidebar becomes the primary spatial anchor of the application outside the auth flow.
 
 ### Sidebar Structure
 
@@ -108,15 +115,20 @@ Rules:
 
 #### 3. System Actions Zone
 
-Bottom block uses system actions instead of sales CTAs.
+Bottom block uses state-aware footer actions instead of sales CTAs.
 
-Required actions:
+Authenticated shell actions:
 
 - Profile
 - Switch role
 - Logout
 
-This zone should visually echo the bottom CTA zone on `overrrides`, but semantically it is product/system control, not checkout.
+Guest shell actions on public pages should use the same visual block, but with guest-appropriate destinations such as:
+
+- Login
+- Register
+
+This zone should visually echo the bottom CTA zone on `overrrides`, but semantically it is product/system control or guest entry, not checkout.
 
 ## Top-Level Layout Rules
 
@@ -138,6 +150,12 @@ Mobile may collapse the sidebar into a drawer or sheet, but:
 - do not reintroduce a standard bottom navigation bar if the sidebar/drawer can cover the need
 - system actions must remain accessible within the mobile nav surface
 
+Auth is the exception on mobile as well:
+
+- login and register remain sidebar-free
+- auth stays as a centered-card family scaled for mobile
+- the mobile sidebar drawer applies to public entry/info pages, dashboard, and admin only
+
 ## Public and Auth Surfaces
 
 ### Home Page
@@ -151,12 +169,17 @@ Desired behavior:
 - copy remains short and functional
 - the page acts as a product gateway, not a visual asset library
 
+Pricing, FAQ, and terms should follow the same sidebar shell family as the home page.
+
+On guest/public pages, the sidebar footer uses the guest action variant rather than authenticated system actions.
+
 ### Login Page
 
 The login page is now intentionally simpler than the shared-shell mockups shown earlier.
 
 Approved direction:
 
+- no left sidebar
 - centered login card
 - no split hero/auth composition
 - two fields
@@ -184,6 +207,7 @@ But the styling should use the `overrrides` internal-page palette and atmosphere
 
 Register should remain consistent with login:
 
+- no left sidebar
 - same centered-card family
 - slightly taller form because of extra fields
 - no return to the split auth layout
