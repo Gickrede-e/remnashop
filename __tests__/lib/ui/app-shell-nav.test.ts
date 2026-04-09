@@ -33,10 +33,21 @@ describe("app shell nav", () => {
       "link",
       "command"
     ]);
+    expect(getFooterActions("public", { authenticated: true }).map((item) => item.label)).toEqual([
+      "Profile",
+      "Logout"
+    ]);
     expect(getFooterActions("public", { authenticated: false }).flatMap((item) => item.href ?? [])).toEqual([
       "/login",
       "/register"
     ]);
+  });
+
+  it("keeps footer role switching scoped to the current shell area and access level", () => {
+    expect(getFooterActions("admin", { authenticated: true }).flatMap((item) => item.href ?? [])).toContain("/dashboard");
+    expect(getFooterActions("dashboard", { authenticated: true, canAccessAdmin: false }).map((item) => item.label)).not.toContain(
+      "Switch role"
+    );
   });
 
   it("keeps dashboard primary nav limited to four mobile destinations", () => {

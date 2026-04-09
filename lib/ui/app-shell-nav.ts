@@ -1,4 +1,5 @@
-export type AppShellArea = "public" | "dashboard" | "admin";
+export type AppShellArea = "dashboard" | "admin";
+export type AppShellNavArea = AppShellArea | "public";
 
 export type AppNavItem = {
   href: string;
@@ -53,7 +54,32 @@ const adminSecondaryNavItems: AppNavItem[] = [
   { href: "/dashboard", label: "Личный кабинет", slot: "secondary" }
 ];
 
-export function getPrimaryNavItems(area: AppShellArea): AppNavItem[] {
+const guestFooterActions: AppFooterAction[] = [
+  { href: "/login", label: "Login", kind: "link", intent: "guest" },
+  { href: "/register", label: "Register", kind: "link", intent: "guest" }
+];
+
+const profileFooterAction: AppFooterAction = { label: "Profile", kind: "summary", intent: "system" };
+const dashboardSwitchFooterAction: AppFooterAction = {
+  href: "/admin",
+  label: "Switch role",
+  kind: "link",
+  intent: "system"
+};
+const adminSwitchFooterAction: AppFooterAction = {
+  href: "/dashboard",
+  label: "Switch role",
+  kind: "link",
+  intent: "system"
+};
+const logoutFooterAction: AppFooterAction = {
+  label: "Logout",
+  kind: "command",
+  command: "logout",
+  intent: "system"
+};
+
+export function getPrimaryNavItems(area: AppShellNavArea): AppNavItem[] {
   if (area === "public") {
     return publicPrimaryNavItems;
   }
@@ -61,7 +87,7 @@ export function getPrimaryNavItems(area: AppShellArea): AppNavItem[] {
   return area === "dashboard" ? dashboardPrimaryNavItems : adminPrimaryNavItems;
 }
 
-export function getSecondaryNavItems(area: AppShellArea, options: SecondaryNavOptions = {}): AppNavItem[] {
+export function getSecondaryNavItems(area: AppShellNavArea, options: SecondaryNavOptions = {}): AppNavItem[] {
   if (area === "public") {
     return [];
   }
@@ -76,25 +102,24 @@ export function getSecondaryNavItems(area: AppShellArea, options: SecondaryNavOp
 }
 
 export function getFooterActions(
-  area: AppShellArea,
+  area: AppShellNavArea,
   options: { authenticated: boolean; canAccessAdmin?: boolean }
 ): AppFooterAction[] {
-  if (!options.authenticated || area === "public") {
-    return [
-      { href: "/login", label: "Login", kind: "link", intent: "guest" },
-      { href: "/register", label: "Register", kind: "link", intent: "guest" }
-    ];
+  if (!options.authenticated) {
+    return guestFooterActions;
   }
 
-  return [
-    { label: "Profile", kind: "summary", intent: "system" },
-    ...(area === "dashboard" && options.canAccessAdmin
-      ? [{ href: "/admin", label: "Switch role", kind: "link", intent: "system" as const }]
-      : area === "admin"
-        ? [{ href: "/dashboard", label: "Switch role", kind: "link", intent: "system" as const }]
-        : []),
-    { label: "Logout", kind: "command", command: "logout", intent: "system" }
-  ];
+  const actions: AppFooterAction[] = [profileFooterAction];
+
+  if (area === "dashboard" && options.canAccessAdmin) {
+    actions.push(dashboardSwitchFooterAction);
+  } else if (area === "admin") {
+    actions.push(adminSwitchFooterAction);
+  }
+
+  actions.push(logoutFooterAction);
+
+  return actions;
 }
 
 export function isNavItemActive(pathname: string, href: string) {
