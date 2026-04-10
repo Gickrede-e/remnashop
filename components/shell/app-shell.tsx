@@ -96,7 +96,7 @@ export function AppShell({ area, canAccessAdmin = false, children }: AppShellPro
         onOpenMore={() => setMoreOpen(true)}
       />
 
-      <div className="appShellViewport">
+      <div className="container appShellViewport">
         <AppNavRail
           area={area}
           primaryItems={railPrimaryItems}
