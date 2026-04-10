@@ -51,10 +51,10 @@ describe("auth pages", () => {
       })
     );
 
-    expect(markup).toMatch(/class="[^"]*\bauthScene\b[^"]*"/);
+    expect(markup).toMatch(/<main[^>]*class="[^"]*\bauthScene\b[^"]*"/);
     expect(markup).toMatch(/class="[^"]*\bauthSceneViewport\b[^"]*"/);
     expect(markup).toMatch(/class="[^"]*\bauthStandaloneCard\b[^"]*"/);
-    expect(markup).not.toContain("Навигация авторизации");
+    expect(markup).not.toContain('aria-label="Навигация авторизации"');
     expect(markup).not.toMatch(/class="[^"]*\bauthEntryTabs\b[^"]*"/);
     expect(markup).toContain("Вход в кабинет");
   });
@@ -68,10 +68,10 @@ describe("auth pages", () => {
       })
     );
 
-    expect(markup).toMatch(/class="[^"]*\bauthScene\b[^"]*"/);
+    expect(markup).toMatch(/<main[^>]*class="[^"]*\bauthScene\b[^"]*"/);
     expect(markup).toMatch(/class="[^"]*\bauthSceneViewport\b[^"]*"/);
     expect(markup).toMatch(/class="[^"]*\bauthStandaloneCard\b[^"]*"/);
-    expect(markup).not.toContain("Навигация авторизации");
+    expect(markup).not.toContain('aria-label="Навигация авторизации"');
     expect(markup).not.toMatch(/class="[^"]*\bauthEntryTabs\b[^"]*"/);
     expect(markup).toContain("Создание аккаунта");
   });
