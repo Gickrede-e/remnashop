@@ -9,8 +9,21 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/components/shell/app-topbar", () => ({
-  AppTopbar: ({ activeRouteLabel }: { activeRouteLabel?: string }) =>
-    React.createElement("div", { "data-slot": "topbar", "data-active-route-label": activeRouteLabel })
+  AppTopbar: ({ area }: { area?: string }) =>
+    React.createElement("div", {
+      "data-slot": "topbar",
+      "data-area": area
+    })
+}));
+
+vi.mock("@/components/shell/app-nav-rail", () => ({
+  AppNavRail: () =>
+    React.createElement(
+      "aside",
+      { "data-testid": "app-nav-rail", "aria-label": "Sidebar navigation" },
+      React.createElement("nav", { "aria-label": "Primary navigation" }),
+      React.createElement("div", { "aria-label": "Sidebar footer actions" })
+    )
 }));
 
 vi.mock("@/components/shell/app-bottom-nav", () => ({
@@ -37,13 +50,17 @@ describe("app shell structure", () => {
       )
     );
 
-    expect(markup).not.toContain("<main");
+    expect(markup).toContain('href="#app-shell-main"');
+    expect(markup).toContain(">Перейти к содержимому<");
+    expect(markup).toContain('data-testid="app-nav-rail"');
+    expect(markup).toContain('<main id="app-shell-main"');
     expect(markup).toContain("Screen body");
     expect(markup).toContain('data-testid="app-shell-main"');
     expect(markup).toMatch(/class="[^"]*\bappShellMain\b[^"]*"/);
+    expect(markup).not.toContain('data-slot="bottom-nav"');
   });
 
-  it("passes the active secondary route label to the topbar summary", () => {
+  it("keeps the topbar mounted without the legacy bottom navigation", () => {
     mockedPathname.value = "/dashboard/history";
 
     const markup = renderToStaticMarkup(
@@ -54,7 +71,9 @@ describe("app shell structure", () => {
       )
     );
 
-    expect(markup).toContain('data-active-route-label="История"');
+    expect(markup).toContain('data-slot="topbar"');
+    expect(markup).toContain('data-area="dashboard"');
+    expect(markup).not.toContain('data-slot="bottom-nav"');
   });
 
   it("labels the desktop rail navigation landmarks", () => {
@@ -68,7 +87,9 @@ describe("app shell structure", () => {
       )
     );
 
-    expect(markup).toContain('aria-label="Основные разделы"');
-    expect(markup).toContain('aria-label="Дополнительные разделы"');
+    expect(markup).toContain('data-testid="app-nav-rail"');
+    expect(markup).toContain('aria-label="Primary navigation"');
+    expect(markup).toContain('aria-label="Sidebar footer actions"');
+    expect(markup).not.toContain('data-slot="bottom-nav"');
   });
 });

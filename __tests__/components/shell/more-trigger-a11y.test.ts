@@ -33,7 +33,7 @@ import { AppBottomNav } from "@/components/shell/app-bottom-nav";
 import { AppTopbar } from "@/components/shell/app-topbar";
 
 describe("shared shell more triggers", () => {
-  it("uses dialog trigger semantics for the mobile bottom-nav more button", () => {
+  it("keeps the legacy bottom-nav component as a no-op compatibility shim", () => {
     const props: React.ComponentProps<typeof AppBottomNav> = {
       items: [
         { href: "/dashboard", label: "Обзор", icon: Menu, active: false },
@@ -48,17 +48,14 @@ describe("shared shell more triggers", () => {
       React.createElement(AppBottomNav, props)
     );
 
-    expect(markup).toContain('aria-haspopup="dialog"');
-    expect(markup).toContain('aria-expanded="true"');
-    expect(markup).toContain('aria-controls="dashboard-more-sheet"');
-    expect(markup).not.toContain("aria-pressed=");
-    expect(markup).toMatch(/class="[^"]*\bmoreTrigger\b[^"]*"/);
+    expect(markup).toBe("");
   });
 
   it("uses dialog trigger semantics for both topbar more buttons", () => {
     const props: React.ComponentProps<typeof AppTopbar> = {
-      homeHref: "/dashboard",
+      area: "dashboard",
       primaryItems: [{ href: "/dashboard", label: "Обзор", icon: Menu, active: true }],
+      activeRouteLabel: "Обзор",
       isMoreActive: false,
       onOpenMore: () => undefined,
       moreOpen: false,
@@ -75,10 +72,11 @@ describe("shared shell more triggers", () => {
     expect((markup.match(/class="[^"]*\bmoreTrigger\b[^"]*"/g) ?? []).length).toBe(2);
   });
 
-  it("keeps the topbar free of the old left text block and mounts logout", () => {
+  it("keeps the topbar free of the old left text block and leaves footer actions to the rail or sheet", () => {
     const props: React.ComponentProps<typeof AppTopbar> = {
-      homeHref: "/dashboard",
+      area: "dashboard",
       primaryItems: [{ href: "/dashboard", label: "Обзор", icon: Menu, active: true }],
+      activeRouteLabel: "Обзор",
       isMoreActive: false,
       onOpenMore: () => undefined,
       moreOpen: false,
@@ -91,20 +89,27 @@ describe("shared shell more triggers", () => {
 
     expect(markup).not.toContain("Личный кабинет");
     expect(markup).not.toContain("<p>Обзор</p>");
-    expect(markup).toContain("LogoutMock");
+    expect(markup).not.toContain("LogoutMock");
     expect(markup).toContain('<a href="/dashboard">Logo</a>');
   });
 
-  it("renders logout inside the more sheet", () => {
+  it("renders footer actions inside the more sheet without a fake logout route", () => {
     const markup = renderToStaticMarkup(
       React.createElement(AppMoreSheet, {
         area: "dashboard",
-        items: [{ href: "/dashboard/referrals", label: "Рефералы", icon: Menu, active: false }],
+        primaryItems: [{ href: "/dashboard", label: "Обзор", icon: Menu, active: true }],
+        secondaryItems: [{ href: "/dashboard/referrals", label: "Рефералы", icon: Menu, active: false }],
+        footerActions: [
+          { label: "Profile", kind: "summary", intent: "system" },
+          { label: "Logout", kind: "command", intent: "system", command: "logout" }
+        ],
         open: true,
         onOpenChange: () => undefined
       })
     );
 
+    expect(markup).toContain("Profile");
     expect(markup).toContain("LogoutMock");
+    expect(markup).not.toContain('href="/logout"');
   });
 });

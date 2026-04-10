@@ -6,21 +6,25 @@ import { cn } from "@/lib/utils";
 export function Logo({
   className,
   href = "/",
-  compact = false
+  compact = false,
+  variant = "default"
 }: {
   className?: string;
   href?: string;
   compact?: boolean;
+  variant?: "default" | "rail";
 }) {
+  const rail = variant === "rail";
+
   return (
-    <Link href={href} className={cn("appLogo", compact && "appLogoCompact", className)}>
+    <Link href={href} className={cn("appLogo", compact && "appLogoCompact", rail && "appLogoRail", className)}>
       <span className="appLogoMark" aria-hidden="true">
         <span className="appLogoMarkCore">
-          <Shield className="h-4 w-4" />
+          <Shield className="iconSm" />
         </span>
       </span>
       <span className="appLogoBody">
-        {!compact ? <span className="appLogoEyebrow">Secure commerce</span> : null}
+        {!compact ? <span className="appLogoEyebrow">{rail ? "Shared shell" : "Secure commerce"}</span> : null}
         <span className="appLogoWordmark">GickShop</span>
       </span>
     </Link>

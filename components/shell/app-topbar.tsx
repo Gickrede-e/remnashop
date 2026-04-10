@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { Menu, type LucideIcon } from "lucide-react";
 
-import { LogoutButton } from "@/components/shared/logout-button";
 import { Logo } from "@/components/shared/logo";
 import { cn } from "@/lib/utils";
 
@@ -15,28 +14,25 @@ type AppTopbarItem = {
 };
 
 type AppTopbarProps = {
-  homeHref: string;
+  area: "dashboard" | "admin";
   primaryItems: AppTopbarItem[];
   activeRouteLabel?: string;
   isMoreActive: boolean;
   moreOpen: boolean;
   moreSheetId?: string;
   onOpenMore: () => void;
-  areaSwitchHref?: string;
-  areaSwitchLabel?: string;
 };
 
 export function AppTopbar({
-  homeHref,
+  area,
   primaryItems,
   activeRouteLabel,
   isMoreActive,
   moreOpen,
   moreSheetId,
-  onOpenMore,
-  areaSwitchHref,
-  areaSwitchLabel
+  onOpenMore
 }: AppTopbarProps) {
+  const homeHref = area === "admin" ? "/admin" : "/dashboard";
   const consoleLabel = homeHref === "/admin" ? "Режим контроля" : "Режим оператора";
 
   return (
@@ -45,11 +41,6 @@ export function AppTopbar({
         <div className="appTopbarIdentity">
           <div className="appTopbarBrandLockup">
             <Logo compact href={homeHref} />
-            {areaSwitchHref && areaSwitchLabel && (
-              <Link href={areaSwitchHref} className="appTopbarAreaSwitch">
-                {areaSwitchLabel}
-              </Link>
-            )}
           </div>
           <span className="appTopbarConsoleBadge">{consoleLabel}</span>
         </div>
@@ -62,7 +53,7 @@ export function AppTopbar({
               aria-current={item.active ? "page" : undefined}
               className={cn("appTopbarNavLink", item.active && "is-active")}
             >
-              <item.icon className="h-4 w-4" />
+              <item.icon className="iconSm" />
               <span>{item.label}</span>
             </Link>
           ))}
@@ -74,7 +65,7 @@ export function AppTopbar({
             aria-expanded={moreOpen}
             aria-controls={moreSheetId}
           >
-            <Menu className="h-4 w-4" />
+            <Menu className="iconSm" />
             <span>Ещё</span>
           </button>
         </nav>
@@ -86,7 +77,6 @@ export function AppTopbar({
               {activeRouteLabel ?? primaryItems.find((item) => item.active)?.label ?? "Обзор"}
             </span>
           </div>
-          <LogoutButton className="appTopbarLogout" />
           <button
             type="button"
             className="button buttonSecondary buttonSizeIcon appTopbarMenuButton moreTrigger"
@@ -96,7 +86,7 @@ export function AppTopbar({
             aria-expanded={moreOpen}
             aria-controls={moreSheetId}
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="iconMd" />
           </button>
         </div>
       </div>
