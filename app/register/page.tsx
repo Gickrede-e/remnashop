@@ -1,4 +1,4 @@
-import { AuthEntryPanel } from "@/components/blocks/auth/auth-entry-panel";
+import { AuthStandaloneCard } from "@/components/blocks/auth/auth-standalone-card";
 import { RegisterForm } from "@/components/auth/register-form";
 import { getSession } from "@/lib/auth/session";
 import { sanitizeNextPath } from "@/lib/auth/navigation";
@@ -21,15 +21,12 @@ export default async function RegisterPage({
   return (
     <main className="authScene">
       <div className="authSceneViewport">
-        <AuthEntryPanel
+        <AuthStandaloneCard
           title="Создание аккаунта"
           description="Новый аккаунт сразу открывает доступ к покупке, продлению и управлению подпиской."
-          activeView="register"
-          nextPath={nextPath}
-          referralCode={referralCode}
         >
           <RegisterForm referralCode={referralCode} nextPath={nextPath} />
-        </AuthEntryPanel>
+        </AuthStandaloneCard>
       </div>
     </main>
   );

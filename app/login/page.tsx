@@ -1,8 +1,7 @@
-import { AuthEntryPanel } from "@/components/blocks/auth/auth-entry-panel";
+import { AuthStandaloneCard } from "@/components/blocks/auth/auth-standalone-card";
 import { LoginForm } from "@/components/auth/login-form";
 import { getSession } from "@/lib/auth/session";
 import { sanitizeNextPath } from "@/lib/auth/navigation";
-import { publicEnv } from "@/lib/public-env";
 import { redirect } from "next/navigation";
 
 export default async function LoginPage({
@@ -21,17 +20,12 @@ export default async function LoginPage({
   return (
     <main className="authScene">
       <div className="authSceneViewport">
-        <AuthEntryPanel
+        <AuthStandaloneCard
           title="Вход в кабинет"
           description="Используйте email и пароль или Telegram, если он уже подключен к аккаунту."
-          activeView="login"
-          nextPath={nextPath}
         >
-          <LoginForm
-            telegramUsername={publicEnv.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}
-            nextPath={nextPath}
-          />
-        </AuthEntryPanel>
+          <LoginForm nextPath={nextPath} />
+        </AuthStandaloneCard>
       </div>
     </main>
   );
