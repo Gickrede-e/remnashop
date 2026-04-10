@@ -1378,6 +1378,16 @@ p {
     padding: 1.5rem;
   }
 
+  .dashShellPageWrapper,
+  .dashOverview,
+  .dashHistory,
+  .dashDevices,
+  .dashReferrals,
+  .dashCheckout {
+    display: grid;
+    gap: clamp(1.5rem, 2.5vw, 2rem);
+  }
+
   .dashCardHead {
     display: flex;
     align-items: center;
