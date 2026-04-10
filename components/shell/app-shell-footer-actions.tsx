@@ -38,7 +38,7 @@ export function AppShellFooterActions({
   const classes = variantClasses[variant];
 
   return (
-    <div className={classes.container} aria-label="Sidebar footer actions">
+    <section className={classes.container} aria-label="Sidebar footer actions">
       {variant === "rail" ? <p className="appNavRailSectionLabel">Аккаунт</p> : null}
 
       <div className={classes.list}>
@@ -76,6 +76,6 @@ export function AppShellFooterActions({
           );
         })}
       </div>
-    </div>
+    </section>
   );
 }

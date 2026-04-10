@@ -1,6 +1,3 @@
-@config "../tailwind.config.mjs";
-@import "tailwindcss";
-
 :root {
   color-scheme: dark;
   --app-bg: 222 32% 7%;
@@ -79,10 +76,64 @@ body.appBody {
   -webkit-font-smoothing: antialiased;
 }
 
+.container {
+  width: min(100% - 2rem, 80rem);
+  margin-inline: auto;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.iconSm {
+  width: 1rem;
+  height: 1rem;
+}
+
+.iconMd {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.iconNoShrink {
+  flex-shrink: 0;
+}
+
 .appRoot {
   position: relative;
   min-height: 100dvh;
   isolation: isolate;
+}
+
+.appSkipLink {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 80;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding-inline: 1rem;
+  border: 1px solid color-mix(in srgb, hsl(var(--app-accent)) 34%, hsl(var(--app-border)));
+  border-radius: calc(var(--radius) + 0.2rem);
+  background: hsl(var(--app-surface-overlay));
+  color: hsl(var(--app-fg));
+  text-decoration: none;
+  transform: translateY(-140%);
+  transition: transform 140ms ease;
+}
+
+.appSkipLink:focus-visible {
+  transform: translateY(0);
 }
 
 a {
@@ -158,6 +209,34 @@ p {
   font-weight: 600;
   letter-spacing: 0.26em;
   text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .skeleton,
+  .dialogOverlay[data-state],
+  .dialogSurface[data-state] {
+    animation: none !important;
+  }
+
+  .appNavRailLink:hover,
+  .appMoreSheetLink:hover,
+  .authEntryTab:hover,
+  .appSkipLink {
+    transform: none;
+  }
 }
 
 @layer components {
@@ -508,6 +587,23 @@ p {
       linear-gradient(180deg, color-mix(in srgb, hsl(var(--app-surface-strong)) 98%, transparent) 0%, color-mix(in srgb, hsl(var(--app-surface-overlay)) 98%, transparent) 100%);
   }
 
+  .appMoreSheetContent {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    max-height: 85dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0;
+    border-right: none;
+    border-bottom: none;
+    border-left: none;
+    border-radius: calc(var(--radius) + 1rem) calc(var(--radius) + 1rem) 0 0;
+    transform: none;
+  }
+
   .appMoreSheetHeader {
     margin-bottom: 0;
     padding: 1.25rem 1.25rem 1rem;
@@ -592,6 +688,39 @@ p {
     justify-content: center;
   }
 
+  .appStatePage {
+    width: min(100% - 2rem, 80rem);
+    margin-inline: auto;
+    display: grid;
+    gap: 1.5rem;
+    padding-block: clamp(3rem, 8vw, 5rem);
+  }
+
+  .appStateCard {
+    width: min(100%, 42rem);
+    justify-self: center;
+  }
+
+  .appStateBody,
+  .appStateSkeletonStack {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .appStateBody {
+    justify-items: start;
+  }
+
+  .appStateSkeletonHero {
+    width: 100%;
+    height: 8rem;
+  }
+
+  .appStateSkeletonCanvas {
+    width: 100%;
+    height: 16rem;
+  }
+
   .screenHeader {
     display: flex;
     flex-direction: column;
@@ -617,6 +746,7 @@ p {
     font-size: clamp(2rem, 3vw, 2.8rem);
     font-weight: 600;
     line-height: 1.04;
+    text-wrap: balance;
   }
 
   .screenHeaderTitleCompact {
@@ -698,7 +828,1895 @@ p {
     font-size: 1rem;
   }
 
+  .authScene {
+    position: relative;
+    min-height: 100dvh;
+    padding: clamp(1.25rem, 3vw, 2.5rem);
+    overflow: hidden;
+  }
+
+  .authScene::before,
+  .authScene::after {
+    content: "";
+    position: absolute;
+    inset: auto;
+    pointer-events: none;
+  }
+
+  .authScene::before {
+    top: -12rem;
+    left: -8rem;
+    width: 24rem;
+    height: 24rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in srgb, hsl(var(--app-accent)) 18%, transparent) 0%, transparent 70%);
+    filter: blur(12px);
+  }
+
+  .authScene::after {
+    right: -10rem;
+    bottom: -8rem;
+    width: 30rem;
+    height: 30rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in srgb, hsl(var(--app-border-strong)) 12%, transparent) 0%, transparent 72%);
+  }
+
+  .authSceneViewport {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    align-items: center;
+    width: min(100%, 74rem);
+    min-height: calc(100dvh - clamp(2.5rem, 6vw, 5rem));
+    margin: 0 auto;
+  }
+
+  .authScenePanel {
+    width: 100%;
+    max-width: 70rem;
+    margin: 0 auto;
+  }
+
+  .authSceneStatus {
+    min-height: 100%;
+  }
+
+  .authEntry {
+    display: grid;
+    overflow: hidden;
+  }
+
+  .authEntryWorkspace {
+    display: grid;
+    align-content: start;
+    min-width: 0;
+    background:
+      linear-gradient(180deg, color-mix(in srgb, hsl(var(--app-surface-strong)) 96%, transparent) 0%, color-mix(in srgb, hsl(var(--app-surface)) 98%, transparent) 100%);
+  }
+
+  .authEntryHeader,
+  .authEntryBody {
+    padding: clamp(1.25rem, 3vw, 2rem);
+  }
+
+  .authEntryHeader {
+    display: grid;
+    gap: 1.25rem;
+    border-bottom: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    background:
+      linear-gradient(135deg, color-mix(in srgb, hsl(var(--app-accent)) 8%, transparent) 0%, transparent 48%),
+      linear-gradient(180deg, color-mix(in srgb, hsl(var(--app-surface-overlay)) 98%, transparent) 0%, color-mix(in srgb, hsl(var(--app-surface)) 94%, transparent) 100%);
+  }
+
+  .authEntryEyebrowRow,
+  .authEntryMeta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+  }
+
+  .authEntryEyebrow {
+    color: hsl(var(--app-muted));
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+  }
+
+  .authEntryBadge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2rem;
+    padding-inline: 0.85rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border-strong)) 34%, hsl(var(--app-border)));
+    border-radius: 999px;
+    background: color-mix(in srgb, hsl(var(--app-accent)) 10%, transparent);
+    color: color-mix(in srgb, hsl(var(--app-accent-strong)) 54%, white);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .authEntryHeading {
+    display: grid;
+    gap: 0.65rem;
+    max-width: 38rem;
+  }
+
+  .authEntryTitle {
+    font-size: clamp(2.3rem, 5vw, 4rem);
+    font-weight: 600;
+    line-height: 0.96;
+    text-wrap: balance;
+  }
+
+  .authEntryDescription {
+    color: hsl(var(--app-muted-strong));
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  .authEntryMeta {
+    padding-top: 0.25rem;
+  }
+
+  .authEntryMetaItem {
+    display: grid;
+    gap: 0.28rem;
+    min-width: 12rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 86%, transparent);
+    border-radius: calc(var(--radius) + 0.25rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-overlay)) 82%, transparent);
+  }
+
+  .authEntryMetaLabel {
+    color: hsl(var(--app-muted));
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .authEntryMetaValue {
+    color: hsl(var(--app-fg));
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .authEntryTabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    padding: 1rem clamp(1.25rem, 3vw, 2rem);
+    border-bottom: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    background: color-mix(in srgb, hsl(var(--app-surface-overlay)) 80%, transparent);
+  }
+
+  .authEntryTab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3rem;
+    padding-inline: 1rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 86%, transparent);
+    border-radius: calc(var(--radius) + 0.25rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-soft)) 60%, transparent);
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.92rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-decoration: none;
+    transition:
+      transform 140ms ease,
+      border-color 140ms ease,
+      background-color 140ms ease,
+      color 140ms ease,
+      box-shadow 140ms ease;
+  }
+
+  .authEntryTab:hover {
+    color: hsl(var(--app-fg));
+    border-color: color-mix(in srgb, hsl(var(--app-border-strong)) 36%, hsl(var(--app-border)));
+    background: color-mix(in srgb, hsl(var(--app-accent)) 8%, hsl(var(--app-surface-soft)));
+    transform: translateY(-1px);
+  }
+
+  .authEntryTabCurrent {
+    color: hsl(var(--app-fg));
+    border-color: color-mix(in srgb, hsl(var(--app-accent)) 30%, hsl(var(--app-border)));
+    background: linear-gradient(135deg, color-mix(in srgb, hsl(var(--app-accent)) 14%, hsl(var(--app-surface-soft))) 0%, color-mix(in srgb, hsl(var(--app-surface-strong)) 96%, transparent) 100%);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 8%, transparent),
+      0 14px 24px color-mix(in srgb, hsl(var(--app-shadow)) 28%, transparent);
+  }
+
+  .authEntryBody {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .authFormPanel,
+  .authForm {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .authFormGrid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .authField {
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  .authSubmit {
+    width: 100%;
+  }
+
+  .authError {
+    margin: 0;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-danger)) 26%, transparent);
+    border-radius: calc(var(--radius) + 0.1rem);
+    padding: 0.8rem 0.9rem;
+    background: color-mix(in srgb, hsl(var(--app-danger)) 10%, transparent);
+    color: color-mix(in srgb, hsl(var(--app-danger-strong)) 76%, white);
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .authDivider {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 1.25rem;
+    color: hsl(var(--app-muted));
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .authDivider::before,
+  .authDivider::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: calc(50% - 2.5rem);
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, color-mix(in srgb, hsl(var(--app-border-strong)) 34%, hsl(var(--app-border))) 100%);
+  }
+
+  .authDivider::before {
+    left: 0;
+  }
+
+  .authDivider::after {
+    right: 0;
+    transform: scaleX(-1);
+  }
+
+  .authDivider span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 3.5rem;
+    padding-inline: 0.5rem;
+    background: hsl(var(--app-surface));
+  }
+
+  .authTelegram {
+    display: grid;
+    gap: 0.85rem;
+    padding: 1rem 1.05rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 86%, transparent);
+    border-radius: calc(var(--radius) + 0.35rem);
+    background: linear-gradient(180deg, color-mix(in srgb, hsl(var(--app-surface-soft)) 82%, transparent) 0%, color-mix(in srgb, hsl(var(--app-surface-overlay)) 90%, transparent) 100%);
+  }
+
+  .authTelegramLabel {
+    color: hsl(var(--app-muted));
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .authTelegramWidget {
+    display: flex;
+    justify-content: center;
+    min-height: 3rem;
+  }
+
+  .authHint {
+    padding: 1rem 1.05rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.3rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-soft)) 76%, transparent);
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.92rem;
+    line-height: 1.7;
+  }
+
+  .dashboardOverviewPage,
+  .dashboardOverview {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .telemetryHero,
+  .referralPanel {
+    display: grid;
+    gap: 1.25rem;
+    padding: clamp(1.1rem, 2.4vw, 1.6rem);
+  }
+
+  .telemetryHero {
+    background:
+      linear-gradient(135deg, color-mix(in srgb, hsl(var(--app-accent)) 10%, transparent) 0%, transparent 45%),
+      linear-gradient(180deg, color-mix(in srgb, hsl(var(--app-surface-strong)) 99%, transparent) 0%, color-mix(in srgb, hsl(var(--app-surface)) 96%, transparent) 100%);
+  }
+
+  .telemetryHeroHeader,
+  .commandPanelSection,
+  .commandPanelCopy {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .telemetryHeroHeader {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .telemetryHeroCopy {
+    display: grid;
+    gap: 0.7rem;
+    max-width: 42rem;
+  }
+
+  .telemetryPanelLabel,
+  .referralLinkLabel {
+    color: hsl(var(--app-muted));
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .telemetryHeroTitle,
+  .commandPanelTitle {
+    color: hsl(var(--app-fg));
+    font-family: var(--font-heading);
+    font-size: clamp(1.6rem, 3vw, 2.65rem);
+    font-weight: 600;
+    line-height: 0.98;
+  }
+
+  .telemetryHeroDescription,
+  .commandPanelDescription {
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.96rem;
+    line-height: 1.7;
+  }
+
+  .telemetryHeroStatus {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+  }
+
+  .telemetryGrid {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .telemetryMetric {
+    display: grid;
+    gap: 0.45rem;
+    padding: 1rem 1.05rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.25rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-overlay)) 88%, transparent);
+  }
+
+  .telemetryMetricPending {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 0.85rem;
+  }
+
+  .telemetryMetricIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: calc(var(--radius) + 0.05rem);
+    background: color-mix(in srgb, hsl(var(--app-accent)) 10%, transparent);
+    color: color-mix(in srgb, hsl(var(--app-accent-strong)) 48%, white);
+  }
+
+  .telemetryMetricBody {
+    display: grid;
+    gap: 0.3rem;
+  }
+
+  .telemetryMetricLabel {
+    color: hsl(var(--app-muted));
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .telemetryMetricValue {
+    color: hsl(var(--app-fg));
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.45;
+  }
+
+  .commandPanel {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .commandRow {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .commandButton {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .commandButtonPrimary {
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 16%, transparent),
+      0 18px 30px color-mix(in srgb, hsl(var(--app-accent)) 20%, transparent);
+  }
+
+  .commandButtonSecondary {
+    background: color-mix(in srgb, hsl(var(--app-surface-soft)) 94%, transparent);
+  }
+
+  .commandButtonDanger {
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 14%, transparent),
+      0 16px 26px color-mix(in srgb, hsl(var(--app-danger)) 16%, transparent);
+  }
+
+  .commandButtonGlyph {
+    font-size: 0.95rem;
+  }
+
+  .commandDialogDescription,
+  .commandDialogActions {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .commandDialogDescription {
+    padding-top: 0.5rem;
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+
+  .commandDialogLine {
+    display: block;
+  }
+
+  .commandDialogStrong {
+    color: hsl(var(--app-fg));
+  }
+
+  .commandDialogActions {
+    padding-top: 0.5rem;
+  }
+
+  .commandError {
+    margin: 0;
+    color: color-mix(in srgb, hsl(var(--app-danger-strong)) 80%, white);
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .referralLinkCard {
+    display: grid;
+    gap: 0.5rem;
+    padding: 1rem 1.05rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.25rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-overlay)) 86%, transparent);
+  }
+
+  .referralLinkValue {
+    color: hsl(var(--app-fg));
+    font-size: 0.95rem;
+    line-height: 1.65;
+    word-break: break-word;
+  }
+
+  .statusBadge {
+    min-height: 2.1rem;
+    padding-inline: 0.85rem;
+    border-radius: 999px;
+    letter-spacing: 0.14em;
+  }
+
+  .statusBadgeActive {
+    border-color: color-mix(in srgb, hsl(var(--app-success)) 32%, transparent);
+    background: color-mix(in srgb, hsl(var(--app-success)) 12%, transparent);
+    color: hsl(var(--app-success-strong));
+  }
+
+  .statusBadgePending {
+    border-color: color-mix(in srgb, hsl(var(--app-accent)) 28%, transparent);
+    background: color-mix(in srgb, hsl(var(--app-accent)) 10%, transparent);
+    color: color-mix(in srgb, hsl(var(--app-accent-strong)) 62%, white);
+  }
+
+  .statusBadgeDisabled,
+  .statusBadgeExpired {
+    border-color: color-mix(in srgb, hsl(var(--app-danger)) 24%, transparent);
+    background: color-mix(in srgb, hsl(var(--app-danger)) 10%, transparent);
+    color: color-mix(in srgb, hsl(var(--app-danger-strong)) 70%, white);
+  }
+
+  .adminOverviewPage,
+  .adminOverviewBlocks {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .controlCenterHero,
+  .adminOverviewTwoColumnGrid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .controlCenterSummary,
+  .controlActionPanel,
+  .controlDetailPanel,
+  .providerStatusPanel,
+  .revenuePanel {
+    display: grid;
+    gap: 1rem;
+    padding: clamp(1.1rem, 2.4vw, 1.6rem);
+  }
+
+  .controlCenterSummary {
+    background:
+      linear-gradient(135deg, color-mix(in srgb, hsl(var(--app-accent)) 8%, transparent) 0%, transparent 42%),
+      linear-gradient(180deg, color-mix(in srgb, hsl(var(--app-surface-strong)) 99%, transparent) 0%, color-mix(in srgb, hsl(var(--app-surface)) 96%, transparent) 100%);
+  }
+
+  .controlPanelHeader,
+  .controlPanelBody,
+  .controlActionList,
+  .controlDetailList,
+  .providerStatusList {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .controlPanelEyebrow {
+    color: hsl(var(--app-muted));
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .controlPanelTitle {
+    color: hsl(var(--app-fg));
+    font-family: var(--font-heading);
+    font-size: clamp(1.4rem, 2.8vw, 2.2rem);
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .controlPanelDescription {
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+
+  .controlMetricGrid {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .controlMetric {
+    display: grid;
+    gap: 0.45rem;
+    padding: 1rem 1.05rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.25rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-overlay)) 88%, transparent);
+  }
+
+  .controlMetricCompact {
+    min-height: 100%;
+  }
+
+  .controlMetricLabel {
+    color: hsl(var(--app-muted));
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .controlMetricValue {
+    color: hsl(var(--app-fg));
+    font-size: clamp(1.25rem, 3vw, 2rem);
+    font-weight: 600;
+    line-height: 1.1;
+    word-break: break-word;
+  }
+
+  .controlMetricHint,
+  .controlContextDescription,
+  .controlActionDescription,
+  .providerStatusDetail {
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+
+  .controlContextList {
+    display: grid;
+    gap: 0.7rem;
+    padding: 1rem 1.05rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.25rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-overlay)) 86%, transparent);
+  }
+
+  .controlContextRow {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.9rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid color-mix(in srgb, hsl(var(--app-border)) 82%, transparent);
+  }
+
+  .controlContextRow:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .controlContextCopy {
+    min-width: 0;
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .controlContextLabel {
+    color: hsl(var(--app-fg));
+    font-size: 0.92rem;
+  }
+
+  .controlContextValue {
+    color: hsl(var(--app-fg));
+    font-size: 0.96rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .controlAction {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 0.9rem;
+    padding: 1rem 1.05rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.25rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-overlay)) 88%, transparent);
+    color: hsl(var(--app-fg));
+    text-decoration: none;
+    transition:
+      border-color 140ms ease,
+      background-color 140ms ease,
+      transform 140ms ease;
+  }
+
+  .controlAction:hover {
+    border-color: color-mix(in srgb, hsl(var(--app-border-strong)) 34%, hsl(var(--app-border)));
+    background: color-mix(in srgb, hsl(var(--app-accent)) 7%, hsl(var(--app-surface-soft)));
+    transform: translateY(-1px);
+  }
+
+  .controlActionIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: calc(var(--radius) + 0.05rem);
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    background: color-mix(in srgb, hsl(var(--app-surface-soft)) 84%, transparent);
+    color: color-mix(in srgb, hsl(var(--app-accent-strong)) 40%, white);
+  }
+
+  .controlActionCopy {
+    min-width: 0;
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .controlActionLabel {
+    color: hsl(var(--app-fg));
+    font-size: 0.94rem;
+    font-weight: 600;
+  }
+
+  .controlActionArrow {
+    margin-top: 0.15rem;
+    width: 1rem;
+    height: 1rem;
+    color: hsl(var(--app-muted));
+  }
+
+  .providerStatusRow {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.9rem;
+    padding: 1rem 1.05rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.25rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-overlay)) 88%, transparent);
+  }
+
+  .providerStatusCopy {
+    min-width: 0;
+    display: grid;
+    gap: 0.3rem;
+  }
+
+  .providerStatusLabel {
+    color: hsl(var(--app-fg));
+    font-size: 0.94rem;
+    font-weight: 600;
+  }
+
+  .providerStatusBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2rem;
+    padding-inline: 0.8rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .providerStatusAvailable {
+    border-color: color-mix(in srgb, hsl(var(--app-success)) 26%, transparent);
+    background: color-mix(in srgb, hsl(var(--app-success)) 10%, transparent);
+    color: hsl(var(--app-success-strong));
+  }
+
+  .providerStatusUnavailable {
+    border-color: color-mix(in srgb, hsl(var(--app-danger)) 24%, transparent);
+    background: color-mix(in srgb, hsl(var(--app-danger)) 10%, transparent);
+    color: color-mix(in srgb, hsl(var(--app-danger-strong)) 70%, white);
+  }
+
+  .providerStatusTimeout {
+    border-color: color-mix(in srgb, #f4b35e 30%, transparent);
+    background: color-mix(in srgb, #f4b35e 10%, transparent);
+    color: #ffd8a2;
+  }
+
+  .providerStatusNotConfigured {
+    border-color: color-mix(in srgb, hsl(var(--app-border)) 90%, transparent);
+    background: color-mix(in srgb, hsl(var(--app-surface-soft)) 86%, transparent);
+    color: hsl(var(--app-muted-strong));
+  }
+
+  .activeUsersSyncButton {
+    justify-content: center;
+  }
+
+  .controlChartCanvas {
+    width: 100%;
+    min-width: 0;
+    height: 260px;
+    overflow: hidden;
+  }
+
+  .providerStatusSkeletonLine {
+    width: 6rem;
+    height: 1rem;
+    background: color-mix(in srgb, hsl(var(--app-border-strong)) 28%, transparent);
+  }
+
+  .providerStatusSkeletonText {
+    width: 8rem;
+    height: 0.75rem;
+    margin-top: 0.5rem;
+    background: color-mix(in srgb, hsl(var(--app-border)) 24%, transparent);
+  }
+
+  .providerStatusSkeletonBadge {
+    width: 5rem;
+    height: 1.75rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, hsl(var(--app-border)) 24%, transparent);
+  }
+
+  .dashboardSurfacePage {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .dataPanelHeaderFeature {
+    gap: 1rem;
+  }
+
+  .dataPanelHeaderCompact {
+    gap: 0.5rem;
+    padding-block-end: 1rem;
+  }
+
+  .dataResponsiveStack {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .dataDesktopTable {
+    display: none;
+  }
+
+  .checkoutWorkspace {
+    display: grid;
+    align-items: start;
+    gap: 1rem;
+  }
+
+  .checkoutSidebar {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .checkoutPlansPanel,
+  .checkoutPaymentPanel,
+  .checkoutSummaryPanel,
+  .checkoutEmptyPanel {
+    overflow: hidden;
+  }
+
+  .checkoutPlanOption {
+    width: 100%;
+    text-align: left;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.4rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-overlay)) 84%, transparent);
+    transition:
+      border-color 140ms ease,
+      background-color 140ms ease,
+      transform 140ms ease,
+      box-shadow 140ms ease;
+  }
+
+  .checkoutPlanOption:hover:not(:disabled) {
+    border-color: color-mix(in srgb, hsl(var(--app-border-strong)) 34%, hsl(var(--app-border)));
+    background: color-mix(in srgb, hsl(var(--app-accent)) 6%, hsl(var(--app-surface-soft)));
+    transform: translateY(-1px);
+  }
+
+  .checkoutPlanOptionCurrent {
+    border-color: color-mix(in srgb, hsl(var(--app-accent)) 28%, hsl(var(--app-border)));
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 7%, transparent),
+      0 16px 28px color-mix(in srgb, hsl(var(--app-shadow)) 24%, transparent);
+  }
+
+  .checkoutPlanOptionDisabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  .checkoutPlanBody,
+  .checkoutPlansStack,
+  .checkoutPlanCopy,
+  .checkoutPlanMeta,
+  .checkoutPaymentContent,
+  .checkoutPromoGroup,
+  .checkoutPromoControls,
+  .checkoutProviderStack,
+  .checkoutSummaryContent,
+  .checkoutSummaryList,
+  .checkoutSummaryMeta,
+  .historyWorkspace,
+  .referralWorkspace,
+  .deviceWorkspace {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .checkoutPlanBody {
+    padding: 1rem 1.05rem;
+  }
+
+  .checkoutPlanHead {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .checkoutPlanCopy {
+    min-width: 0;
+    gap: 0.45rem;
+  }
+
+  .checkoutPlanNameRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .checkoutPlanTitle {
+    color: hsl(var(--app-fg));
+    font-size: 1.05rem;
+    font-weight: 600;
+  }
+
+  .checkoutPlanBadge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.45rem;
+    padding-inline: 0.55rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-accent)) 28%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, hsl(var(--app-accent)) 10%, transparent);
+    color: color-mix(in srgb, hsl(var(--app-accent-strong)) 58%, white);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .checkoutPlanDescription {
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .checkoutPlanPrice {
+    color: hsl(var(--app-fg));
+    font-size: 1.05rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .checkoutPlanMeta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
+
+  .checkoutPlanMetaItem,
+  .checkoutSummaryMetaItem {
+    padding: 0.7rem 0.8rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.15rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-soft)) 84%, transparent);
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.78rem;
+    line-height: 1.45;
+  }
+
+  .checkoutStatus {
+    margin: 0;
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .checkoutSummaryCard {
+    padding: 1rem 1.05rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.25rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-overlay)) 88%, transparent);
+  }
+
+  .checkoutSummaryCardHead {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .checkoutSummaryCardCopy {
+    min-width: 0;
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .checkoutSummaryCardLabel {
+    color: hsl(var(--app-muted));
+    font-size: 0.78rem;
+  }
+
+  .checkoutSummaryCardValue {
+    color: hsl(var(--app-fg));
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .checkoutSummaryCardPrice {
+    color: hsl(var(--app-fg));
+    font-size: 0.92rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .checkoutSummaryList {
+    padding: 1rem 1.05rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.25rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-overlay)) 88%, transparent);
+  }
+
+  .checkoutSummaryRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.7rem;
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.92rem;
+    border-bottom: 1px solid color-mix(in srgb, hsl(var(--app-border)) 80%, transparent);
+  }
+
+  .checkoutSummaryRow:last-child {
+    padding-bottom: 0;
+  }
+
+  .checkoutSummaryRowAccent {
+    color: color-mix(in srgb, hsl(var(--app-accent-strong)) 62%, white);
+  }
+
+  .checkoutSummaryRowTotal {
+    padding-top: 0.3rem;
+    color: hsl(var(--app-fg));
+    font-size: 1rem;
+    font-weight: 600;
+    border-bottom: none;
+  }
+
+  .dataPanel,
+  .dataPanelFeature,
+  .devicePanel,
+  .deviceGuidePanel {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .dataPanelFeature {
+    background:
+      linear-gradient(135deg, color-mix(in srgb, hsl(var(--app-accent)) 8%, transparent) 0%, transparent 42%),
+      linear-gradient(180deg, color-mix(in srgb, hsl(var(--app-surface-strong)) 99%, transparent) 0%, color-mix(in srgb, hsl(var(--app-surface)) 96%, transparent) 100%);
+  }
+
+  .dataPanelHeader {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .dataPanelCopy {
+    display: grid;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .dataPanelTitle,
+  .dataPanelSectionTitle {
+    color: hsl(var(--app-fg));
+    font-family: var(--font-heading);
+    font-weight: 600;
+  }
+
+  .dataPanelTitle {
+    font-size: clamp(1.35rem, 2.8vw, 2rem);
+  }
+
+  .dataPanelSectionTitle {
+    font-size: 1.15rem;
+  }
+
+  .dataPanelDescription {
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.94rem;
+    line-height: 1.65;
+  }
+
+  .dataPanelBody,
+  .dataCardList,
+  .dataCardDetails,
+  .dataSplitGrid,
+  .deviceListStack {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .dataSummaryGrid {
+    display: grid;
+    gap: 0.7rem;
+  }
+
+  .dataSummaryGridTertiary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .dataSummaryItem {
+    display: grid;
+    gap: 0.35rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.15rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-soft)) 82%, transparent);
+  }
+
+  .dataSummaryLabel,
+  .dataDetailLabel {
+    color: hsl(var(--app-muted));
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .dataSummaryValue,
+  .dataDetailValue,
+  .referralLinkValue {
+    color: hsl(var(--app-fg));
+    font-size: 0.92rem;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
+  .dataEmptyState {
+    padding: 1rem 1.05rem;
+    border: 1px dashed color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.25rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-soft)) 62%, transparent);
+  }
+
+  .dataEmptyStateTitle {
+    color: hsl(var(--app-fg));
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .dataEmptyStateDescription {
+    margin-top: 0.45rem;
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.9rem;
+    line-height: 1.65;
+  }
+
+  .dataCard {
+    padding: 1rem 1.05rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.25rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-overlay)) 88%, transparent);
+  }
+
+  .dataCardHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .dataCardCopy {
+    min-width: 0;
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .dataCardTitle {
+    color: hsl(var(--app-fg));
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .dataCardMeta {
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+
+  .dataDetailPill {
+    padding: 0.8rem 0.9rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 82%, transparent);
+    border-radius: calc(var(--radius) + 0.1rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-soft)) 82%, transparent);
+  }
+
+  .referralLinkPanel {
+    padding: 1rem 1.05rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.25rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-overlay)) 88%, transparent);
+  }
+
+  .deviceToolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .deviceCounter {
+    color: hsl(var(--app-fg));
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .deviceToolbarAction,
+  .deviceGuideAction {
+    width: fit-content;
+  }
+
+  .devicePanelBody {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.9rem;
+    padding: 1rem 1.05rem;
+  }
+
+  .devicePanelCopy {
+    min-width: 0;
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .devicePanelTitle {
+    color: hsl(var(--app-fg));
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .devicePanelMeta {
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.78rem;
+    line-height: 1.55;
+    text-wrap: pretty;
+  }
+
+  .devicePanelAction {
+    width: auto;
+    min-width: 7rem;
+  }
+
+  .deviceEmptyState {
+    padding: 1.25rem;
+    text-align: center;
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.92rem;
+    line-height: 1.65;
+  }
+
+  .deviceGuidePanel {
+    padding: 1.15rem;
+  }
+
+  .deviceGuideLead {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .deviceGuideLeadIcon {
+    color: color-mix(in srgb, hsl(var(--app-accent-strong)) 44%, white);
+  }
+
+  .deviceGuideLeadText {
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.95rem;
+    line-height: 1.65;
+  }
+
+  .deviceGuideList {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .deviceGuideStep {
+    display: flex;
+    gap: 0.8rem;
+    padding: 0.95rem 1rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.15rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-overlay)) 86%, transparent);
+  }
+
+  .deviceGuideIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    flex: none;
+    border-radius: calc(var(--radius) + 0.05rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-soft)) 84%, transparent);
+    color: color-mix(in srgb, hsl(var(--app-accent-strong)) 44%, white);
+  }
+
+  .deviceGuideCopy {
+    min-width: 0;
+  }
+
+  .deviceGuideTitle {
+    color: hsl(var(--app-fg));
+    font-size: 0.92rem;
+    font-weight: 600;
+  }
+
+  .deviceGuideDescription {
+    margin-top: 0.3rem;
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.82rem;
+    line-height: 1.55;
+  }
+
+  .formSection {
+    padding: 1rem 1.05rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.25rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-overlay)) 88%, transparent);
+  }
+
+  .formSectionHeader {
+    display: grid;
+    gap: 0.35rem;
+    margin-bottom: 1rem;
+  }
+
+  .formSectionTitle {
+    color: hsl(var(--app-fg));
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .formSectionDescription {
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .controlForm,
+  .controlFormBody,
+  .controlFormActions,
+  .controlField,
+  .controlCheckboxGrid,
+  .adminUserActions,
+  .adminUserActionGrid,
+  .grantFormBody,
+  .controlFormPanel {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .controlFieldGrid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .controlFieldGridWide {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+
+  .controlField {
+    min-width: 0;
+  }
+
+  .controlFieldHint {
+    margin: 0.45rem 0 0;
+    color: hsl(var(--app-muted));
+    font-size: 0.78rem;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  .controlInfoPanel {
+    padding: 0.95rem 1rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.15rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-soft)) 82%, transparent);
+  }
+
+  .controlInfoLabel {
+    color: hsl(var(--app-muted));
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .controlInfoValue {
+    margin-top: 0.45rem;
+    color: hsl(var(--app-fg));
+    font-size: 0.92rem;
+    font-weight: 600;
+    word-break: break-word;
+  }
+
+  .controlCheckboxRow {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 2.875rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.15rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-soft)) 80%, transparent);
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .controlCheckboxRow input {
+    flex: none;
+  }
+
+  .controlSelect {
+    appearance: none;
+    width: 100%;
+    min-height: 2.875rem;
+    padding-inline: 1rem;
+    padding-block: 0.75rem;
+    color: hsl(var(--app-fg));
+  }
+
+  .controlSelect option {
+    color: #050b11;
+  }
+
+  .controlMessage {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .controlMessageError {
+    color: color-mix(in srgb, hsl(var(--app-danger-strong)) 80%, white);
+  }
+
+  .adminActionButton {
+    justify-content: center;
+  }
+
+  .adminUserActionWide {
+    grid-column: 1 / -1;
+  }
+
+  .grantFormSurface {
+    padding: 1rem 1.05rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.25rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-overlay)) 88%, transparent);
+  }
+
+  .grantFormSummary {
+    display: flex;
+    align-items: center;
+    min-height: 2.875rem;
+    cursor: pointer;
+    list-style: none;
+    color: hsl(var(--app-fg));
+    font-size: 0.96rem;
+    font-weight: 600;
+  }
+
+  .grantFormSummary::-webkit-details-marker {
+    display: none;
+  }
+
+  .adminSurfacePage {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .routeStatePage {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .routeStatePanelBody {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .routeStateMetricsGrid {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .routeStateMetricSkeleton {
+    width: 100%;
+    height: 6rem;
+  }
+
+  .routeStateLineSkeleton {
+    width: 10rem;
+    height: 1.25rem;
+  }
+
+  .routeStateRowSkeleton {
+    width: 100%;
+    height: 3.5rem;
+  }
+
+  .routeStateCanvas {
+    width: 100%;
+    height: 18rem;
+    border-radius: calc(var(--radius) + 0.75rem);
+  }
+
+  .routeStateCanvasWide {
+    height: 24rem;
+  }
+
+  .routeStateInfo {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .routeStateInfoTitle {
+    color: hsl(var(--app-fg));
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .routeStateInfoCopy,
+  .emptyStateCopy {
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.92rem;
+    line-height: 1.65;
+  }
+
+  .adminRecordList,
+  .adminRecordCard {
+    display: grid;
+  }
+
+  .adminRecordListHeader,
+  .adminRecordListBody,
+  .adminRecordListHeading,
+  .adminRecordListCopy,
+  .adminRecordMetadata,
+  .adminRecordCardContent,
+  .adminInlineActions,
+  .adminListControls,
+  .adminResponsiveStack,
+  .adminExportGrid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .adminRecordListTitle {
+    color: hsl(var(--app-fg));
+    font-family: var(--font-heading);
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+
+  .adminRecordListDescription {
+    color: hsl(var(--app-muted-strong));
+    max-width: 42rem;
+    font-size: 0.94rem;
+    line-height: 1.65;
+  }
+
+  .adminRecordCard {
+    padding: 1rem 1.05rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.25rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-overlay)) 88%, transparent);
+  }
+
+  .adminRecordCardLayout {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .adminRecordCardHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.9rem;
+  }
+
+  .adminRecordCardCopy {
+    min-width: 0;
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .adminRecordCardTitle {
+    color: hsl(var(--app-fg));
+    font-size: 0.95rem;
+    font-weight: 600;
+    word-break: break-word;
+  }
+
+  .adminRecordCardSubtitle,
+  .adminTableMeta {
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+
+  .adminRecordMetadata {
+    gap: 0.75rem;
+  }
+
+  .adminRecordMetadataRow {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.9rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid color-mix(in srgb, hsl(var(--app-border)) 74%, transparent);
+  }
+
+  .adminRecordMetadataRow:first-child {
+    padding-top: 0;
+    border-top: none;
+  }
+
+  .adminRecordMetadataLabel,
+  .adminSummaryLabel {
+    color: hsl(var(--app-muted));
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .adminRecordMetadataValue,
+  .adminSummaryValue,
+  .adminTableTitle {
+    color: hsl(var(--app-fg));
+    font-size: 0.92rem;
+    font-weight: 600;
+    word-break: break-word;
+  }
+
+  .adminRecordCardActions {
+    min-width: 0;
+  }
+
+  .adminBadgePill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2rem;
+    width: fit-content;
+    padding-inline: 0.75rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, hsl(var(--app-surface-soft)) 84%, transparent);
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .adminEmptyState {
+    padding: 1rem 1.05rem;
+    border: 1px dashed color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.25rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-soft)) 64%, transparent);
+  }
+
+  .adminEmptyStateTitle {
+    color: hsl(var(--app-fg));
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .adminEmptyStateDescription {
+    margin-top: 0.45rem;
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.9rem;
+    line-height: 1.65;
+  }
+
+  .adminFilterForm {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .adminSummaryGrid {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .adminSummaryGridWide {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .adminSummaryItem {
+    display: grid;
+    gap: 0.35rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+    border-radius: calc(var(--radius) + 0.15rem);
+    background: color-mix(in srgb, hsl(var(--app-surface-soft)) 82%, transparent);
+  }
+
+  .adminDesktopTable {
+    display: none;
+  }
+
+  .adminCellWrap {
+    max-inline-size: 15rem;
+    word-break: break-word;
+  }
+
+  .adminTableActionsCell {
+    min-width: 13.75rem;
+  }
+
+  .adminTableActionsCellWide {
+    min-width: 18.75rem;
+  }
+
   @media (min-width: 48rem) {
+    .authScene {
+      padding: clamp(1.5rem, 4vw, 3rem);
+    }
+
+    .routeStateMetricsGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .authEntry {
+      grid-template-columns: minmax(0, 0.98fr) minmax(30rem, 1.02fr);
+    }
+
+    .authEntryHeader {
+      border-right: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+      border-bottom: none;
+      min-height: 100%;
+      align-content: space-between;
+    }
+
+    .authEntryWorkspace {
+      grid-template-rows: auto 1fr;
+      min-height: 100%;
+    }
+
+    .authEntryTabs {
+      align-content: start;
+      padding-block: clamp(1.4rem, 3vw, 2rem);
+      padding-inline: clamp(1.4rem, 3vw, 2rem);
+      border-bottom: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
+      background: color-mix(in srgb, hsl(var(--app-surface-overlay)) 36%, transparent);
+    }
+
+    .authEntryBody {
+      padding: clamp(1.4rem, 3vw, 2rem);
+      align-content: start;
+    }
+
+    .dashboardOverview {
+      gap: 1.25rem;
+    }
+
+    .checkoutWorkspace {
+      grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.85fr);
+      gap: 1.1rem;
+    }
+
+    .dataSummaryGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dataSplitGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: start;
+    }
+
+    .deviceGuideList {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .controlFieldGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .controlFieldGridWide {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .controlFieldSpan {
+      grid-column: 1 / -1;
+    }
+
+    .controlCheckboxGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .controlFormActions {
+      grid-auto-flow: column;
+      justify-content: start;
+    }
+
+    .adminRecordListHeading {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: start;
+    }
+
+    .adminListControls {
+      min-width: 18rem;
+    }
+
+    .adminRecordCardLayout {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: start;
+    }
+
+    .adminSummaryGrid,
+    .adminFilterFormWide {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .telemetryHeroHeader {
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 1rem;
+    }
+
+    .telemetryGrid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .commandPanel {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .commandRow {
+      grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    }
+
+    .controlMetricGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .controlCenterHero,
+    .adminOverviewTwoColumnGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .controlChartCanvas {
+      height: 300px;
+    }
+
     .appShellViewport {
       padding-top: 1.25rem;
       padding-bottom: 2.5rem;
@@ -1277,6 +3295,23 @@ p {
     animation: dialogExit 120ms ease-in forwards;
   }
 
+  .dialogSurface.appMoreSheetContent {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    max-height: 85dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0;
+    border-right: none;
+    border-bottom: none;
+    border-left: none;
+    border-radius: calc(var(--radius) + 1rem) calc(var(--radius) + 1rem) 0 0;
+    transform: none;
+  }
+
   .dialogHeader {
     display: flex;
     flex-direction: column;
@@ -1415,7 +3450,129 @@ p {
     animation: skeletonShift 1.4s ease-in-out infinite;
   }
 
+  @media (min-width: 80rem) {
+    .dialogSurface.appMoreSheetContent {
+      top: 50%;
+      right: auto;
+      bottom: auto;
+      left: 50%;
+      width: min(92vw, 35rem);
+      max-height: min(80vh, 45rem);
+      border: 1px solid color-mix(in srgb, hsl(var(--app-border-strong)) 32%, hsl(var(--app-border)));
+      border-radius: calc(var(--radius) + 0.75rem);
+      transform: translate(-50%, -50%);
+    }
+
+    .appMoreSheetContent {
+      top: 50%;
+      right: auto;
+      bottom: auto;
+      left: 50%;
+      width: min(92vw, 35rem);
+      max-height: min(80vh, 45rem);
+      border: 1px solid color-mix(in srgb, hsl(var(--app-border-strong)) 32%, hsl(var(--app-border)));
+      border-radius: calc(var(--radius) + 0.75rem);
+      transform: translate(-50%, -50%);
+    }
+
+    .adminResponsiveStack {
+      display: none;
+    }
+
+    .adminDesktopTable {
+      display: block;
+    }
+
+    .dataResponsiveStack {
+      display: none;
+    }
+
+    .dataDesktopTable {
+      display: block;
+    }
+
+    .routeStateMetricsGridWide {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
   @media (max-width: 640px) {
+    .authScene {
+      padding-inline: 1rem;
+    }
+
+    .authSceneViewport {
+      min-height: auto;
+    }
+
+    .authEntryHeader,
+    .authEntryBody {
+      padding-inline: 1rem;
+    }
+
+    .authEntryTabs {
+      padding-inline: 1rem;
+    }
+
+    .checkoutPlanMeta,
+    .dataSummaryGridTertiary {
+      grid-template-columns: 1fr;
+    }
+
+    .deviceToolbar,
+    .devicePanelBody,
+    .checkoutPlanHead,
+    .dataCardHeader {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .deviceToolbarAction,
+    .deviceGuideAction,
+    .devicePanelAction {
+      width: 100%;
+    }
+
+    .dataSplitGrid {
+      grid-template-columns: 1fr;
+    }
+
+    .deviceGuideList {
+      grid-template-columns: 1fr;
+    }
+
+    .controlFieldGrid,
+    .controlFieldGridWide,
+    .controlCheckboxGrid,
+    .adminUserActionGrid {
+      grid-template-columns: 1fr;
+    }
+
+    .controlFormActions {
+      grid-auto-flow: row;
+    }
+
+    .adminRecordListHeading,
+    .adminRecordCardLayout,
+    .adminSummaryGrid,
+    .adminSummaryGridWide,
+    .adminFilterFormWide {
+      grid-template-columns: 1fr;
+    }
+
+    .providerStatusRow {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .controlAction {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .controlActionArrow {
+      display: none;
+    }
+
     .panelHeader,
     .panelBody,
     .panelFooter,

@@ -1,7 +1,11 @@
+import fs from "node:fs";
+import path from "node:path";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Menu } from "lucide-react";
 import { describe, expect, it, vi } from "vitest";
+
+const globalsCssPath = path.resolve(process.cwd(), "app/globals.css");
 
 vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) =>
@@ -111,5 +115,10 @@ describe("shared shell more triggers", () => {
     expect(markup).toContain("Profile");
     expect(markup).toContain("LogoutMock");
     expect(markup).not.toContain('href="/logout"');
+    expect(markup).toMatch(/class="[^"]*\bappMoreSheetContent\b[^"]*\bdialogSurface\b[^"]*"/);
+
+    const source = fs.readFileSync(globalsCssPath, "utf8");
+    expect(source).toContain(".dialogSurface.appMoreSheetContent");
+    expect(source).toContain("bottom: 0;");
   });
 });
