@@ -8,28 +8,52 @@ vi.mock("next/link", () => ({
     React.createElement("a", { href, ...props }, children)
 }));
 
-vi.mock("@radix-ui/react-dialog", () => ({
-  Root: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
-  Portal: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
-  Overlay: React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ children, ...props }, ref) =>
-    React.createElement("div", { ref, ...props }, children)
-  ),
-  Content: React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ children, ...props }, ref) =>
-    React.createElement("div", { ref, ...props }, children)
-  ),
-  Close: React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(({ children, ...props }, ref) =>
-    React.createElement("button", { ref, type: "button", ...props }, children)
-  ),
-  Title: React.forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTMLHeadingElement>>(({ children, ...props }, ref) =>
-    React.createElement("h2", { ref, ...props }, children)
-  ),
-  Description: React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(({ children, ...props }, ref) =>
-    React.createElement("p", { ref, ...props }, children)
-  ),
-  Trigger: React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(({ children, ...props }, ref) =>
-    React.createElement("button", { ref, type: "button", ...props }, children)
-  )
-}));
+vi.mock("@radix-ui/react-dialog", () => {
+  const Overlay = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+    ({ children, ...props }, ref) => React.createElement("div", { ref, ...props }, children)
+  );
+  Overlay.displayName = "MockDialogOverlay";
+
+  const Content = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+    ({ children, ...props }, ref) => React.createElement("div", { ref, ...props }, children)
+  );
+  Content.displayName = "MockDialogContent";
+
+  const Close = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(
+    ({ children, ...props }, ref) =>
+      React.createElement("button", { ref, type: "button", ...props }, children)
+  );
+  Close.displayName = "MockDialogClose";
+
+  const Title = React.forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTMLHeadingElement>>(
+    ({ children, ...props }, ref) => React.createElement("h2", { ref, ...props }, children)
+  );
+  Title.displayName = "MockDialogTitle";
+
+  const Description = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
+    ({ children, ...props }, ref) => React.createElement("p", { ref, ...props }, children)
+  );
+  Description.displayName = "MockDialogDescription";
+
+  const Trigger = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(
+    ({ children, ...props }, ref) =>
+      React.createElement("button", { ref, type: "button", ...props }, children)
+  );
+  Trigger.displayName = "MockDialogTrigger";
+
+  return {
+    Root: ({ children }: { children: React.ReactNode }) =>
+      React.createElement(React.Fragment, null, children),
+    Portal: ({ children }: { children: React.ReactNode }) =>
+      React.createElement(React.Fragment, null, children),
+    Overlay,
+    Content,
+    Close,
+    Title,
+    Description,
+    Trigger
+  };
+});
 
 vi.mock("@/components/shared/logo", () => ({
   Logo: ({ href = "/" }: { href?: string }) => React.createElement("a", { href }, "Logo")

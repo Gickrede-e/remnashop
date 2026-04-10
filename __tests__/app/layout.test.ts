@@ -3,7 +3,13 @@ import path from "node:path";
 
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("next/font/google", () => ({
+  JetBrains_Mono: () => ({
+    variable: "font-mono-mock"
+  })
+}));
 
 import RootLayout from "@/app/layout";
 

@@ -25,9 +25,9 @@ describe("admin secondary surfaces", () => {
         FormSection,
         {
           title: "Секция формы",
-          description: "Описание",
-          children: React.createElement("div", null, "Body")
-        }
+          description: "Описание"
+        },
+        React.createElement("div", null, "Body")
       )
     );
 
