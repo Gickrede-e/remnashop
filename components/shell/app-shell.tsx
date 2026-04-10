@@ -27,17 +27,22 @@ import {
   getSecondaryNavItems,
   isNavItemActive,
   type AppNavItem,
-  type AppShellArea
+  type AppShellArea,
+  type AppShellNavArea
 } from "@/lib/ui/app-shell-nav";
 
 type AppShellProps = {
-  area: AppShellArea;
+  area: AppShellNavArea;
   canAccessAdmin?: boolean;
   children: React.ReactNode;
 };
 
 const navIcons: Record<string, LucideIcon> = {
   "#more": Menu,
+  "/": Gauge,
+  "/pricing": CreditCard,
+  "/faq": ClipboardList,
+  "/terms": BadgePercent,
   "/dashboard": Gauge,
   "/dashboard/buy": CreditCard,
   "/dashboard/history": History,
@@ -52,7 +57,7 @@ const navIcons: Record<string, LucideIcon> = {
   "/admin/export": ArrowDownToLine
 };
 
-function resolveIcon(area: AppShellArea, item: AppNavItem) {
+function resolveIcon(area: AppShellNavArea, item: AppNavItem) {
   if (area === "admin" && item.href === "/dashboard") {
     return ArrowLeft;
   }
@@ -60,7 +65,7 @@ function resolveIcon(area: AppShellArea, item: AppNavItem) {
   return navIcons[item.href] ?? ArrowLeft;
 }
 
-function decorateItems(area: AppShellArea, items: AppNavItem[], pathname: string, moreActive: boolean) {
+function decorateItems(area: AppShellNavArea, items: AppNavItem[], pathname: string, moreActive: boolean) {
   return items.map((item) => ({
     ...item,
     icon: resolveIcon(area, item),
@@ -72,6 +77,7 @@ export function AppShell({ area, canAccessAdmin = false, children }: AppShellPro
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const moreSheetId = `${area}-more-sheet`;
+  const isPublic = area === "public";
 
   const secondaryItems = decorateItems(area, getSecondaryNavItems(area, { canAccessAdmin }), pathname, false);
   const isMoreActive = secondaryItems.some((item) => item.active);
@@ -79,22 +85,24 @@ export function AppShell({ area, canAccessAdmin = false, children }: AppShellPro
   const railPrimaryItems = primaryItems.filter((item) => item.href !== "#more");
   const activeRouteLabel =
     [...railPrimaryItems, ...secondaryItems].find((item) => item.active)?.label ?? railPrimaryItems[0]?.label ?? "Обзор";
-  const footerActions = getFooterActions(area, { authenticated: true, canAccessAdmin });
+  const footerActions = getFooterActions(area, { authenticated: !isPublic, canAccessAdmin });
 
   return (
     <div className="appShell overrridesShell">
       <a href="#app-shell-main" className="appSkipLink">
         Перейти к содержимому
       </a>
-      <AppTopbar
-        area={area}
-        primaryItems={railPrimaryItems}
-        activeRouteLabel={activeRouteLabel}
-        isMoreActive={isMoreActive}
-        moreOpen={moreOpen}
-        moreSheetId={moreSheetId}
-        onOpenMore={() => setMoreOpen(true)}
-      />
+      {!isPublic ? (
+        <AppTopbar
+          area={area as AppShellArea}
+          primaryItems={railPrimaryItems}
+          activeRouteLabel={activeRouteLabel}
+          isMoreActive={isMoreActive}
+          moreOpen={moreOpen}
+          moreSheetId={moreSheetId}
+          onOpenMore={() => setMoreOpen(true)}
+        />
+      ) : null}
 
       <div className="container appShellViewport">
         <AppNavRail
@@ -103,20 +111,22 @@ export function AppShell({ area, canAccessAdmin = false, children }: AppShellPro
           secondaryItems={secondaryItems}
           footerActions={footerActions}
         />
-        <main id="app-shell-main" data-testid="app-shell-main" className="appShellMain">
+        <main id="app-shell-main" data-testid="app-shell-main" className="appShellMain" tabIndex={-1}>
           {children}
         </main>
       </div>
 
-      <AppMoreSheet
-        area={area}
-        primaryItems={railPrimaryItems}
-        secondaryItems={secondaryItems}
-        footerActions={footerActions}
-        open={moreOpen}
-        contentId={moreSheetId}
-        onOpenChange={setMoreOpen}
-      />
+      {!isPublic ? (
+        <AppMoreSheet
+          area={area as AppShellArea}
+          primaryItems={railPrimaryItems}
+          secondaryItems={secondaryItems}
+          footerActions={footerActions}
+          open={moreOpen}
+          contentId={moreSheetId}
+          onOpenChange={setMoreOpen}
+        />
+      ) : null}
     </div>
   );
 }
