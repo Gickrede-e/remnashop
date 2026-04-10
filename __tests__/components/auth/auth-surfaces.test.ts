@@ -25,33 +25,27 @@ vi.mock("@/lib/public-env", () => ({
 
 import { LoginForm } from "@/components/auth/login-form";
 import { RegisterForm } from "@/components/auth/register-form";
-import { AuthEntryPanel } from "@/components/blocks/auth/auth-entry-panel";
+import { AuthStandaloneCard } from "@/components/blocks/auth/auth-standalone-card";
 
 describe("auth surfaces", () => {
-  it("renders the auth entry panel with semantic shell hooks and active tabs", () => {
+  it("renders the standalone auth card with semantic shell hooks", () => {
     const markup = renderToStaticMarkup(
       React.createElement(
-        AuthEntryPanel,
-        {
-          title: "Вход в кабинет",
-          description: "Используйте email и пароль.",
-          activeView: "login",
-          nextPath: "/dashboard/history"
-        },
+        AuthStandaloneCard,
+        { title: "Вход в кабинет", description: "Используйте email и пароль." },
         React.createElement("div", null, "Children")
       )
     );
 
-    expect(markup).toMatch(/class="[^"]*\bauthCard\b[^"]*"/);
-    expect(markup).toMatch(/class="[^"]*\bauthCardHeader\b[^"]*"/);
-    expect(markup).toMatch(/class="[^"]*\bauthCardTabs\b[^"]*"/);
-    expect(markup).toMatch(/class="[^"]*\bauthCardTab\b[^"]*\bauthCardTabCurrent\b[^"]*"/);
-    expect(markup).toMatch(/class="[^"]*\bauthCardBody\b[^"]*"/);
-    expect(markup).not.toMatch(/class="[^"]*\bauthEntryWorkspace\b[^"]*"/);
-    expect(markup).toContain('aria-current="page"');
+    expect(markup).toContain("RemnaShop");
+    expect(markup).toContain("Вход в кабинет");
+    expect(markup).toContain("Используйте email и пароль.");
+    expect(markup).toMatch(/class="[^"]*\bauthStandaloneCard\b[^"]*"/);
+    expect(markup).toMatch(/class="[^"]*\bauthStandaloneBody\b[^"]*"/);
+    expect(markup).not.toContain("Навигация авторизации");
   });
 
-  it("renders the login form with compact auth form hooks and telegram zone", () => {
+  it("renders the login form with a register footer link and no telegram block", () => {
     const markup = renderToStaticMarkup(
       React.createElement(LoginForm, {
         telegramUsername: "remnashop_bot",
@@ -61,12 +55,13 @@ describe("auth surfaces", () => {
 
     expect(markup).toMatch(/class="[^"]*\bauthForm\b[^"]*"/);
     expect(markup).toMatch(/class="[^"]*\bauthFormGrid\b[^"]*"/);
-    expect(markup).toMatch(/class="[^"]*\bauthTelegramSection\b[^"]*"/);
-    expect(markup).toMatch(/class="[^"]*\bauthTelegram\b[^"]*"/);
-    expect(markup).toMatch(/class="[^"]*\bauthHint\b[^"]*"/);
+    expect(markup).not.toMatch(/class="[^"]*\bauthTelegramSection\b[^"]*"/);
+    expect(markup).not.toMatch(/class="[^"]*\bauthTelegram\b[^"]*"/);
+    expect(markup).not.toMatch(/class="[^"]*\bauthHint\b[^"]*"/);
+    expect(markup).toContain('href="/register?next=%2Fdashboard%2Fbuy"');
   });
 
-  it("renders the register form with semantic auth form hooks and footer hint", () => {
+  it("renders the register form with a login footer link and referral code", () => {
     const markup = renderToStaticMarkup(
       React.createElement(RegisterForm, {
         referralCode: "ALLY42",
@@ -76,7 +71,7 @@ describe("auth surfaces", () => {
 
     expect(markup).toMatch(/class="[^"]*\bauthForm\b[^"]*"/);
     expect(markup).toMatch(/class="[^"]*\bauthFormGrid\b[^"]*"/);
-    expect(markup).toMatch(/class="[^"]*\bauthHint\b[^"]*"/);
+    expect(markup).toContain('href="/login?next=%2Fdashboard"');
     expect(markup).toContain("ALLY42");
   });
 });
