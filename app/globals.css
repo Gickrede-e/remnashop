@@ -264,12 +264,16 @@ p {
   }
 
   .appNavRailSurface {
-    position: sticky;
+    position: fixed;
     top: 5.75rem;
+    left: max(1rem, calc((100vw - 80rem) / 2 + 1rem));
+    width: clamp(15.75rem, 28vw, 17.5rem);
+    max-height: calc(100dvh - 6.75rem);
     display: grid;
     gap: 1.5rem;
     padding: 1.25rem;
-    overflow: hidden;
+    overflow: auto;
+    overscroll-behavior: contain;
     background:
       linear-gradient(180deg, color-mix(in srgb, hsl(var(--app-surface-overlay)) 94%, transparent) 0%, color-mix(in srgb, hsl(var(--app-surface)) 98%, transparent) 100%);
     box-shadow:
@@ -2718,24 +2722,34 @@ p {
     }
 
     .appShellViewport {
+      grid-template-columns: minmax(15.75rem, 17.5rem) minmax(0, 1fr);
+      align-items: start;
+      gap: 1.5rem;
       padding-top: 1.25rem;
       padding-bottom: 2.5rem;
     }
 
+    .appNavRail {
+      display: block;
+    }
+
     .appTopbarInner {
-      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-columns: auto 1fr auto;
       gap: 1rem;
     }
 
     .appTopbarAreaSwitch,
-    .appTopbarQuickNav,
     .appTopbarActionSummary,
     .appTopbarLogout {
       display: inline-flex;
     }
 
     .appTopbarQuickNav {
-      display: flex;
+      display: none;
+    }
+
+    .appTopbarConsoleBadge {
+      display: inline-flex;
     }
 
     .appTopbarMenuButton {
@@ -2759,22 +2773,12 @@ p {
 
   @media (min-width: 73.75rem) {
     .appShellViewport {
-      grid-template-columns: minmax(15.75rem, 17.5rem) minmax(0, 1fr);
-      align-items: start;
       gap: 1.75rem;
       padding-top: 1.5rem;
     }
 
-    .appNavRail {
-      display: block;
-    }
-
-    .appTopbarConsoleBadge {
-      display: inline-flex;
-    }
-
-    .appTopbarQuickNav {
-      display: none;
+    .appNavRailSurface {
+      width: 17.5rem;
     }
   }
 
