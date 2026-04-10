@@ -35,8 +35,6 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-tooltip": "^1.2.8",
     "bcryptjs": "^3.0.3",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "dotenv": "^17.3.1",
     "jose": "^6.2.2",
@@ -48,11 +46,9 @@
     "react-dom": "^19.2.4",
     "react-hook-form": "^7.71.2",
     "recharts": "^3.8.0",
-    "tailwind-merge": "^3.5.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.2.2",
     "@types/bcryptjs": "^3.0.0",
     "@types/node": "^25.5.0",
     "@types/nodemailer": "^7.0.11",
@@ -64,7 +60,6 @@
     "eslint-config-next": "^16.2.0",
     "postcss": "^8.5.8",
     "prisma": "^7.5.0",
-    "tailwindcss": "^4.2.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.1.0"

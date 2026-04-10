@@ -29,18 +29,18 @@ type ReferralSummaryBlocksProps = {
 
 function SummaryChip({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-      <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">{label}</p>
-      <p className="mt-2 text-sm font-medium text-white">{value}</p>
+    <div className="dataDetailPill">
+      <p className="dataDetailLabel">{label}</p>
+      <p className="dataDetailValue">{value}</p>
     </div>
   );
 }
 
 function SectionEmptyState({ title, description }: { title: string; description: string }) {
   return (
-    <div className="rounded-[24px] border border-dashed border-white/12 bg-white/[0.02] p-5 text-sm text-zinc-300">
-      <p className="font-medium text-white">{title}</p>
-      <p className="mt-2 leading-6 text-zinc-400">{description}</p>
+    <div className="dataEmptyState">
+      <p className="dataEmptyStateTitle">{title}</p>
+      <p className="dataEmptyStateDescription">{description}</p>
     </div>
   );
 }
@@ -49,24 +49,24 @@ function ReferralLinkCard({ referralLink, referredUsers, rewards }: ReferralSumm
   const successfulReferrals = referredUsers.filter((userItem) => userItem.payments.length > 0).length;
 
   return (
-    <Card className="surface-feature">
-      <CardHeader className="space-y-4 p-5 sm:p-6">
-        <div className="space-y-2">
-          <CardTitle className="text-xl text-white sm:text-2xl">Реферальная ссылка</CardTitle>
-          <p className="max-w-2xl text-sm leading-6 text-zinc-300">
+    <Card className="dashboardSection referralWorkspace dataPanel dataPanelFeature">
+      <CardHeader className="dataPanelHeaderFeature">
+        <div className="dataPanelCopy">
+          <CardTitle className="dataPanelTitle">Реферальная ссылка</CardTitle>
+          <p className="dataPanelDescription">
             Приглашайте друзей по своей ссылке и отслеживайте, кто уже зарегистрировался и какие награды были
             начислены.
           </p>
         </div>
       </CardHeader>
 
-      <CardContent className="grid gap-4 p-5 pt-0 sm:p-6 sm:pt-0">
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4 text-sm text-zinc-200">
-          <p className="mb-2 text-xs uppercase tracking-[0.18em] text-zinc-400">Ссылка для приглашений</p>
-          <p className="break-all">{referralLink || "Ссылка недоступна"}</p>
+      <CardContent className="dataPanelBody">
+        <div className="referralLinkPanel">
+          <p className="dataDetailLabel">Ссылка для приглашений</p>
+          <p className="referralLinkValue">{referralLink || "Ссылка недоступна"}</p>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="dataSummaryGrid dataSummaryGridTertiary">
           <SummaryChip label="Приглашено" value={String(referredUsers.length)} />
           <SummaryChip label="С оплатой" value={String(successfulReferrals)} />
           <SummaryChip label="Наград" value={String(rewards.length)} />
@@ -78,13 +78,15 @@ function ReferralLinkCard({ referralLink, referredUsers, rewards }: ReferralSumm
 
 function InvitedUsersSection({ referredUsers }: Pick<ReferralSummaryBlocksProps, "referredUsers">) {
   return (
-    <Card>
-      <CardHeader className="space-y-2 p-5 pb-3 sm:p-6 sm:pb-4">
-        <CardTitle className="text-lg text-white sm:text-xl">Приглашённые пользователи</CardTitle>
-        <p className="text-sm leading-6 text-zinc-400">Список регистраций по вашей ссылке и дата последнего успешного платежа.</p>
+    <Card className="dataPanel">
+      <CardHeader className="dataPanelHeaderCompact">
+        <CardTitle className="dataPanelSectionTitle">Приглашённые пользователи</CardTitle>
+        <p className="dataPanelDescription">
+          Список регистраций по вашей ссылке и дата последнего успешного платежа.
+        </p>
       </CardHeader>
 
-      <CardContent className="grid gap-4 p-5 pt-0 sm:p-6 sm:pt-0">
+      <CardContent className="dataPanelBody">
         {referredUsers.length === 0 ? (
           <SectionEmptyState
             title="Пока без приглашений"
@@ -92,24 +94,26 @@ function InvitedUsersSection({ referredUsers }: Pick<ReferralSummaryBlocksProps,
           />
         ) : (
           <>
-            <div className="grid gap-3 xl:hidden">
+            <div className="dataResponsiveStack">
               {referredUsers.map((userItem) => {
                 const firstPayment = userItem.payments[0]?.paidAt;
                 const hasPayment = Boolean(firstPayment);
 
                 return (
-                  <article key={userItem.id} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 space-y-1">
-                        <p className="text-sm font-medium text-white">{maskEmail(userItem.email)}</p>
-                        <p className="text-xs text-zinc-400">{hasPayment ? "Последний платёж зафиксирован" : "Ожидает успешный платёж"}</p>
+                  <article key={userItem.id} className="dataCard">
+                    <div className="dataCardHeader">
+                      <div className="dataCardCopy">
+                        <p className="dataCardTitle">{maskEmail(userItem.email)}</p>
+                        <p className="dataCardMeta">
+                          {hasPayment ? "Последний платёж зафиксирован" : "Ожидает успешный платёж"}
+                        </p>
                       </div>
-                      <span className="inline-flex h-8 items-center rounded-full border border-white/10 bg-white/[0.04] px-3 text-xs text-zinc-300">
+                      <span className="statusBadge statusBadgePending">
                         {hasPayment ? "Оплатил" : "Без оплаты"}
                       </span>
                     </div>
 
-                    <div className="mt-4 grid gap-3">
+                    <div className="dataCardDetails">
                       <SummaryChip label="Регистрация" value={formatDateTime(userItem.createdAt)} />
                       <SummaryChip label="Последний платёж" value={formatDateTime(firstPayment)} />
                     </div>
@@ -118,7 +122,7 @@ function InvitedUsersSection({ referredUsers }: Pick<ReferralSummaryBlocksProps,
               })}
             </div>
 
-            <div className="hidden xl:block">
+            <div className="dataDesktopTable">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -147,13 +151,15 @@ function InvitedUsersSection({ referredUsers }: Pick<ReferralSummaryBlocksProps,
 
 function RewardsSection({ rewards }: Pick<ReferralSummaryBlocksProps, "rewards">) {
   return (
-    <Card>
-      <CardHeader className="space-y-2 p-5 pb-3 sm:p-6 sm:pb-4">
-        <CardTitle className="text-lg text-white sm:text-xl">Награды</CardTitle>
-        <p className="text-sm leading-6 text-zinc-400">Все начисления за первые успешные платежи приглашённых пользователей.</p>
+    <Card className="dataPanel">
+      <CardHeader className="dataPanelHeaderCompact">
+        <CardTitle className="dataPanelSectionTitle">Награды</CardTitle>
+        <p className="dataPanelDescription">
+          Все начисления за первые успешные платежи приглашённых пользователей.
+        </p>
       </CardHeader>
 
-      <CardContent className="grid gap-4 p-5 pt-0 sm:p-6 sm:pt-0">
+      <CardContent className="dataPanelBody">
         {rewards.length === 0 ? (
           <SectionEmptyState
             title="Наград пока нет"
@@ -161,15 +167,15 @@ function RewardsSection({ rewards }: Pick<ReferralSummaryBlocksProps, "rewards">
           />
         ) : (
           <>
-            <div className="grid gap-3 xl:hidden">
+            <div className="dataResponsiveStack">
               {rewards.map((reward) => (
-                <article key={reward.id} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-white">{maskEmail(reward.referredUser.email)}</p>
-                    <p className="text-xs text-zinc-400">{formatDateTime(reward.createdAt)}</p>
+                <article key={reward.id} className="dataCard">
+                  <div className="dataCardCopy">
+                    <p className="dataCardTitle">{maskEmail(reward.referredUser.email)}</p>
+                    <p className="dataCardMeta">{formatDateTime(reward.createdAt)}</p>
                   </div>
 
-                  <div className="mt-4 grid gap-3">
+                  <div className="dataCardDetails">
                     <SummaryChip label="Тип" value={reward.rewardType} />
                     <SummaryChip label="Значение" value={String(reward.rewardValue)} />
                   </div>
@@ -177,7 +183,7 @@ function RewardsSection({ rewards }: Pick<ReferralSummaryBlocksProps, "rewards">
               ))}
             </div>
 
-            <div className="hidden xl:block">
+            <div className="dataDesktopTable">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -208,9 +214,9 @@ function RewardsSection({ rewards }: Pick<ReferralSummaryBlocksProps, "rewards">
 
 export function ReferralSummaryBlocks(props: ReferralSummaryBlocksProps) {
   return (
-    <div className="grid gap-4 sm:gap-5">
+    <div className="dashboardWorkspace referralWorkspace">
       <ReferralLinkCard {...props} />
-      <div className="grid gap-4 xl:grid-cols-2 xl:items-start">
+      <div className="dataSplitGrid">
         <InvitedUsersSection referredUsers={props.referredUsers} />
         <RewardsSection rewards={props.rewards} />
       </div>

@@ -57,21 +57,21 @@ function DeviceCard({ device, onDelete, deleting }: { device: Device; onDelete: 
     .join(" · ");
 
   return (
-    <Card>
-      <CardContent className="flex items-center justify-between p-4">
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-white">
+    <Card className="devicePanel">
+      <CardContent className="devicePanelBody">
+        <div className="devicePanelCopy">
+          <p className="devicePanelTitle">
             {getPlatformIcon(device.platform)} {model}
           </p>
           {details ? (
-            <p className="mt-1 truncate text-xs text-zinc-400">{details}</p>
+            <p className="devicePanelMeta">{details}</p>
           ) : null}
         </div>
         <Button
           variant="outline"
           size="sm"
           disabled={deleting}
-          className="shrink-0 border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+          className="commandButton commandButtonDanger devicePanelAction"
           onClick={() => onDelete(device.hwid)}
         >
           {deleting ? "..." : "Удалить"}
@@ -138,8 +138,8 @@ export function DeviceList({ devices, total, deviceLimit }: DeviceListProps) {
 
   if (devices.length === 0) {
     return (
-      <Card>
-        <CardContent className="p-6 text-center text-sm text-zinc-400">
+      <Card className="dashboardWorkspace deviceWorkspace devicePanel">
+        <CardContent className="deviceEmptyState">
           Нет подключённых устройств. Устройства появятся автоматически при подключении.
         </CardContent>
       </Card>
@@ -151,15 +151,15 @@ export function DeviceList({ devices, total, deviceLimit }: DeviceListProps) {
     : `${total} устройств`;
 
   return (
-    <div className="grid gap-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-white">{counter}</p>
+    <div className="dashboardWorkspace deviceWorkspace">
+      <div className="deviceToolbar">
+        <p className="deviceCounter">{counter}</p>
         <Dialog open={deleteAllOpen} onOpenChange={setDeleteAllOpen}>
           <DialogTrigger asChild>
             <Button
               variant="outline"
               size="sm"
-              className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+              className="commandButton commandButtonDanger deviceToolbarAction"
             >
               Удалить все
             </Button>
@@ -171,11 +171,21 @@ export function DeviceList({ devices, total, deviceLimit }: DeviceListProps) {
                 Все привязанные устройства будут удалены. Это действие нельзя отменить.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-3 pt-2">
-              <Button variant="destructive" disabled={pending} onClick={handleDeleteAll}>
+            <div className="commandDialogActions">
+              <Button
+                variant="destructive"
+                className="commandButton commandButtonDanger"
+                disabled={pending}
+                onClick={handleDeleteAll}
+              >
                 {pending ? "Удаление..." : "Подтвердить удаление"}
               </Button>
-              <Button variant="secondary" disabled={pending} onClick={() => setDeleteAllOpen(false)}>
+              <Button
+                variant="secondary"
+                className="commandButton commandButtonSecondary"
+                disabled={pending}
+                onClick={() => setDeleteAllOpen(false)}
+              >
                 Отмена
               </Button>
             </div>
@@ -183,9 +193,9 @@ export function DeviceList({ devices, total, deviceLimit }: DeviceListProps) {
         </Dialog>
       </div>
 
-      {error ? <p className="text-sm text-red-400">{error}</p> : null}
+      {error ? <p className="commandError">{error}</p> : null}
 
-      <div className="grid gap-2">
+      <div className="deviceListStack">
         {devices.map((device) => (
           <DeviceCard
             key={device.hwid}

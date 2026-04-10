@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 export function AdminUserActions({
   userId,
@@ -61,12 +62,12 @@ export function AdminUserActions({
   const fieldId = (name: string) => `${idPrefix}-${name}-${userId}`;
 
   return (
-    <div className="flex min-w-0 flex-col gap-3">
-      <div className="grid gap-2 sm:grid-cols-2">
+    <div className="adminUserActions">
+      <div className="adminUserActionGrid">
         <Button
           type="button"
           size="sm"
-          className="w-full"
+          className="commandButton commandButtonSecondary"
           variant="secondary"
           disabled={pending}
           onClick={() =>
@@ -80,7 +81,7 @@ export function AdminUserActions({
         <Button
           type="button"
           size="sm"
-          className="w-full"
+          className="commandButton commandButtonSecondary"
           variant="outline"
           disabled={pending}
           onClick={() =>
@@ -103,7 +104,7 @@ export function AdminUserActions({
           <Button
             type="button"
             size="sm"
-            className="w-full sm:col-span-2"
+            className="commandButton commandButtonDanger adminUserActionWide"
             variant="destructive"
             disabled={pending}
             onClick={() =>
@@ -117,17 +118,17 @@ export function AdminUserActions({
         ) : null}
       </div>
 
-      <details className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-sm text-zinc-300">
-        <summary className="flex min-h-11 cursor-pointer list-none items-center select-none font-medium text-white">
+      <details className="grantFormSurface">
+        <summary className="grantFormSummary">
           Выдать подписку вручную
         </summary>
-        <div className="mt-3 grid gap-3">
-          <div className="space-y-2">
+        <div className="grantFormBody">
+          <div className="controlField">
             <Label htmlFor={fieldId("grant-plan")}>Тариф</Label>
             <select
               id={fieldId("grant-plan")}
               disabled={pending}
-              className="flex h-11 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 text-sm text-white"
+              className="controlSurface controlSelect"
               value={selectedPlanId}
               onChange={(event) => setGrantState((current) => ({ ...current, planId: event.target.value }))}
             >
@@ -138,8 +139,8 @@ export function AdminUserActions({
               ))}
             </select>
           </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="space-y-2">
+          <div className="controlFieldGrid">
+            <div className="controlField">
               <Label htmlFor={fieldId("grant-days")}>Дни</Label>
               <Input
                 id={fieldId("grant-days")}
@@ -149,7 +150,7 @@ export function AdminUserActions({
                 onChange={(event) => setGrantState((current) => ({ ...current, durationDays: event.target.value }))}
               />
             </div>
-            <div className="space-y-2">
+            <div className="controlField">
               <Label htmlFor={fieldId("grant-traffic")}>Трафик, ГБ</Label>
               <Input
                 id={fieldId("grant-traffic")}
@@ -160,7 +161,7 @@ export function AdminUserActions({
               />
             </div>
           </div>
-          <div className="space-y-2">
+          <div className="controlField">
             <Label htmlFor={fieldId("grant-note")}>Комментарий</Label>
             <Input
               id={fieldId("grant-note")}
@@ -172,7 +173,7 @@ export function AdminUserActions({
           <Button
             type="button"
             size="sm"
-            className="w-full sm:w-auto"
+            className="commandButton commandButtonPrimary"
             disabled={pending}
             onClick={() =>
               runAction(async () => {

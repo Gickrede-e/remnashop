@@ -63,33 +63,41 @@ export function LoginForm({
   });
 
   return (
-    <div className="space-y-6">
-      <form onSubmit={onSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" autoComplete="email" {...form.register("email")} />
+    <div className="authFormPanel authCardForm">
+      <form onSubmit={onSubmit} className="authForm">
+        <div className="authFormGrid">
+          <div className="authField">
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" type="email" autoComplete="email" {...form.register("email")} />
+          </div>
+          <div className="authField">
+            <Label htmlFor="password">Пароль</Label>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              {...form.register("password")}
+            />
+          </div>
+          {error ? <p className="authError">{error}</p> : null}
+          <Button type="submit" className="authSubmit" disabled={pending}>
+            {pending ? "Входим..." : "Войти"}
+          </Button>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Пароль</Label>
-          <Input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            {...form.register("password")}
-          />
-        </div>
-        {error ? <p className="text-sm text-red-300">{error}</p> : null}
-        <Button type="submit" className="w-full" disabled={pending}>
-          {pending ? "Входим..." : "Войти"}
-        </Button>
       </form>
 
-      <div className="space-y-3">
-        <p className="text-center text-xs uppercase tracking-[0.2em] text-zinc-400">или</p>
-        <TelegramLoginButton botUsername={telegramUsername} nextPath={safeNextPath} />
+      <div className="authTelegramSection">
+        <div className="authDivider" aria-hidden="true">
+          <span>или</span>
+        </div>
+
+        <div className="authTelegram">
+          <p className="authTelegramLabel">Telegram gateway</p>
+          <TelegramLoginButton botUsername={telegramUsername} nextPath={safeNextPath} />
+        </div>
       </div>
 
-      <div className="rounded-[22px] border border-white/8 bg-white/[0.03] px-4 py-4 text-sm leading-6 text-zinc-400">
+      <div className="authHint">
         После входа вы вернетесь в кабинет или продолжите покупку без лишних шагов.
       </div>
     </div>

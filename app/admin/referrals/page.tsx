@@ -10,14 +10,14 @@ export default async function AdminReferralsPage() {
   const overview = await getReferralAdminOverview();
 
   return (
-    <div className="grid gap-4 sm:gap-6">
+    <div className="adminWorkspacePage adminWorkspace adminSurfacePage">
       <ScreenHeader
         eyebrow="Админка"
         title="Рефералы"
         description="Лучшие рефереры и недавние начисленные награды."
       />
 
-      <div className="surface-soft grid gap-3 p-4 sm:grid-cols-3">
+      <div className="adminSummaryGrid">
         <SummaryItem label="Всего рефералов" value={String(overview.totalReferrals)} />
         <SummaryItem label="Топ рефереров" value={String(overview.topReferrers.length)} />
         <SummaryItem label="Последние награды" value={String(overview.rewards.length)} />
@@ -34,7 +34,7 @@ export default async function AdminReferralsPage() {
           />
         ) : (
           <>
-            <div className="grid gap-3 xl:hidden">
+            <div className="adminResponsiveStack">
               {overview.topReferrers.map((user) => (
                 <AdminRecordCard
                   key={user.id}
@@ -47,7 +47,7 @@ export default async function AdminReferralsPage() {
               ))}
             </div>
 
-            <div className="hidden xl:block">
+            <div className="adminDesktopTable">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -60,7 +60,7 @@ export default async function AdminReferralsPage() {
                   {overview.topReferrers.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell>{maskEmail(user.email)}</TableCell>
-                      <TableCell className="max-w-[220px] break-all">{user.referralCode}</TableCell>
+                      <TableCell className="adminCellWrap">{user.referralCode}</TableCell>
                       <TableCell>{user._count.referrals}</TableCell>
                     </TableRow>
                   ))}
@@ -82,7 +82,7 @@ export default async function AdminReferralsPage() {
           />
         ) : (
           <>
-            <div className="grid gap-3 xl:hidden">
+            <div className="adminResponsiveStack">
               {overview.rewards.map((reward) => (
                 <AdminRecordCard
                   key={reward.id}
@@ -97,7 +97,7 @@ export default async function AdminReferralsPage() {
               ))}
             </div>
 
-            <div className="hidden xl:block">
+            <div className="adminDesktopTable">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -130,9 +130,9 @@ export default async function AdminReferralsPage() {
 
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="space-y-1">
-      <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">{label}</p>
-      <p className="text-sm font-medium text-white">{value}</p>
+    <div className="adminSummaryItem">
+      <p className="adminSummaryLabel">{label}</p>
+      <p className="adminSummaryValue">{value}</p>
     </div>
   );
 }

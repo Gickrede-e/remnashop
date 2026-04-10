@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 export default function DashboardError({ reset }: { error: Error; reset: () => void }) {
   return (
     <Card className="surface-feature">
-      <CardHeader className="p-5 sm:p-6">
+      <CardHeader>
         <ScreenHeader
           eyebrow="Личный кабинет"
           title="Не удалось загрузить кабинет"
@@ -15,9 +15,9 @@ export default function DashboardError({ reset }: { error: Error; reset: () => v
           actions={<Button onClick={reset}>Повторить</Button>}
         />
       </CardHeader>
-      <CardContent className="grid gap-3 p-5 pt-0 text-sm text-zinc-400 sm:p-6 sm:pt-0">
-        <CardTitle className="text-base text-white">Что можно сделать сейчас</CardTitle>
-        <CardDescription className="text-sm text-zinc-400">
+      <CardContent className="routeStateInfo">
+        <CardTitle className="routeStateInfoTitle">Что можно сделать сейчас</CardTitle>
+        <CardDescription className="routeStateInfoCopy">
           Состояние маршрута сохранится. После повтора загрузки вы вернётесь в тот же раздел кабинета.
         </CardDescription>
       </CardContent>

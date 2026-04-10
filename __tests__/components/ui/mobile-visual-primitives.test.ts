@@ -18,7 +18,6 @@ import { Separator } from "@/components/ui/separator";
 import { buttonVariants } from "@/components/ui/button";
 
 const dialogPath = path.resolve(process.cwd(), "components/ui/dialog.tsx");
-const tailwindConfigPath = path.resolve(process.cwd(), "tailwind.config.mjs");
 const globalsCssPath = path.resolve(process.cwd(), "app/globals.css");
 
 describe("mobile visual primitives", () => {
@@ -34,28 +33,22 @@ describe("mobile visual primitives", () => {
     expect(markup).toMatch(/class="[^"]*\bbuttonPrimary\b[^"]*"/);
   });
 
-  it("preserves caller utility overrides through the primitive layer", () => {
-    const markup = renderToStaticMarkup(
-      React.createElement(Button, { className: "w-full justify-between" }, "Primary")
-    );
+  it("preserves caller class overrides through the primitive layer", () => {
+    const markup = renderToStaticMarkup(React.createElement(Button, { className: "customButtonHook" }, "Primary"));
     const css = fs.readFileSync(globalsCssPath, "utf8");
 
-    expect(markup).toMatch(/class="[^"]*\bbutton\b[^"]*\bw-full\b[^"]*\bjustify-between\b[^"]*"/);
+    expect(markup).toMatch(/class="[^"]*\bbutton\b[^"]*\bcustomButtonHook\b[^"]*"/);
     expect(css).toMatch(/@layer components\s*\{[\s\S]*\.button\s*\{/);
     expect(css).not.toMatch(/\.button\s*\{[\s\S]*!important/);
   });
 
-  it("preserves panel primitive overrides and legacy helper classes during the bridge", () => {
-    const cardMarkup = renderToStaticMarkup(
-      React.createElement(Card, { className: "surface-soft p-5" }, "Telemetry")
-    );
-    const contentMarkup = renderToStaticMarkup(
-      React.createElement(CardContent, { className: "p-5 pt-0" }, "Rows")
-    );
+  it("preserves panel primitive overrides with semantic hook classes", () => {
+    const cardMarkup = renderToStaticMarkup(React.createElement(Card, { className: "surface-soft customPanel" }, "Telemetry"));
+    const contentMarkup = renderToStaticMarkup(React.createElement(CardContent, { className: "customPanelBody" }, "Rows"));
     const css = fs.readFileSync(globalsCssPath, "utf8");
 
-    expect(cardMarkup).toMatch(/class="[^"]*\bpanel\b[^"]*\bsurface-soft\b[^"]*\bp-5\b[^"]*"/);
-    expect(contentMarkup).toMatch(/class="[^"]*\bpanelBody\b[^"]*\bp-5\b[^"]*\bpt-0\b[^"]*"/);
+    expect(cardMarkup).toMatch(/class="[^"]*\bpanel\b[^"]*\bsurface-soft\b[^"]*\bcustomPanel\b[^"]*"/);
+    expect(contentMarkup).toMatch(/class="[^"]*\bpanelBody\b[^"]*\bcustomPanelBody\b[^"]*"/);
     expect(css).toMatch(/@layer components\s*\{[\s\S]*\.panel\s*\{/);
     expect(css).toMatch(/@layer components\s*\{[\s\S]*\.panelBody\s*\{/);
     expect(css).not.toMatch(/\.panel(?:Body)?\s*\{[\s\S]*!important/);
@@ -86,10 +79,17 @@ describe("mobile visual primitives", () => {
     expect(source).not.toContain("shadow-glow");
   });
 
-  it("does not keep the old 16px/48px glow token in tailwind config", () => {
-    const source = fs.readFileSync(tailwindConfigPath, "utf8");
+  it("does not keep Tailwind bridge directives in global CSS", () => {
+    const source = fs.readFileSync(globalsCssPath, "utf8");
 
-    expect(source).not.toContain("0 16px 48px");
+    expect(source).not.toContain('tailwindcss');
+    expect(source).not.toContain('tailwind.config.mjs');
+    expect(source).toContain("--accent-primary");
+    expect(source).toContain("--canvas-0: #090909");
+    expect(source).toContain("--text-primary: #f3efe6");
+    expect(source).toContain(".appNavRail");
+    expect(source).toContain(".authCard");
+    expect(source).toContain("@media (prefers-reduced-motion: reduce)");
   });
 
   it("defines CSS for semantic hooks emitted by select and dropdown primitives", () => {

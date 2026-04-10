@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowRight, type LucideIcon } from "lucide-react";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ProviderStatusRow } from "@/lib/services/provider-status";
 import { cn } from "@/lib/utils";
@@ -47,13 +46,11 @@ type AdminOverviewBlocksProps = {
 
 function MetricTile({ item, compact = false }: { item: AdminOverviewMetric; compact?: boolean }) {
   return (
-    <div className={cn("rounded-[22px] border border-white/10 bg-white/[0.03]", compact ? "p-4" : "p-4 sm:p-5")}>
-      <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">{item.label}</p>
-      <p className={cn("mt-3 break-words font-semibold text-white", compact ? "text-xl" : "text-2xl sm:text-[1.75rem]")}>
-        {item.value}
-      </p>
-      {item.hint ? <p className="mt-2 text-sm leading-5 text-zinc-400">{item.hint}</p> : null}
-    </div>
+    <article className={cn("controlMetric", compact && "controlMetricCompact")}>
+      <p className="controlMetricLabel">{item.label}</p>
+      <p className="controlMetricValue">{item.value}</p>
+      {item.hint ? <p className="controlMetricHint">{item.hint}</p> : null}
+    </article>
   );
 }
 
@@ -69,159 +66,157 @@ function SummaryCard({
   rows: AdminOverviewContextRow[];
 }) {
   return (
-    <Card>
-      <CardHeader className="p-5 pb-4 sm:p-6 sm:pb-5">
-        <CardTitle className="text-lg text-white sm:text-xl">{title}</CardTitle>
-        <CardDescription className="text-sm leading-6 text-zinc-400">{description}</CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-4 p-5 pt-0 sm:p-6 sm:pt-0">
-        <div className="grid gap-3 sm:grid-cols-2">
+    <section className="adminSection controlCenterSummary panel">
+      <div className="controlPanelHeader">
+        <p className="controlPanelEyebrow">Ключевой срез</p>
+        <h2 className="controlPanelTitle">{title}</h2>
+        <p className="controlPanelDescription">{description}</p>
+      </div>
+      <div className="controlPanelBody">
+        <div className="controlMetricGrid">
           {metrics.map((item) => (
             <MetricTile key={item.label} item={item} />
           ))}
         </div>
-        <div className="grid gap-3 rounded-[24px] border border-white/10 bg-black/20 p-4">
+        <div className="controlContextList">
           {rows.map((row) => (
-            <div key={row.label} className="flex items-start justify-between gap-4 border-b border-white/8 pb-3 last:border-b-0 last:pb-0">
-              <div className="min-w-0">
-                <p className="text-sm text-zinc-300">{row.label}</p>
-                {row.description ? <p className="mt-1 text-xs leading-5 text-zinc-400">{row.description}</p> : null}
+            <div key={row.label} className="controlContextRow">
+              <div className="controlContextCopy">
+                <p className="controlContextLabel">{row.label}</p>
+                {row.description ? <p className="controlContextDescription">{row.description}</p> : null}
               </div>
-              <p className="shrink-0 text-right text-sm font-semibold text-white">{row.value}</p>
+              <p className="controlContextValue">{row.value}</p>
             </div>
           ))}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
 
 function QuickActionsCard({ actions }: { actions: AdminOverviewAction[] }) {
   return (
-    <Card>
-      <CardHeader className="p-5 pb-4 sm:p-6 sm:pb-5">
-        <CardTitle className="text-lg text-white sm:text-xl">Быстрые действия</CardTitle>
-        <CardDescription className="text-sm leading-6 text-zinc-400">
+    <section className="adminSection controlActionPanel panel">
+      <div className="controlPanelHeader">
+        <p className="controlPanelEyebrow">Операции</p>
+        <h2 className="controlPanelTitle">Быстрые действия</h2>
+        <p className="controlPanelDescription">
           Переходы в разделы, которые чаще всего нужны для ручной проверки, поддержки и выгрузки.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-3 p-5 pt-0 sm:p-6 sm:pt-0">
+        </p>
+      </div>
+      <div className="controlActionList">
         {actions.map((action) => {
           const Icon = action.icon;
 
           return (
-            <Link
-              key={action.href}
-              href={action.href}
-              className="group flex items-start gap-3 rounded-[22px] border border-white/10 bg-white/[0.03] px-4 py-4 transition hover:border-white/20 hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-black/20 text-zinc-200">
-                <Icon className="h-4 w-4" />
+            <Link key={action.href} href={action.href} className="controlAction">
+              <span className="controlActionIcon">
+                <Icon className="iconSm" />
               </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-medium text-white">{action.label}</span>
-                <span className="mt-1 block text-sm leading-5 text-zinc-400">{action.description}</span>
+              <span className="controlActionCopy">
+                <span className="controlActionLabel">{action.label}</span>
+                <span className="controlActionDescription">{action.description}</span>
               </span>
-              <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-zinc-400 transition group-hover:text-zinc-200" />
+              <ArrowRight className="controlActionArrow" />
             </Link>
           );
         })}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
 
 function DetailSection({ section }: { section: AdminOverviewSection }) {
   return (
-    <Card>
-      <CardHeader className="p-5 pb-4 sm:p-6 sm:pb-5">
-        <CardTitle className="text-lg text-white sm:text-xl">{section.title}</CardTitle>
-        <CardDescription className="text-sm leading-6 text-zinc-400">{section.description}</CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-3 p-5 pt-0 sm:p-6 sm:pt-0">
+    <section className="adminSection controlDetailPanel panel">
+      <div className="controlPanelHeader">
+        <p className="controlPanelEyebrow">Раздел</p>
+        <h2 className="controlPanelTitle">{section.title}</h2>
+        <p className="controlPanelDescription">{section.description}</p>
+      </div>
+      <div className="controlDetailList">
         {section.items.map((item) => (
           <MetricTile key={item.label} item={item} compact />
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
 
 export function AdminProviderStatusSection({ statuses }: { statuses: ProviderStatusRow[] }) {
   return (
-    <Card>
-      <CardHeader className="p-5 pb-4 sm:p-6 sm:pb-5">
-        <CardTitle className="text-lg text-white sm:text-xl">Статусы модулей</CardTitle>
-        <CardDescription className="text-sm leading-6 text-zinc-400">
-          Текущее состояние подключённых платёжных систем и сервисов.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-3 p-5 pt-0 sm:p-6 sm:pt-0">
-        {statuses.map((item) => (
-          <div
-            key={item.label}
-            data-status={item.status}
-            className="rounded-[22px] border border-white/10 bg-white/[0.03] px-4 py-3"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-white">{item.label}</p>
-                <p className="mt-1 text-xs leading-5 text-zinc-400">{item.detail}</p>
+    <section className="adminSection adminProviderStatusSection">
+      <div className="adminSection providerStatusPanel panel">
+        <div className="controlPanelHeader">
+          <p className="controlPanelEyebrow">Мониторинг</p>
+          <h2 className="controlPanelTitle">Статусы модулей</h2>
+          <p className="controlPanelDescription">
+            Текущее состояние подключённых платёжных систем и сервисов.
+          </p>
+        </div>
+        <div className="providerStatusList">
+          {statuses.map((item) => (
+            <article key={item.label} data-status={item.status} className="providerStatusRow">
+              <div className="providerStatusCopy">
+                <p className="providerStatusLabel">{item.label}</p>
+                <p className="providerStatusDetail">{item.detail}</p>
               </div>
               <span
                 className={cn(
-                  "shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em]",
-                  item.status === "available" && "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
-                  item.status === "unavailable" && "border-rose-500/30 bg-rose-500/10 text-rose-200",
-                  item.status === "timeout" && "border-amber-500/30 bg-amber-500/10 text-amber-100",
-                  item.status === "not_configured" && "border-zinc-500/30 bg-zinc-500/10 text-zinc-200"
+                  "providerStatusBadge",
+                  item.status === "available" && "providerStatusAvailable",
+                  item.status === "unavailable" && "providerStatusUnavailable",
+                  item.status === "timeout" && "providerStatusTimeout",
+                  item.status === "not_configured" && "providerStatusNotConfigured"
                 )}
               >
                 {item.summary}
               </span>
-            </div>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
 export function AdminProviderStatusFallback() {
   return (
-    <Card>
-      <CardHeader className="p-5 pb-4 sm:p-6 sm:pb-5">
-        <CardTitle className="text-lg text-white sm:text-xl">Статусы модулей</CardTitle>
-        <CardDescription className="text-sm leading-6 text-zinc-400">
-          Текущее состояние подключённых платёжных систем и сервисов.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-3 p-5 pt-0 sm:p-6 sm:pt-0">
-        {[0, 1, 2].map((index) => (
-          <div key={index} className="rounded-[22px] border border-white/10 bg-white/[0.03] px-4 py-3">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <Skeleton className="h-4 w-24 bg-white/10" />
-                <Skeleton className="mt-2 h-3 w-32 bg-white/10" />
+    <section className="adminSection adminProviderStatusSection">
+      <div className="adminSection providerStatusPanel panel">
+        <div className="controlPanelHeader">
+          <p className="controlPanelEyebrow">Мониторинг</p>
+          <h2 className="controlPanelTitle">Статусы модулей</h2>
+          <p className="controlPanelDescription">
+            Текущее состояние подключённых платёжных систем и сервисов.
+          </p>
+        </div>
+        <div className="providerStatusList">
+          {[0, 1, 2].map((index) => (
+            <article key={index} className="providerStatusRow">
+              <div className="providerStatusCopy">
+                <Skeleton className="providerStatusSkeletonLine" />
+                <Skeleton className="providerStatusSkeletonText" />
               </div>
-              <Skeleton className="h-7 w-20 rounded-full bg-white/10" />
-            </div>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
+              <Skeleton className="providerStatusSkeletonBadge" />
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
 function ChartSection({ title, description, children }: { title: string; description: string; children: ReactNode }) {
   return (
-    <Card>
-      <CardHeader className="p-5 pb-4 sm:p-6 sm:pb-5">
-        <CardTitle className="text-lg text-white sm:text-xl">{title}</CardTitle>
-        <CardDescription className="text-sm leading-6 text-zinc-400">{description}</CardDescription>
-      </CardHeader>
-      <CardContent className="p-5 pt-0 sm:p-6 sm:pt-0">{children}</CardContent>
-    </Card>
+    <section className="adminSection revenuePanel panel">
+      <div className="controlPanelHeader">
+        <p className="controlPanelEyebrow">Тренд</p>
+        <h2 className="controlPanelTitle">{title}</h2>
+        <p className="controlPanelDescription">{description}</p>
+      </div>
+      <div className="controlPanelBody">{children}</div>
+    </section>
   );
 }
 
@@ -238,20 +233,29 @@ export function AdminOverviewBlocks({
   chartDescription = "Тренд вынесен ниже после KPI и действий, чтобы первый экран оставался операционным."
 }: AdminOverviewBlocksProps) {
   return (
-    <div className="grid gap-4 sm:gap-5">
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.95fr)]">
-        <SummaryCard title={summaryTitle} description={summaryDescription} metrics={primaryMetrics} rows={contextRows} />
+    <div className="adminWorkspace adminOverviewBlocks">
+      <div className="adminHero controlCenterHero">
+        <SummaryCard
+          title={summaryTitle}
+          description={summaryDescription}
+          metrics={primaryMetrics}
+          rows={contextRows}
+        />
         <QuickActionsCard actions={quickActions} />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="adminOverviewTwoColumnGrid">
         {sections.map((section) => (
           <DetailSection key={section.title} section={section} />
         ))}
         {providerStatusSlot}
       </div>
 
-      {chart ? <ChartSection title={chartTitle} description={chartDescription}>{chart}</ChartSection> : null}
+      {chart ? (
+        <ChartSection title={chartTitle} description={chartDescription}>
+          {chart}
+        </ChartSection>
+      ) : null}
     </div>
   );
 }

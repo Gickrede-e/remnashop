@@ -16,7 +16,7 @@ export default async function AdminEditPromoPage({ params }: { params: Promise<{
   }
 
   return (
-    <div className="grid gap-4 sm:gap-6">
+    <div className="adminWorkspacePage adminWorkspace adminSurfacePage adminSurfacePageForm">
       <ScreenHeader
         eyebrow="Админка"
         title={`Промокод: ${promo.code}`}

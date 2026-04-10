@@ -13,7 +13,7 @@ export default async function AdminLogsPage() {
   });
 
   return (
-    <div className="grid gap-4 sm:gap-6">
+    <div className="adminWorkspacePage adminWorkspace adminSurfacePage">
       <ScreenHeader
         eyebrow="Админка"
         title="Логи"
@@ -24,7 +24,7 @@ export default async function AdminLogsPage() {
         title="Журнал действий"
         description="Последние 50 записей с действиями и их контекстом."
         summary={
-          <div className="surface-soft grid gap-3 p-4 sm:grid-cols-2">
+          <div className="adminSummaryGrid adminSummaryGridWide">
             <SummaryItem label="Всего записей" value={String(result.total)} />
             <SummaryItem label="Период" value="Последние события" />
           </div>
@@ -37,7 +37,7 @@ export default async function AdminLogsPage() {
           />
         ) : (
           <>
-            <div className="grid gap-3 xl:hidden">
+            <div className="adminResponsiveStack">
               {result.items.map((log) => (
                 <AdminRecordCard
                   key={log.id}
@@ -52,7 +52,7 @@ export default async function AdminLogsPage() {
               ))}
             </div>
 
-            <div className="hidden xl:block">
+            <div className="adminDesktopTable">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -70,7 +70,7 @@ export default async function AdminLogsPage() {
                       <TableCell>{log.admin?.email ? maskEmail(log.admin.email) : "Система"}</TableCell>
                       <TableCell>{log.action}</TableCell>
                       <TableCell>{log.targetType}</TableCell>
-                      <TableCell className="max-w-[220px] break-all">{log.targetId}</TableCell>
+                      <TableCell className="adminCellWrap">{log.targetId}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -85,9 +85,9 @@ export default async function AdminLogsPage() {
 
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="space-y-1">
-      <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">{label}</p>
-      <p className="text-sm font-medium text-white">{value}</p>
+    <div className="adminSummaryItem">
+      <p className="adminSummaryLabel">{label}</p>
+      <p className="adminSummaryValue">{value}</p>
     </div>
   );
 }

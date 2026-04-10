@@ -1,15 +1,34 @@
-import fs from "node:fs";
-import path from "node:path";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Menu } from "lucide-react";
 import { describe, expect, it, vi } from "vitest";
 
-const globalsCssPath = path.resolve(process.cwd(), "app/globals.css");
-
 vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) =>
     React.createElement("a", { href, ...props }, children)
+}));
+
+vi.mock("@radix-ui/react-dialog", () => ({
+  Root: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
+  Portal: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
+  Overlay: React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ children, ...props }, ref) =>
+    React.createElement("div", { ref, ...props }, children)
+  ),
+  Content: React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ children, ...props }, ref) =>
+    React.createElement("div", { ref, ...props }, children)
+  ),
+  Close: React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(({ children, ...props }, ref) =>
+    React.createElement("button", { ref, type: "button", ...props }, children)
+  ),
+  Title: React.forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTMLHeadingElement>>(({ children, ...props }, ref) =>
+    React.createElement("h2", { ref, ...props }, children)
+  ),
+  Description: React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(({ children, ...props }, ref) =>
+    React.createElement("p", { ref, ...props }, children)
+  ),
+  Trigger: React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(({ children, ...props }, ref) =>
+    React.createElement("button", { ref, type: "button", ...props }, children)
+  )
 }));
 
 vi.mock("@/components/shared/logo", () => ({
@@ -18,18 +37,6 @@ vi.mock("@/components/shared/logo", () => ({
 
 vi.mock("@/components/shared/logout-button", () => ({
   LogoutButton: () => React.createElement("button", { type: "button" }, "LogoutMock")
-}));
-
-vi.mock("@/components/ui/dialog", () => ({
-  Dialog: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
-  DialogContent: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) =>
-    React.createElement("div", props, children),
-  DialogDescription: ({ children, ...props }: React.HTMLAttributes<HTMLParagraphElement>) =>
-    React.createElement("p", props, children),
-  DialogHeader: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) =>
-    React.createElement("div", props, children),
-  DialogTitle: ({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) =>
-    React.createElement("h2", props, children)
 }));
 
 import { AppMoreSheet } from "@/components/shell/app-more-sheet";
@@ -55,7 +62,7 @@ describe("shared shell more triggers", () => {
     expect(markup).toBe("");
   });
 
-  it("uses dialog trigger semantics for both topbar more buttons", () => {
+  it("exposes the topbar more trigger as a dialog opener", () => {
     const props: React.ComponentProps<typeof AppTopbar> = {
       area: "dashboard",
       primaryItems: [{ href: "/dashboard", label: "Обзор", icon: Menu, active: true }],
@@ -70,10 +77,10 @@ describe("shared shell more triggers", () => {
       React.createElement(AppTopbar, props)
     );
 
+    expect(markup).toContain('aria-label="Открыть меню разделов"');
     expect(markup.match(/aria-haspopup="dialog"/g)).toHaveLength(2);
     expect(markup.match(/aria-expanded="false"/g)).toHaveLength(2);
     expect(markup.match(/aria-controls="dashboard-more-sheet"/g)).toHaveLength(2);
-    expect((markup.match(/class="[^"]*\bmoreTrigger\b[^"]*"/g) ?? []).length).toBe(2);
   });
 
   it("keeps the topbar free of the old left text block and leaves footer actions to the rail or sheet", () => {
@@ -104,25 +111,19 @@ describe("shared shell more triggers", () => {
         primaryItems: [{ href: "/dashboard", label: "Обзор", icon: Menu, active: true }],
         secondaryItems: [{ href: "/dashboard/referrals", label: "Рефералы", icon: Menu, active: false }],
         footerActions: [
-          { label: "Profile", kind: "summary", intent: "system" },
-          { label: "Logout", kind: "command", intent: "system", command: "logout" }
+          { label: "Профиль", kind: "summary", intent: "system" },
+          { label: "Выйти", kind: "command", intent: "system", command: "logout" }
         ],
         open: true,
         onOpenChange: () => undefined
       })
     );
 
-    expect(markup).toContain("Profile");
+    expect(markup).toContain("Профиль");
     expect(markup).toContain("LogoutMock");
     expect(markup).not.toContain('href="/logout"');
     expect(markup).toMatch(/class="[^"]*\bappMoreSheetContent\b[^"]*\bdialogSurface\b[^"]*"/);
-
-    const source = fs.readFileSync(globalsCssPath, "utf8");
-    expect(source).toContain(".dialogSurface.appMoreSheetContent");
-    expect(source).toContain(".appNavRailSurface");
-    expect(source).toContain("position: fixed;");
-    expect(source).toContain("grid-template-columns: minmax(15.75rem, 17.5rem) minmax(0, 1fr);");
-    expect(source).toContain("bottom: 0;");
-    expect(source).not.toContain("padding-bottom: calc(env(safe-area-inset-bottom) + 6.5rem);");
+    expect(markup).toContain('aria-label="Действия в меню"');
+    expect(markup).toContain('aria-label="Закрыть диалог"');
   });
 });

@@ -19,16 +19,18 @@ export default async function RegisterPage({
   const nextPath = sanitizeNextPath(resolvedSearchParams?.next);
 
   return (
-    <div className="container flex min-h-dvh items-center justify-center px-4 py-8 sm:py-10">
-      <AuthEntryPanel
-        title="Создание аккаунта"
-        description="Новый аккаунт сразу открывает доступ к покупке, продлению и управлению подпиской."
-        activeView="register"
-        nextPath={nextPath}
-        referralCode={referralCode}
-      >
-        <RegisterForm referralCode={referralCode} nextPath={nextPath} />
-      </AuthEntryPanel>
-    </div>
+    <main className="authScene">
+      <div className="authSceneViewport">
+        <AuthEntryPanel
+          title="Создание аккаунта"
+          description="Новый аккаунт сразу открывает доступ к покупке, продлению и управлению подпиской."
+          activeView="register"
+          nextPath={nextPath}
+          referralCode={referralCode}
+        >
+          <RegisterForm referralCode={referralCode} nextPath={nextPath} />
+        </AuthEntryPanel>
+      </div>
+    </main>
   );
 }

@@ -17,7 +17,7 @@ export default async function DashboardBuyPage() {
   const plans = await getActivePlans();
 
   return (
-    <div className="grid gap-4 sm:gap-6">
+    <div className="dashboardWorkspacePage dashboardSurfacePage dashboardSurfacePageBuy">
       <ScreenHeader
         eyebrow="Покупка"
         title="Купить тариф"

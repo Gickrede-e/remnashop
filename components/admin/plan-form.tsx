@@ -81,14 +81,14 @@ export function PlanForm({
   };
 
   return (
-    <div className="grid gap-4">
+    <div className="controlForm">
       <FormSection
         title="Идентичность тарифа"
         description="Название, slug и витринные тексты, по которым тариф будут узнавать в интерфейсе."
       >
-        <div className="grid gap-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
+        <div className="controlFormBody">
+          <div className="controlFieldGrid">
+            <div className="controlField">
               <Label htmlFor="plan-name">Название</Label>
               <Input
                 id="plan-name"
@@ -102,7 +102,7 @@ export function PlanForm({
                 }
               />
             </div>
-            <div className="space-y-2">
+            <div className="controlField">
               <Label htmlFor="plan-slug">Slug</Label>
               <Input
                 id="plan-slug"
@@ -112,10 +112,10 @@ export function PlanForm({
                   setValues((current) => ({ ...current, slug: slugify(event.target.value).slice(0, 16) }))
                 }
               />
-              <p className="break-all text-xs text-zinc-400">Tag в Remnawave будет вычислен из slug: {remnawaveTag || "—"}</p>
+              <p className="controlFieldHint">Tag в Remnawave будет вычислен из slug: {remnawaveTag || "—"}</p>
             </div>
           </div>
-          <div className="space-y-2">
+          <div className="controlField">
             <Label htmlFor="plan-description">Описание</Label>
             <Textarea
               id="plan-description"
@@ -123,7 +123,7 @@ export function PlanForm({
               onChange={(event) => setValues((current) => ({ ...current, description: event.target.value }))}
             />
           </div>
-          <div className="space-y-2">
+          <div className="controlField">
             <Label htmlFor="plan-highlight">Метка</Label>
             <Input
               id="plan-highlight"
@@ -138,8 +138,8 @@ export function PlanForm({
         title="Ценообразование"
         description="Оставляем в одном месте только коммерческие параметры и порядок показа тарифа."
       >
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
+        <div className="controlFieldGrid">
+          <div className="controlField">
             <Label htmlFor="plan-price">Цена, ₽</Label>
             <Input
               id="plan-price"
@@ -148,7 +148,7 @@ export function PlanForm({
               onChange={(event) => setValues((current) => ({ ...current, priceRubles: Number(event.target.value) }))}
             />
           </div>
-          <div className="space-y-2">
+          <div className="controlField">
             <Label htmlFor="plan-sort">Порядок на витрине</Label>
             <Input
               id="plan-sort"
@@ -164,8 +164,8 @@ export function PlanForm({
         title="Лимиты и доступ"
         description="Основные пользовательские ограничения, которые видны и в checkout, и в личном кабинете."
       >
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
+        <div className="controlFieldGrid">
+          <div className="controlField">
             <Label htmlFor="plan-duration">Дней</Label>
             <Input
               id="plan-duration"
@@ -174,7 +174,7 @@ export function PlanForm({
               onChange={(event) => setValues((current) => ({ ...current, durationDays: Number(event.target.value) }))}
             />
           </div>
-          <div className="space-y-2">
+          <div className="controlField">
             <Label htmlFor="plan-traffic">Трафик, ГБ</Label>
             <Input
               id="plan-traffic"
@@ -190,13 +190,13 @@ export function PlanForm({
         title="Remnawave и выдача"
         description="Все параметры provisioning собраны отдельно, чтобы они не конкурировали с ценой и лимитами."
       >
-        <div className="grid gap-4">
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-zinc-300">
-            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Текущий tag</p>
-            <p className="mt-2 break-all text-sm text-white">{remnawaveTag || "—"}</p>
+        <div className="controlFormBody">
+          <div className="controlInfoPanel">
+            <p className="controlInfoLabel">Текущий tag</p>
+            <p className="controlInfoValue">{remnawaveTag || "—"}</p>
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
+          <div className="controlFieldGrid">
+            <div className="controlField">
               <Label htmlFor="plan-external-squad">Внешний сквад Remnawave</Label>
               <Input
                 id="plan-external-squad"
@@ -207,7 +207,7 @@ export function PlanForm({
                 }
               />
             </div>
-            <div className="space-y-2">
+            <div className="controlField">
               <Label htmlFor="plan-device-limit">Лимит устройств</Label>
               <Input
                 id="plan-device-limit"
@@ -220,7 +220,7 @@ export function PlanForm({
                 }
               />
             </div>
-            <div className="space-y-2 md:col-span-2">
+            <div className="controlField controlFieldSpan">
               <Label htmlFor="plan-internal-squads">Внутренние сквады Remnawave</Label>
               <Textarea
                 id="plan-internal-squads"
@@ -249,8 +249,8 @@ export function PlanForm({
         title="Публикация и действия"
         description="Статус публикации и сохранение оставляем последним шагом, чтобы форма читалась сверху вниз."
       >
-        <div className="grid gap-4">
-          <label className="flex items-center gap-3 rounded-2xl border border-white/10 px-4 py-3 text-sm text-zinc-300">
+        <div className="controlFormBody">
+          <label className="controlCheckboxRow">
             <input
               type="checkbox"
               checked={values.isActive}
@@ -259,16 +259,21 @@ export function PlanForm({
             Активный тариф
           </label>
 
-          {message ? <p className="text-sm text-red-300">{message}</p> : null}
+          {message ? <p className="controlMessage controlMessageError">{message}</p> : null}
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Button type="button" className="w-full sm:w-auto" onClick={submit} disabled={pending}>
+          <div className="controlFormActions">
+            <Button
+              type="button"
+              className="commandButton commandButtonPrimary"
+              onClick={submit}
+              disabled={pending}
+            >
               {pending ? "Сохраняем..." : "Сохранить"}
             </Button>
             <Button
               type="button"
               variant="ghost"
-              className="w-full sm:w-auto"
+              className="commandButton commandButtonSecondary"
               onClick={() => router.push("/admin/plans")}
             >
               Отмена

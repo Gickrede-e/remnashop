@@ -24,27 +24,31 @@ describe("root layout foundation", () => {
     expect(markup).toMatch(/<body[^>]*class="[^"]*\bappBody\b[^"]*"/);
     expect(markup).toMatch(/class="[^"]*\bappRoot\b[^"]*"/);
     expect(markup).not.toContain('data-testid="app-root"');
+    expect(markup).not.toContain("<main><div>Screen body</div></main>");
   });
 
-  it("defines the root foundation while keeping the temporary Tailwind bridge", () => {
+  it("defines the root foundation without the Tailwind bridge", () => {
     const source = fs.readFileSync(globalsCssPath, "utf8");
 
     expect(source).toContain(":root");
     expect(source).toContain("body.appBody");
     expect(source).toContain(".appRoot");
-    expect(source).toContain("--background: 222 32% 7%");
-    expect(source).toContain("--foreground: 210 38% 96%");
-    expect(source).toContain("--border: 216 18% 24%");
-    expect(source).toContain("--input: 216 18% 24%");
-    expect(source).toContain("--primary: 192 88% 58%");
-    expect(source).toContain("--ring: 192 88% 58%");
+    expect(source).toContain("--canvas-0: #090909");
+    expect(source).toContain("--canvas-1: #121212");
+    expect(source).toContain("--text-primary: #f3efe6");
+    expect(source).toContain("--accent-primary: #d6ff3f");
+    expect(source).toContain("--accent-ambient: rgba(124, 92, 255, 0.18)");
     expect(source).toContain("--radius: 1rem");
-    expect(source).toContain('@config "../tailwind.config.mjs";');
-    expect(source).toContain('@import "tailwindcss";');
-    expect(source).toContain(".app-shell");
+    expect(source).toContain(".container");
+    expect(source).toContain(".sr-only");
+    expect(source).not.toContain('tailwindcss');
+    expect(source).not.toContain('tailwind.config.mjs');
+    expect(source).toContain(".appNavRail");
+    expect(source).toContain(".authCard");
     expect(source).toContain(".page-surface");
-    expect(source).toContain(".surface-soft");
-    expect(source).toContain(".surface-feature");
-    expect(source).toContain(".section-kicker");
+    expect(source).toContain("@media (prefers-reduced-motion: reduce)");
+    expect(source).toContain("overscroll-behavior: contain");
+    expect(source).toContain(".screenHeaderTitle");
+    expect(source).toContain("text-wrap: balance");
   });
 });

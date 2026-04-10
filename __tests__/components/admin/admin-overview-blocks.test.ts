@@ -95,8 +95,11 @@ describe("AdminOverviewBlocks provider status section", () => {
     expect(markup).toContain("data-status=\"unavailable\"");
     expect(markup).toContain("data-status=\"timeout\"");
     expect(markup).toContain("data-status=\"not_configured\"");
-    expect(markup).toContain('class="adminOverviewBlocks"');
-    expect(markup).toContain('class="adminProviderStatusSection"');
+    expect(markup).toMatch(/class="[^"]*\badminWorkspace\b[^"]*"/);
+    expect(markup).toMatch(/class="[^"]*\badminHero\b[^"]*"/);
+    expect(markup).toMatch(/class="[^"]*\badminSection\b[^"]*"/);
+    expect(markup).toMatch(/class="[^"]*\badminOverviewBlocks\b[^"]*"/);
+    expect(markup).toMatch(/class="[^"]*\badminProviderStatusSection\b[^"]*"/);
     expect(markup).not.toContain("Что проверять дальше");
   });
 

@@ -33,7 +33,7 @@ export default async function AdminUsersPage({ searchParams }: UsersPageProps) {
   const planOptions = plans.map((plan) => ({ id: plan.id, name: plan.name }));
 
   return (
-    <div className="grid gap-4 sm:gap-6">
+    <div className="adminWorkspacePage adminWorkspace adminSurfacePage">
       <ScreenHeader
         eyebrow="Админка"
         title="Пользователи"
@@ -44,8 +44,8 @@ export default async function AdminUsersPage({ searchParams }: UsersPageProps) {
         title="Список пользователей"
         description="Все зарегистрированные пользователи с возможностью управления доступом."
         controls={
-          <div className="flex flex-col gap-2 lg:flex-row lg:items-start">
-            <form className="grid flex-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+          <div className="adminListControls">
+            <form className="adminFilterForm adminFilterFormWide">
               <Input
                 type="text"
                 name="search"
@@ -53,10 +53,10 @@ export default async function AdminUsersPage({ searchParams }: UsersPageProps) {
                 placeholder="Поиск по email"
                 aria-label="Поиск пользователя по email"
               />
-              <Button type="submit" variant="secondary">
+              <Button type="submit" variant="secondary" className="commandButton commandButtonSecondary">
                 Найти
               </Button>
-              <Button asChild variant="ghost">
+              <Button asChild variant="ghost" className="commandButton commandButtonSecondary">
                 <Link href="/admin/users">Сбросить</Link>
               </Button>
             </form>
@@ -64,7 +64,7 @@ export default async function AdminUsersPage({ searchParams }: UsersPageProps) {
           </div>
         }
         summary={
-          <div className="surface-soft grid gap-3 p-4 sm:grid-cols-2">
+          <div className="adminSummaryGrid adminSummaryGridWide">
             <SummaryItem label="Записей на странице" value={String(result.items.length)} />
             <SummaryItem label="Текущий поиск" value={search || "Все пользователи"} />
           </div>
@@ -77,7 +77,7 @@ export default async function AdminUsersPage({ searchParams }: UsersPageProps) {
           />
         ) : (
           <>
-            <div className="grid gap-3 xl:hidden">
+            <div className="adminResponsiveStack">
               {result.items.map((user) => (
                 <AdminRecordCard
                   key={user.id}
@@ -87,9 +87,7 @@ export default async function AdminUsersPage({ searchParams }: UsersPageProps) {
                     user.subscription ? (
                       <SubscriptionStatusBadge status={user.subscription.status} />
                     ) : (
-                      <span className="inline-flex h-8 items-center rounded-full border border-white/10 bg-white/[0.04] px-3 text-xs text-zinc-300">
-                        Без подписки
-                      </span>
+                      <span className="adminBadgePill">Без подписки</span>
                     )
                   }
                   metadata={[
@@ -110,7 +108,7 @@ export default async function AdminUsersPage({ searchParams }: UsersPageProps) {
               ))}
             </div>
 
-            <div className="hidden xl:block">
+            <div className="adminDesktopTable">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -125,12 +123,12 @@ export default async function AdminUsersPage({ searchParams }: UsersPageProps) {
                 <TableBody>
                   {result.items.map((user) => (
                     <TableRow key={user.id}>
-                      <TableCell className="max-w-[240px] break-all">{user.email}</TableCell>
+                      <TableCell className="adminCellWrap">{user.email}</TableCell>
                       <TableCell>{user.role}</TableCell>
                       <TableCell>{user.subscription?.status ?? "—"}</TableCell>
                       <TableCell>{formatPrice(user.totalSpent)}</TableCell>
                       <TableCell>{formatDateTime(user.createdAt)}</TableCell>
-                      <TableCell className="min-w-[300px]">
+                      <TableCell className="adminTableActionsCellWide">
                         <AdminUserActions
                           userId={user.id}
                           subscriptionId={user.subscription?.id}
@@ -153,9 +151,9 @@ export default async function AdminUsersPage({ searchParams }: UsersPageProps) {
 
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="space-y-1">
-      <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">{label}</p>
-      <p className="text-sm font-medium text-white">{value}</p>
+    <div className="adminSummaryItem">
+      <p className="adminSummaryLabel">{label}</p>
+      <p className="adminSummaryValue">{value}</p>
     </div>
   );
 }

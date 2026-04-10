@@ -31,7 +31,7 @@ const DialogContent = React.forwardRef<
       {...props}
     >
       {children}
-      <DialogClose className="dialogCloseButton">
+      <DialogClose className="dialogCloseButton" aria-label="Закрыть диалог">
         <X className="dialogCloseIcon" />
       </DialogClose>
     </DialogPrimitive.Content>

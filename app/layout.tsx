@@ -20,7 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="appBody">
         <Providers>
           <div className="appRoot">
-            <main>{children}</main>
+            {children}
           </div>
         </Providers>
       </body>

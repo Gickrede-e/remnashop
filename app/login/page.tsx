@@ -19,15 +19,20 @@ export default async function LoginPage({
   const nextPath = sanitizeNextPath(resolvedSearchParams?.next);
 
   return (
-    <div className="container flex min-h-dvh items-center justify-center px-4 py-8 sm:py-10">
-      <AuthEntryPanel
-        title="Вход в кабинет"
-        description="Используйте email и пароль или Telegram, если он уже подключен к аккаунту."
-        activeView="login"
-        nextPath={nextPath}
-      >
-        <LoginForm telegramUsername={publicEnv.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME} nextPath={nextPath} />
-      </AuthEntryPanel>
-    </div>
+    <main className="authScene">
+      <div className="authSceneViewport">
+        <AuthEntryPanel
+          title="Вход в кабинет"
+          description="Используйте email и пароль или Telegram, если он уже подключен к аккаунту."
+          activeView="login"
+          nextPath={nextPath}
+        >
+          <LoginForm
+            telegramUsername={publicEnv.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}
+            nextPath={nextPath}
+          />
+        </AuthEntryPanel>
+      </div>
+    </main>
   );
 }

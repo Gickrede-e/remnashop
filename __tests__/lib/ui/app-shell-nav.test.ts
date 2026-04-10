@@ -16,17 +16,17 @@ describe("app shell nav", () => {
       "/terms"
     ]);
     expect(getFooterActions("public", { authenticated: false }).map((item) => item.label)).toEqual([
-      "Login",
-      "Register"
+      "Войти",
+      "Регистрация"
     ]);
     expect(getFooterActions("public", { authenticated: false }).map((item) => item.kind)).toEqual([
       "link",
       "link"
     ]);
     expect(getFooterActions("dashboard", { authenticated: true, canAccessAdmin: true }).map((item) => item.label)).toEqual([
-      "Profile",
-      "Switch role",
-      "Logout"
+      "Профиль",
+      "Админка",
+      "Выйти"
     ]);
     expect(getFooterActions("dashboard", { authenticated: true, canAccessAdmin: true }).map((item) => item.kind)).toEqual([
       "summary",
@@ -34,8 +34,8 @@ describe("app shell nav", () => {
       "command"
     ]);
     expect(getFooterActions("public", { authenticated: true }).map((item) => item.label)).toEqual([
-      "Profile",
-      "Logout"
+      "Профиль",
+      "Выйти"
     ]);
     expect(getFooterActions("public", { authenticated: false }).flatMap((item) => item.href ?? [])).toEqual([
       "/login",
@@ -45,8 +45,9 @@ describe("app shell nav", () => {
 
   it("keeps footer role switching scoped to the current shell area and access level", () => {
     expect(getFooterActions("admin", { authenticated: true }).flatMap((item) => item.href ?? [])).toContain("/dashboard");
+    expect(getFooterActions("admin", { authenticated: true }).map((item) => item.label)).toContain("Кабинет");
     expect(getFooterActions("dashboard", { authenticated: true, canAccessAdmin: false }).map((item) => item.label)).not.toContain(
-      "Switch role"
+      "Админка"
     );
   });
 

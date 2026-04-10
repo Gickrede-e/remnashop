@@ -19,7 +19,7 @@ export default async function DashboardReferralsPage() {
   const referralLink = user?.referralCode ? `${siteUrl}/register?ref=${user.referralCode}` : "";
 
   return (
-    <div className="grid gap-4 sm:gap-6">
+    <div className="dashboardWorkspacePage dashboardSurfacePage dashboardSurfacePageReferrals">
       <ScreenHeader
         eyebrow="Личный кабинет"
         title="Рефералы"

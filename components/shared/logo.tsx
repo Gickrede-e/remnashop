@@ -24,7 +24,7 @@ export function Logo({
         </span>
       </span>
       <span className="appLogoBody">
-        {!compact ? <span className="appLogoEyebrow">{rail ? "Shared shell" : "Secure commerce"}</span> : null}
+        {!compact ? <span className="appLogoEyebrow">{rail ? "Единый контур" : "Защищённый доступ"}</span> : null}
         <span className="appLogoWordmark">GickShop</span>
       </span>
     </Link>

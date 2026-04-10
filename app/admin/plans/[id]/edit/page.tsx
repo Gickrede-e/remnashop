@@ -14,7 +14,7 @@ export default async function AdminEditPlanPage({ params }: { params: Promise<{ 
   }
 
   return (
-    <div className="grid gap-4 sm:gap-6">
+    <div className="adminWorkspacePage adminWorkspace adminSurfacePage adminSurfacePageForm">
       <ScreenHeader
         eyebrow="Админка"
         title={`Тариф: ${plan.name}`}

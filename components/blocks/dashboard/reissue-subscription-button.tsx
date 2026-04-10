@@ -45,30 +45,31 @@ export function ReissueSubscriptionButton() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="destructive" className="w-full justify-between">
+        <Button variant="destructive" className="commandButton commandButtonDanger">
           Перевыпустить подписку
-          <span className="text-sm">↻</span>
+          <span className="commandButtonGlyph">↻</span>
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Перевыпуск подписки</DialogTitle>
-          <DialogDescription className="space-y-2 pt-2 text-sm leading-6">
-            <span className="block">
-              Будет сгенерирована <strong className="text-white">новая ссылка для подключения</strong>.
+          <DialogDescription className="commandDialogDescription">
+            <span className="commandDialogLine">
+              Будет сгенерирована <strong className="commandDialogStrong">новая ссылка для подключения</strong>.
             </span>
-            <span className="block">Текущая ссылка перестанет работать.</span>
-            <span className="block">
+            <span className="commandDialogLine">Текущая ссылка перестанет работать.</span>
+            <span className="commandDialogLine">
               Все устройства нужно будет подключить заново по новой ссылке.
             </span>
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-3 pt-2">
+        <div className="commandDialogActions">
           {error ? (
-            <p className="text-sm text-red-400">{error}</p>
+            <p className="commandError">{error}</p>
           ) : null}
           <Button
             variant="destructive"
+            className="commandButton commandButtonDanger"
             disabled={pending}
             onClick={handleReissue}
           >
@@ -76,6 +77,7 @@ export function ReissueSubscriptionButton() {
           </Button>
           <Button
             variant="secondary"
+            className="commandButton commandButtonSecondary"
             disabled={pending}
             onClick={() => setOpen(false)}
           >

@@ -30,7 +30,7 @@ export default async function DashboardPage() {
       : null;
 
   return (
-    <div className="grid gap-4 sm:gap-6">
+    <div className="dashboardWorkspacePage dashboardOverviewPage">
       <ScreenHeader
         eyebrow="Личный кабинет"
         title="Обзор"

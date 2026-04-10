@@ -53,7 +53,9 @@ describe("auth pages", () => {
 
     expect(markup).toMatch(/<main[^>]*class="[^"]*\bauthScene\b[^"]*"/);
     expect(markup).toMatch(/class="[^"]*\bauthSceneViewport\b[^"]*"/);
-    expect(markup).toMatch(/class="[^"]*\bauthScenePanel\b[^"]*"/);
+    expect(markup).toMatch(/class="[^"]*\bauthCard\b[^"]*"/);
+    expect(markup).not.toContain('data-testid="app-nav-rail"');
+    expect(markup).not.toMatch(/class="[^"]*\bauthEntryWorkspace\b[^"]*"/);
     expect(markup).not.toContain('data-testid="app-nav-rail"');
     expect(markup).toContain("Вход в кабинет");
   });
@@ -69,7 +71,8 @@ describe("auth pages", () => {
 
     expect(markup).toMatch(/class="[^"]*\bauthScene\b[^"]*"/);
     expect(markup).toMatch(/class="[^"]*\bauthSceneViewport\b[^"]*"/);
-    expect(markup).toMatch(/class="[^"]*\bauthScenePanel\b[^"]*"/);
+    expect(markup).toMatch(/class="[^"]*\bauthCard\b[^"]*"/);
+    expect(markup).not.toMatch(/class="[^"]*\bauthEntryWorkspace\b[^"]*"/);
     expect(markup).not.toContain('data-testid="app-nav-rail"');
     expect(markup).toContain("Создание аккаунта");
   });

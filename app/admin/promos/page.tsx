@@ -15,13 +15,13 @@ export default async function AdminPromosPage() {
   const activePromos = promos.filter((promo) => promo.isActive).length;
 
   return (
-    <div className="grid gap-4 sm:gap-6">
+    <div className="adminWorkspacePage adminWorkspace adminSurfacePage">
       <ScreenHeader
         eyebrow="Админка"
         title="Промокоды"
         description="Управление промокодами и скидками."
         actions={
-          <Button asChild>
+          <Button asChild className="commandButton commandButtonPrimary">
             <Link href="/admin/promos/new">Создать промокод</Link>
           </Button>
         }
@@ -31,7 +31,7 @@ export default async function AdminPromosPage() {
         title="Каталог промокодов"
         description="В первом экране оставляем только тип, значение, лимиты и срок действия, чтобы быстрее понимать, что открывать или отключать."
         summary={
-          <div className="surface-soft grid gap-3 p-4 sm:grid-cols-3">
+          <div className="adminSummaryGrid">
             <SummaryItem label="Всего кодов" value={String(promos.length)} />
             <SummaryItem label="Активных" value={String(activePromos)} />
             <SummaryItem label="Отключенных" value={String(promos.length - activePromos)} />
@@ -45,7 +45,7 @@ export default async function AdminPromosPage() {
           />
         ) : (
           <>
-            <div className="grid gap-3 xl:hidden">
+            <div className="adminResponsiveStack">
               {promos.map((promo) => (
                 <AdminRecordCard
                   key={promo.id}
@@ -58,8 +58,8 @@ export default async function AdminPromosPage() {
                     { label: "Статус", value: promo.isActive ? "Активен" : "Отключен" }
                   ]}
                   actions={
-                    <div className="grid gap-2 sm:justify-items-end">
-                      <Button asChild variant="outline" className="w-full sm:w-auto">
+                    <div className="adminInlineActions">
+                      <Button asChild variant="outline" className="commandButton commandButtonSecondary">
                         <Link href={`/admin/promos/${promo.id}/edit`}>Редактировать</Link>
                       </Button>
                       {promo.isActive ? (
@@ -77,7 +77,7 @@ export default async function AdminPromosPage() {
               ))}
             </div>
 
-            <div className="hidden xl:block">
+            <div className="adminDesktopTable">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -93,7 +93,7 @@ export default async function AdminPromosPage() {
                 <TableBody>
                   {promos.map((promo) => (
                     <TableRow key={promo.id}>
-                      <TableCell className="font-medium text-white">{promo.code}</TableCell>
+                      <TableCell className="adminTableTitle">{promo.code}</TableCell>
                       <TableCell>{promo.type}</TableCell>
                       <TableCell>{promo.value}</TableCell>
                       <TableCell>
@@ -101,9 +101,9 @@ export default async function AdminPromosPage() {
                       </TableCell>
                       <TableCell>{formatDateTime(promo.expiresAt)}</TableCell>
                       <TableCell>{promo.isActive ? "Активен" : "Отключен"}</TableCell>
-                      <TableCell className="min-w-[220px]">
-                        <div className="flex flex-wrap gap-2">
-                          <Button asChild variant="outline" className="h-9 px-3">
+                      <TableCell className="adminTableActionsCell">
+                        <div className="adminInlineActions">
+                          <Button asChild size="sm" variant="outline" className="commandButton commandButtonSecondary">
                             <Link href={`/admin/promos/${promo.id}/edit`}>Редактировать</Link>
                           </Button>
                           {promo.isActive ? (
@@ -113,7 +113,6 @@ export default async function AdminPromosPage() {
                               variant="destructive"
                               endpoint={`/api/admin/promos/${promo.id}`}
                               method="DELETE"
-                              className="h-9"
                             />
                           ) : null}
                         </div>
@@ -132,9 +131,9 @@ export default async function AdminPromosPage() {
 
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="space-y-1">
-      <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">{label}</p>
-      <p className="text-sm font-medium text-white">{value}</p>
+    <div className="adminSummaryItem">
+      <p className="adminSummaryLabel">{label}</p>
+      <p className="adminSummaryValue">{value}</p>
     </div>
   );
 }

@@ -1,11 +1,10 @@
 import type { ComponentProps } from "react";
 import Link from "next/link";
-import { CreditCard, ExternalLink, Share2, ShieldCheck, Zap, Globe } from "lucide-react";
+import { CreditCard, ExternalLink, History, Share2, ShieldCheck, Smartphone, Zap, Globe } from "lucide-react";
 
 import { ReissueSubscriptionButton } from "@/components/blocks/dashboard/reissue-subscription-button";
 import { SubscriptionStatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatBytes, formatDateTime } from "@/lib/utils";
 
 type SubscriptionStatus = ComponentProps<typeof SubscriptionStatusBadge>["status"];
@@ -43,116 +42,173 @@ function getSubscriptionMessage(subscription: DashboardOverviewBlocksProps["subs
   return "Доступ сейчас отключён. Обновите подписку и проверьте ссылку для подключения.";
 }
 
-function SubscriptionSnapshot({ subscription, externalSubscriptionUrl, remnawaveUuid }: Pick<DashboardOverviewBlocksProps, "subscription" | "externalSubscriptionUrl" | "remnawaveUuid">) {
+function SubscriptionSnapshot({
+  subscription,
+  externalSubscriptionUrl,
+  remnawaveUuid
+}: Pick<DashboardOverviewBlocksProps, "subscription" | "externalSubscriptionUrl" | "remnawaveUuid">) {
   return (
-    <Card className="surface-feature">
-      <CardHeader className="space-y-4 p-5 sm:p-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-2">
-            <p className="text-sm text-zinc-400">Текущий доступ</p>
-            <CardTitle className="text-[1.6rem] leading-tight text-white sm:text-3xl">
-              {subscription?.planName ?? "Подписка не оформлена"}
-            </CardTitle>
-          </div>
+    <section className="dashboardHero dashboardSection telemetryHero panel">
+      <div className="telemetryHeroHeader">
+        <div className="telemetryHeroCopy">
+          <p className="telemetryPanelLabel">Текущий доступ</p>
+          <h2 className="telemetryHeroTitle">{subscription?.planName ?? "Подписка не оформлена"}</h2>
+          <p className="telemetryHeroDescription">{getSubscriptionMessage(subscription)}</p>
+        </div>
+        <div className="telemetryHeroStatus">
           {subscription ? (
             <SubscriptionStatusBadge status={subscription.status} />
           ) : (
-            <span className="inline-flex h-8 w-fit items-center rounded-full border border-white/10 bg-white/[0.04] px-3 text-xs font-medium text-zinc-300">
-              Нет подписки
-            </span>
+            <span className="statusBadge statusBadgeDisabled">Нет подписки</span>
           )}
         </div>
-        <p className="max-w-xl text-sm leading-6 text-zinc-300">{getSubscriptionMessage(subscription)}</p>
-      </CardHeader>
+      </div>
 
-      <CardContent className="grid gap-4 p-5 pt-0 sm:p-6 sm:pt-0">
+      <div className="telemetryGrid">
         {subscription ? (
-          <div className="surface-soft grid gap-3 p-4">
-            <OverviewRow label="Доступ до" value={formatDateTime(subscription.expiresAt)} />
-            <OverviewRow label="Лимит трафика" value={formatBytes(subscription.trafficLimitBytes)} />
-            <OverviewRow label="Использовано" value={formatBytes(subscription.trafficUsedBytes)} />
-          </div>
+          <>
+            <TelemetryMetric label="Доступ до" value={formatDateTime(subscription.expiresAt)} />
+            <TelemetryMetric label="Лимит трафика" value={formatBytes(subscription.trafficLimitBytes)} />
+            <TelemetryMetric label="Использовано" value={formatBytes(subscription.trafficUsedBytes)} />
+          </>
         ) : (
-          <div className="surface-soft grid gap-3 p-4">
-            <p className="text-sm leading-6 text-zinc-300">После оплаты здесь появятся:</p>
-            <div className="grid gap-2 sm:grid-cols-3">
-              {[
-                { icon: ShieldCheck, text: "Срок действия" },
-                { icon: Zap, text: "Лимит трафика" },
-                { icon: Globe, text: "Статус доступа" },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-2 rounded-lg border border-white/8 bg-white/[0.02] px-3 py-2">
-                  <item.icon className="h-4 w-4 shrink-0 text-zinc-400" />
-                  <span className="text-xs text-zinc-400">{item.text}</span>
+          <>
+            {[
+              { icon: ShieldCheck, label: "Срок действия", value: "После первой оплаты" },
+              { icon: Zap, label: "Лимит трафика", value: "Появится в overview" },
+              { icon: Globe, label: "Статус доступа", value: "Отслеживание в реальном времени" }
+            ].map((item) => (
+                <article key={item.label} className="telemetryMetric telemetryMetricPending">
+                  <div className="telemetryMetricIcon" aria-hidden="true">
+                    <item.icon className="iconSm" />
+                  </div>
+                <div className="telemetryMetricBody">
+                  <p className="telemetryMetricLabel">{item.label}</p>
+                  <p className="telemetryMetricValue">{item.value}</p>
                 </div>
-              ))}
-            </div>
-          </div>
+              </article>
+            ))}
+          </>
         )}
+      </div>
 
-        <div className="grid gap-3">
-        <Button asChild className="w-full justify-between">
+      <div className="dashboardActionRow commandRow">
+        <Button asChild className="commandButton commandButtonPrimary">
           <Link href="/dashboard/buy">
-              {subscription ? "Продлить подписку" : "Купить подписку"}
-            <CreditCard className="h-4 w-4" />
+            {subscription ? "Продлить подписку" : "Купить подписку"}
+            <CreditCard className="iconSm" />
           </Link>
         </Button>
         {externalSubscriptionUrl ? (
-          <Button asChild variant="secondary" className="w-full justify-between">
+          <Button asChild variant="secondary" className="commandButton commandButtonSecondary">
             <a href={externalSubscriptionUrl} target="_blank" rel="noreferrer">
               Ссылка для подключения
-              <ExternalLink className="h-4 w-4" />
+              <ExternalLink className="iconSm" />
             </a>
           </Button>
-          ) : (
-            null
-          )}
-          {subscription?.status === "ACTIVE" && remnawaveUuid ? (
-            <ReissueSubscriptionButton />
-          ) : null}
-        </div>
-      </CardContent>
-    </Card>
+        ) : null}
+        {subscription?.status === "ACTIVE" && remnawaveUuid ? <ReissueSubscriptionButton /> : null}
+      </div>
+    </section>
   );
 }
 
-function OverviewRow({ label, value }: { label: string; value: string }) {
+function TelemetryMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-white/8 pb-3 last:border-b-0 last:pb-0">
-      <span className="text-sm text-zinc-400">{label}</span>
-      <span className="text-right text-sm font-medium text-white">{value}</span>
-    </div>
+    <article className="telemetryMetric">
+      <p className="telemetryMetricLabel">{label}</p>
+      <p className="telemetryMetricValue">{value}</p>
+    </article>
   );
 }
 
 function ReferralAccess({ referralLink }: Pick<DashboardOverviewBlocksProps, "referralLink">) {
   return (
-    <Card>
-      <CardHeader className="space-y-2 p-5 pb-3 sm:p-6 sm:pb-4">
-        <CardTitle className="text-lg text-white sm:text-xl">Рефералы</CardTitle>
-        <p className="text-sm leading-6 text-zinc-400">Скопируйте ссылку для приглашений и откройте панель наград.</p>
-      </CardHeader>
-      <CardContent className="grid gap-4 p-5 pt-0 sm:p-6 sm:pt-0">
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-zinc-200">
-          <p className="mb-2 text-xs uppercase tracking-[0.18em] text-zinc-400">Реферальная ссылка</p>
-          <p className="break-all">{referralLink || "Ссылка появится после загрузки профиля."}</p>
+    <section className="dashboardSection referralPanel panel">
+      <div className="commandPanelSection">
+        <div className="commandPanelCopy">
+          <p className="telemetryPanelLabel">Рефералы</p>
+          <h2 className="commandPanelTitle">Панель приглашений</h2>
+          <p className="commandPanelDescription">
+            Скопируйте ссылку для приглашений и откройте панель наград.
+          </p>
         </div>
-        <Button asChild variant="secondary" className="w-full justify-between sm:w-auto">
-          <Link href="/dashboard/referrals">
-            Открыть реферальную панель
-            <Share2 className="h-4 w-4" />
-          </Link>
-        </Button>
-      </CardContent>
-    </Card>
+        <div className="referralLinkCard">
+          <p className="referralLinkLabel">Реферальная ссылка</p>
+          <p className="referralLinkValue">{referralLink || "Ссылка появится после загрузки профиля."}</p>
+        </div>
+        <div className="commandRow">
+          <Button asChild variant="secondary" className="commandButton commandButtonSecondary">
+            <Link href="/dashboard/referrals">
+              Открыть реферальную панель
+              <Share2 className="iconSm" />
+            </Link>
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function DashboardShortcuts() {
+  const shortcuts = [
+    {
+      href: "/dashboard/history",
+      label: "История",
+      description: "Последние оплаты и статусы операций.",
+      icon: History
+    },
+    {
+      href: "/dashboard/devices",
+      label: "Устройства",
+      description: "Привязанные устройства и лимиты.",
+      icon: Smartphone
+    },
+    {
+      href: "/dashboard/referrals",
+      label: "Рефералы",
+      description: "Ссылка приглашений и награды.",
+      icon: Share2
+    }
+  ];
+
+  return (
+    <section className="dashboardSection panel">
+      <div className="commandPanelSection">
+        <div className="commandPanelCopy">
+          <p className="telemetryPanelLabel">Быстрый доступ</p>
+          <h2 className="commandPanelTitle">Ключевые разделы кабинета</h2>
+          <p className="commandPanelDescription">
+            История операций, устройства и реферальные инструменты без лишней навигации.
+          </p>
+        </div>
+        <div className="commandRow">
+          {shortcuts.map((shortcut) => (
+            <Button key={shortcut.href} asChild variant="secondary" className="commandButton commandButtonSecondary">
+              <Link href={shortcut.href}>
+                {shortcut.label}
+                <shortcut.icon className="iconSm" />
+              </Link>
+            </Button>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
 export function DashboardOverviewBlocks(props: DashboardOverviewBlocksProps) {
   return (
-    <div className="grid gap-4 sm:gap-5">
-      <SubscriptionSnapshot subscription={props.subscription} externalSubscriptionUrl={props.externalSubscriptionUrl} remnawaveUuid={props.remnawaveUuid} />
-      <ReferralAccess referralLink={props.referralLink} />
+    <div className="dashboardWorkspace dashboardOverview">
+      <SubscriptionSnapshot
+        subscription={props.subscription}
+        externalSubscriptionUrl={props.externalSubscriptionUrl}
+        remnawaveUuid={props.remnawaveUuid}
+      />
+      <div className="commandPanel dashboardOverviewGrid">
+        <ReferralAccess referralLink={props.referralLink} />
+        <DashboardShortcuts />
+      </div>
     </div>
   );
 }

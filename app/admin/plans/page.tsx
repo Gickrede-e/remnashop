@@ -15,13 +15,13 @@ export default async function AdminPlansPage() {
   const activePlans = plans.filter((plan) => plan.isActive).length;
 
   return (
-    <div className="grid gap-4 sm:gap-6">
+    <div className="adminWorkspacePage adminWorkspace adminSurfacePage">
       <ScreenHeader
         eyebrow="Админка"
         title="Тарифы"
         description="Все тарифные планы и их текущие статусы."
         actions={
-          <Button asChild>
+          <Button asChild className="commandButton commandButtonPrimary">
             <Link href="/admin/plans/new">Создать тариф</Link>
           </Button>
         }
@@ -31,7 +31,7 @@ export default async function AdminPlansPage() {
         title="Тарифная сетка"
         description="На телефоне показываем только данные, которые нужны, чтобы решить: открыть редактирование, отключить или восстановить тариф."
         summary={
-          <div className="surface-soft grid gap-3 p-4 sm:grid-cols-3">
+          <div className="adminSummaryGrid">
             <SummaryItem label="Всего тарифов" value={String(plans.length)} />
             <SummaryItem label="Активных" value={String(activePlans)} />
             <SummaryItem label="Отключенных" value={String(plans.length - activePlans)} />
@@ -45,7 +45,7 @@ export default async function AdminPlansPage() {
           />
         ) : (
           <>
-            <div className="grid gap-3 xl:hidden">
+            <div className="adminResponsiveStack">
               {plans.map((plan) => (
                 <AdminRecordCard
                   key={plan.id}
@@ -59,8 +59,8 @@ export default async function AdminPlansPage() {
                     { label: "Статус", value: plan.isActive ? "Активен" : "Отключен" }
                   ]}
                   actions={
-                    <div className="grid gap-2 sm:justify-items-end">
-                      <Button asChild variant="outline" className="w-full sm:w-auto">
+                    <div className="adminInlineActions">
+                      <Button asChild variant="outline" className="commandButton commandButtonSecondary">
                         <Link href={`/admin/plans/${plan.id}/edit`}>Редактировать</Link>
                       </Button>
                       {plan.isActive ? (
@@ -87,7 +87,7 @@ export default async function AdminPlansPage() {
               ))}
             </div>
 
-            <div className="hidden xl:block">
+            <div className="adminDesktopTable">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -104,8 +104,8 @@ export default async function AdminPlansPage() {
                   {plans.map((plan) => (
                     <TableRow key={plan.id}>
                       <TableCell>
-                        <div className="font-medium text-white">{plan.name}</div>
-                        <div className="text-xs text-zinc-400">
+                        <div className="adminTableTitle">{plan.name}</div>
+                        <div className="adminTableMeta">
                           {plan.slug} • {slugToRemnawaveTag(plan.slug)}
                         </div>
                       </TableCell>
@@ -116,9 +116,9 @@ export default async function AdminPlansPage() {
                         {plan.remnawaveInternalSquadUuids.length} вн. / {plan.remnawaveExternalSquadUuid ? "1 внеш." : "0 внеш."}
                       </TableCell>
                       <TableCell>{plan.isActive ? "Активен" : "Отключен"}</TableCell>
-                      <TableCell className="min-w-[240px]">
-                        <div className="flex flex-wrap gap-2">
-                          <Button asChild variant="outline" className="h-9 px-3">
+                      <TableCell className="adminTableActionsCell">
+                        <div className="adminInlineActions">
+                          <Button asChild size="sm" variant="outline" className="commandButton commandButtonSecondary">
                             <Link href={`/admin/plans/${plan.id}/edit`}>Редактировать</Link>
                           </Button>
                           {plan.isActive ? (
@@ -129,7 +129,6 @@ export default async function AdminPlansPage() {
                               endpoint={`/api/admin/plans/${plan.id}`}
                               method="DELETE"
                               confirmMessage="Удалить тариф? Он останется в базе, но пропадёт из публичной продажи."
-                              className="h-9"
                             />
                           ) : (
                             <AsyncActionButton
@@ -138,7 +137,6 @@ export default async function AdminPlansPage() {
                               variant="secondary"
                               endpoint={`/api/admin/plans/${plan.id}`}
                               method="POST"
-                              className="h-9"
                             />
                           )}
                         </div>
@@ -157,9 +155,9 @@ export default async function AdminPlansPage() {
 
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="space-y-1">
-      <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">{label}</p>
-      <p className="text-sm font-medium text-white">{value}</p>
+    <div className="adminSummaryItem">
+      <p className="adminSummaryLabel">{label}</p>
+      <p className="adminSummaryValue">{value}</p>
     </div>
   );
 }

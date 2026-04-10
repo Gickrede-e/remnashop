@@ -5,13 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export default function Error({ reset }: { error: Error; reset: () => void }) {
   return (
-    <div className="container py-20">
-      <Card className="mx-auto max-w-2xl">
+    <div className="appStatePage">
+      <Card className="appStateCard">
         <CardHeader>
           <CardTitle>Что-то пошло не так</CardTitle>
           <CardDescription>Приложение поймало ошибку на уровне страницы. Можно попробовать повторить запрос.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="appStateBody">
           <Button onClick={reset}>Повторить</Button>
         </CardContent>
       </Card>

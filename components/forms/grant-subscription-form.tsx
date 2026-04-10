@@ -25,16 +25,21 @@ export function GrantSubscriptionForm({
   const [note, setNote] = useState("");
 
   return (
-    <Card>
+    <Card className="controlFormPanel">
       <CardHeader>
         <CardTitle>Ручная выдача подписки</CardTitle>
         <CardDescription>Используйте форму, если нужно активировать доступ без оплаты.</CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          <div className="space-y-2">
+      <CardContent className="controlForm">
+        <div className="controlFieldGrid controlFieldGridWide">
+          <div className="controlField">
             <Label htmlFor="userId">Пользователь</Label>
-            <select id="userId" className="h-11 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4" value={userId} onChange={(event) => setUserId(event.target.value)}>
+            <select
+              id="userId"
+              className="controlSurface controlSelect"
+              value={userId}
+              onChange={(event) => setUserId(event.target.value)}
+            >
               {users.map((user) => (
                 <option key={user.id} value={user.id}>
                   {user.email}
@@ -42,9 +47,14 @@ export function GrantSubscriptionForm({
               ))}
             </select>
           </div>
-          <div className="space-y-2">
+          <div className="controlField">
             <Label htmlFor="planId">Тариф</Label>
-            <select id="planId" className="h-11 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4" value={planId} onChange={(event) => setPlanId(event.target.value)}>
+            <select
+              id="planId"
+              className="controlSurface controlSelect"
+              value={planId}
+              onChange={(event) => setPlanId(event.target.value)}
+            >
               {plans.map((plan) => (
                 <option key={plan.id} value={plan.id}>
                   {plan.name}
@@ -52,22 +62,33 @@ export function GrantSubscriptionForm({
               ))}
             </select>
           </div>
-          <div className="space-y-2">
+          <div className="controlField">
             <Label htmlFor="durationDays">Дни</Label>
-            <Input id="durationDays" type="number" value={durationDays} onChange={(event) => setDurationDays(event.target.value)} />
+            <Input
+              id="durationDays"
+              type="number"
+              value={durationDays}
+              onChange={(event) => setDurationDays(event.target.value)}
+            />
           </div>
-          <div className="space-y-2">
+          <div className="controlField">
             <Label htmlFor="trafficGB">ГБ</Label>
-            <Input id="trafficGB" type="number" value={trafficGB} onChange={(event) => setTrafficGB(event.target.value)} />
+            <Input
+              id="trafficGB"
+              type="number"
+              value={trafficGB}
+              onChange={(event) => setTrafficGB(event.target.value)}
+            />
           </div>
-          <div className="space-y-2">
+          <div className="controlField">
             <Label htmlFor="note">Комментарий</Label>
             <Input id="note" value={note} onChange={(event) => setNote(event.target.value)} />
           </div>
         </div>
-        {error ? <p className="mt-3 text-sm text-red-300">{error}</p> : null}
-        <div className="mt-4">
+        {error ? <p className="controlMessage controlMessageError">{error}</p> : null}
+        <div className="controlFormActions">
           <Button
+            className="commandButton commandButtonPrimary"
             disabled={pending || !userId || !planId}
             onClick={() =>
               startTransition(async () => {

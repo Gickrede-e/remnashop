@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/utils";
 
 type PromoState = {
@@ -33,31 +34,35 @@ const CheckoutPlanCard = memo(function CheckoutPlanCard({
       disabled={disabled}
       onClick={() => onSelect(plan.id)}
       aria-pressed={active}
-      className={`page-surface w-full text-left transition-colors ${active ? "ring-2 ring-violet-400/70" : "hover:bg-white/[0.05]"} ${disabled ? "cursor-not-allowed opacity-70" : ""}`}
+      className={cn(
+        "checkoutPlanOption",
+        active && "checkoutPlanOptionCurrent",
+        disabled && "checkoutPlanOptionDisabled"
+      )}
     >
-      <div className="flex min-w-0 flex-col gap-4 p-4 sm:p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0 space-y-1.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-lg font-semibold text-white">{plan.name}</h3>
+      <div className="checkoutPlanBody">
+        <div className="checkoutPlanHead">
+          <div className="checkoutPlanCopy">
+            <div className="checkoutPlanNameRow">
+              <h3 className="checkoutPlanTitle">{plan.name}</h3>
               {plan.highlight ? (
-                <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.18em] text-cyan-200">
+                <span className="checkoutPlanBadge">
                   {plan.highlight}
                 </span>
               ) : null}
             </div>
-            <p className="text-sm text-zinc-400">
+            <p className="checkoutPlanDescription">
               {plan.description?.trim() ? plan.description : "Подписка активируется автоматически после оплаты."}
             </p>
           </div>
-          <p className="shrink-0 text-lg font-semibold text-white">{formatPrice(plan.price)}</p>
+          <p className="checkoutPlanPrice">{formatPrice(plan.price)}</p>
         </div>
 
-        <div className="grid gap-2 text-xs text-zinc-400 sm:grid-cols-2">
-          <p className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2">
+        <div className="checkoutPlanMeta">
+          <p className="checkoutPlanMetaItem">
             {plan.durationDays} дней, {plan.trafficGB} ГБ
           </p>
-          <p className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2">
+          <p className="checkoutPlanMetaItem">
             {active ? "Выбран для оплаты" : "Нажмите, чтобы выбрать"}
           </p>
         </div>
@@ -192,7 +197,7 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
 
   if (plans.length === 0) {
     return (
-      <Card className="surface-soft">
+      <Card className="checkoutEmptyPanel">
         <CardHeader>
           <CardTitle>Нет доступных тарифов</CardTitle>
           <CardDescription>
@@ -204,13 +209,13 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
   }
 
   return (
-    <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)] lg:gap-5">
-      <Card className="surface-soft overflow-hidden">
-        <CardHeader className="space-y-2">
+    <div className="dashboardWorkspace checkoutWorkspace">
+      <Card className="dashboardSection checkoutPlansPanel">
+        <CardHeader>
           <CardTitle>1. Выберите тариф</CardTitle>
           <CardDescription>Планы показаны сразу с ценой и объёмом. Смена плана сохраняет текущий поток оплаты.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-3">
+        <CardContent className="checkoutPlansStack">
           {plans.map((plan) => (
             <CheckoutPlanCard
               key={plan.id}
@@ -223,16 +228,16 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4">
-        <Card>
-          <CardHeader className="space-y-2">
+      <div className="checkoutSidebar">
+        <Card className="dashboardSection checkoutPaymentPanel">
+          <CardHeader>
             <CardTitle>2. Промокод и оплата</CardTitle>
             <CardDescription>Проверьте промокод перед созданием платежа и выберите провайдера.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="space-y-2">
+          <CardContent className="checkoutPaymentContent">
+            <div className="checkoutPromoGroup">
               <Label htmlFor="promoCode">Промокод</Label>
-              <div className="grid gap-2">
+              <div className="checkoutPromoControls">
                 <Input
                   id="promoCode"
                   disabled={pending}
@@ -244,79 +249,94 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
                   }}
                   placeholder="WELCOME10"
                 />
-                <Button type="button" variant="secondary" onClick={validatePromo} disabled={pending}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="commandButton commandButtonSecondary"
+                  onClick={validatePromo}
+                  disabled={pending}
+                >
                   Проверить промокод
                 </Button>
               </div>
             </div>
 
             {message ? (
-              <p role="status" aria-live="polite" className="text-sm leading-5 text-zinc-400">
+              <p role="status" aria-live="polite" className="checkoutStatus">
                 {message}
               </p>
             ) : null}
 
-            <div className="grid gap-3">
-              <Button className="w-full" onClick={() => createPayment(PaymentProvider.YOOKASSA)} disabled={pending}>
+            <div className="checkoutProviderStack">
+              <Button
+                className="commandButton commandButtonPrimary"
+                onClick={() => createPayment(PaymentProvider.YOOKASSA)}
+                disabled={pending}
+              >
                 Оплатить через ЮKassa
               </Button>
-              <Button className="w-full" variant="secondary" onClick={() => createPayment(PaymentProvider.PLATEGA)} disabled={pending}>
+              <Button
+                className="commandButton commandButtonSecondary"
+                variant="secondary"
+                onClick={() => createPayment(PaymentProvider.PLATEGA)}
+                disabled={pending}
+              >
                 Оплатить через Platega
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="surface-soft">
-          <CardHeader className="space-y-2">
+        <Card className="checkoutSummaryPanel">
+          <CardHeader>
             <CardTitle>3. Краткая сводка</CardTitle>
             <CardDescription>Итоговая сумма и бонусы видны до перехода на страницу оплаты.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="text-sm text-zinc-400">Текущий тариф</p>
-                  <p className="truncate text-base font-semibold text-white">{selectedPlan?.name ?? "Не выбран"}</p>
+          <CardContent className="checkoutSummaryContent">
+            <div className="checkoutSummaryCard">
+              <div className="checkoutSummaryCardHead">
+                <div className="checkoutSummaryCardCopy">
+                  <p className="checkoutSummaryCardLabel">Текущий тариф</p>
+                  <p className="checkoutSummaryCardValue">{selectedPlan?.name ?? "Не выбран"}</p>
                 </div>
-                <p className="shrink-0 text-sm font-medium text-white">{formatPrice(selectedPlan?.price ?? 0)}</p>
+                <p className="checkoutSummaryCardPrice">{formatPrice(selectedPlan?.price ?? 0)}</p>
               </div>
             </div>
 
-            <div className="space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-zinc-300">
-              <div className="flex items-center justify-between gap-4">
+            <div className="checkoutSummaryList">
+              <div className="checkoutSummaryRow">
                 <span>Базовая цена</span>
                 <span>{formatPrice(selectedPlan?.price ?? 0)}</span>
               </div>
               {promoState?.discountAmount ? (
-                <div className="flex items-center justify-between gap-4 text-cyan-300">
+                <div className="checkoutSummaryRow checkoutSummaryRowAccent">
                   <span>Скидка</span>
                   <span>-{formatPrice(promoState.discountAmount)}</span>
                 </div>
               ) : null}
               {promoState?.bonusDays ? (
-                <div className="flex items-center justify-between gap-4">
+                <div className="checkoutSummaryRow">
                   <span>Бонусные дни</span>
                   <span>+{promoState.bonusDays}</span>
                 </div>
               ) : null}
               {promoState?.bonusTrafficGb ? (
-                <div className="flex items-center justify-between gap-4">
+                <div className="checkoutSummaryRow">
                   <span>Бонусный трафик</span>
                   <span>+{promoState.bonusTrafficGb} ГБ</span>
                 </div>
               ) : null}
-              <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-3 text-base font-semibold text-white">
+              <div className="checkoutSummaryRow checkoutSummaryRowTotal">
                 <span>Итого</span>
                 <span>{formatPrice(finalAmount)}</span>
               </div>
             </div>
 
-            <div className="grid gap-2 text-xs text-zinc-400 sm:grid-cols-2">
-              <p className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2">
+            <div className="checkoutSummaryMeta">
+              <p className="checkoutSummaryMetaItem">
                 {selectedPlan?.durationDays ?? 0} дней доступа
               </p>
-              <p className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2">
+              <p className="checkoutSummaryMetaItem">
                 {selectedPlan?.trafficGB ?? 0} ГБ трафика
               </p>
             </div>

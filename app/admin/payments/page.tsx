@@ -36,7 +36,7 @@ export default async function AdminPaymentsPage({ searchParams }: PaymentsPagePr
     payment.status === "PENDING" || (payment.status === "SUCCEEDED" && !payment.subscriptionId);
 
   return (
-    <div className="grid gap-4 sm:gap-6">
+    <div className="adminWorkspacePage adminWorkspace adminSurfacePage">
       <ScreenHeader
         eyebrow="Админка"
         title="Платежи"
@@ -47,12 +47,12 @@ export default async function AdminPaymentsPage({ searchParams }: PaymentsPagePr
         title="Платёжные операции"
         description="Все платежи с фильтрацией по статусу и платёжной системе."
         controls={
-          <form className="grid gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto]">
+          <form className="adminFilterForm adminFilterFormWide">
             <select
               name="status"
               defaultValue={status ?? ""}
               aria-label="Фильтр по статусу платежа"
-              className="flex h-11 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 text-sm text-white"
+              className="controlSurface controlSelect"
             >
               <option value="">Все статусы</option>
               {Object.values(PaymentStatus).map((item) => (
@@ -65,7 +65,7 @@ export default async function AdminPaymentsPage({ searchParams }: PaymentsPagePr
               name="provider"
               defaultValue={provider ?? ""}
               aria-label="Фильтр по провайдеру платежа"
-              className="flex h-11 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 text-sm text-white"
+              className="controlSurface controlSelect"
             >
               <option value="">Все провайдеры</option>
               {Object.values(PaymentProvider).map((item) => (
@@ -74,16 +74,16 @@ export default async function AdminPaymentsPage({ searchParams }: PaymentsPagePr
                 </option>
               ))}
             </select>
-            <Button type="submit" variant="secondary">
+            <Button type="submit" variant="secondary" className="commandButton commandButtonSecondary">
               Фильтр
             </Button>
-            <Button asChild variant="ghost">
+            <Button asChild variant="ghost" className="commandButton commandButtonSecondary">
               <Link href="/admin/payments">Сбросить</Link>
             </Button>
           </form>
         }
         summary={
-          <div className="surface-soft grid gap-3 p-4 sm:grid-cols-3">
+          <div className="adminSummaryGrid">
             <SummaryItem label="На странице" value={String(result.items.length)} />
             <SummaryItem label="Статус" value={status || "Все"} />
             <SummaryItem label="Провайдер" value={provider || "Все"} />
@@ -97,7 +97,7 @@ export default async function AdminPaymentsPage({ searchParams }: PaymentsPagePr
           />
         ) : (
           <>
-            <div className="grid gap-3 xl:hidden">
+            <div className="adminResponsiveStack">
               {result.items.map((payment) => (
                 <AdminRecordCard
                   key={payment.id}
@@ -122,7 +122,7 @@ export default async function AdminPaymentsPage({ searchParams }: PaymentsPagePr
               ))}
             </div>
 
-            <div className="hidden xl:block">
+            <div className="adminDesktopTable">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -138,7 +138,7 @@ export default async function AdminPaymentsPage({ searchParams }: PaymentsPagePr
                 <TableBody>
                   {result.items.map((payment) => (
                     <TableRow key={payment.id}>
-                      <TableCell className="max-w-[220px] break-all">{payment.user.email}</TableCell>
+                      <TableCell className="adminCellWrap">{payment.user.email}</TableCell>
                       <TableCell>{payment.plan.name}</TableCell>
                       <TableCell>{payment.provider}</TableCell>
                       <TableCell>{formatPrice(payment.amount)}</TableCell>
@@ -169,9 +169,9 @@ export default async function AdminPaymentsPage({ searchParams }: PaymentsPagePr
 
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="space-y-1">
-      <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">{label}</p>
-      <p className="text-sm font-medium text-white">{value}</p>
+    <div className="adminSummaryItem">
+      <p className="adminSummaryLabel">{label}</p>
+      <p className="adminSummaryValue">{value}</p>
     </div>
   );
 }

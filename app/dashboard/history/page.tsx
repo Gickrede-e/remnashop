@@ -27,7 +27,7 @@ export default async function DashboardHistoryPage() {
   });
 
   return (
-    <div className="grid gap-4 sm:gap-6">
+    <div className="dashboardWorkspacePage dashboardSurfacePage dashboardSurfacePageHistory">
       <ScreenHeader
         eyebrow="Личный кабинет"
         title="История платежей"

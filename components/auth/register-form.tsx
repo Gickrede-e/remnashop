@@ -61,28 +61,41 @@ export function RegisterForm({
   });
 
   return (
-    <div className="space-y-6">
-      <form onSubmit={onSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" autoComplete="email" {...form.register("email")} />
+    <div className="authFormPanel authCardForm">
+      <form onSubmit={onSubmit} className="authForm">
+        <div className="authFormGrid">
+          <div className="authField">
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" type="email" autoComplete="email" {...form.register("email")} />
+          </div>
+          <div className="authField">
+            <Label htmlFor="password">Пароль</Label>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="new-password"
+              {...form.register("password")}
+            />
+          </div>
+          <div className="authField">
+            <Label htmlFor="referralCode">Реферальный код</Label>
+            <Input id="referralCode" {...form.register("referralCode")} placeholder="Необязательно" />
+          </div>
+          {error ? <p className="authError">{error}</p> : null}
+          <Button type="submit" className="authSubmit" disabled={pending}>
+            {pending ? "Создаем аккаунт..." : "Создать аккаунт"}
+          </Button>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Пароль</Label>
-          <Input id="password" type="password" autoComplete="new-password" {...form.register("password")} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="referralCode">Реферальный код</Label>
-          <Input id="referralCode" {...form.register("referralCode")} placeholder="Необязательно" />
-        </div>
-        {error ? <p className="text-sm text-red-300">{error}</p> : null}
-        <Button type="submit" className="w-full" disabled={pending}>
-          {pending ? "Создаем аккаунт..." : "Создать аккаунт"}
-        </Button>
       </form>
 
-      <div className="rounded-[22px] border border-white/8 bg-white/[0.03] px-4 py-4 text-sm leading-6 text-zinc-400">
+      <div className="authHint">
         После регистрации можно сразу выбрать тариф, применить промокод и оплатить подписку.
+        {referralCode ? (
+          <>
+            {" "}
+            Активный реферальный код: <strong>{referralCode}</strong>.
+          </>
+        ) : null}
       </div>
     </div>
   );

@@ -25,13 +25,19 @@ export function AsyncActionButton({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const commandVariantClass =
+    variant === "destructive"
+      ? "commandButtonDanger"
+      : variant === "secondary" || variant === "outline"
+        ? "commandButtonSecondary"
+        : "commandButtonPrimary";
 
   return (
     <Button
       type="button"
       size="sm"
       variant={variant}
-      className={cn("w-full justify-center sm:min-w-[9.5rem] sm:w-auto", className)}
+      className={cn("commandButton", commandVariantClass, "adminActionButton", className)}
       disabled={pending}
       onClick={() =>
         startTransition(async () => {

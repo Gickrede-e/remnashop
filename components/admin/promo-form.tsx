@@ -86,13 +86,13 @@ export function PromoForm({
   };
 
   return (
-    <div className="grid gap-4">
+    <div className="controlForm">
       <FormSection
         title="Идентичность промокода"
         description="Код и тип бонуса, по которым админ сразу понимает, как этот промо работает в checkout."
       >
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
+        <div className="controlFieldGrid">
+          <div className="controlField">
             <Label htmlFor="promo-code">Код</Label>
             <Input
               id="promo-code"
@@ -100,11 +100,11 @@ export function PromoForm({
               onChange={(event) => setValues((current) => ({ ...current, code: event.target.value.toUpperCase() }))}
             />
           </div>
-          <div className="space-y-2">
+          <div className="controlField">
             <Label htmlFor="promo-type">Тип</Label>
             <select
               id="promo-type"
-              className="flex h-11 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 text-sm text-white"
+              className="controlSurface controlSelect"
               value={values.type}
               onChange={(event) => setValues((current) => ({ ...current, type: event.target.value as PromoCodeType }))}
             >
@@ -121,8 +121,8 @@ export function PromoForm({
         title="Поведение скидки"
         description="Собираем числовые правила в одном месте, чтобы не растягивать форму по четырём строкам."
       >
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
+        <div className="controlFieldGrid">
+          <div className="controlField">
             <Label htmlFor="promo-value">Значение</Label>
             <Input
               id="promo-value"
@@ -131,7 +131,7 @@ export function PromoForm({
               onChange={(event) => setValues((current) => ({ ...current, value: Number(event.target.value) }))}
             />
           </div>
-          <div className="space-y-2">
+          <div className="controlField">
             <Label htmlFor="promo-min">Мин. сумма, коп.</Label>
             <Input
               id="promo-min"
@@ -152,8 +152,8 @@ export function PromoForm({
         title="Окно активации"
         description="Период действия вынесен отдельно, чтобы его можно было проверить перед публикацией промокода."
       >
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
+        <div className="controlFieldGrid">
+          <div className="controlField">
             <Label htmlFor="promo-start">Активен с</Label>
             <Input
               id="promo-start"
@@ -162,7 +162,7 @@ export function PromoForm({
               onChange={(event) => setValues((current) => ({ ...current, startsAt: event.target.value }))}
             />
           </div>
-          <div className="space-y-2">
+          <div className="controlField">
             <Label htmlFor="promo-end">Истекает</Label>
             <Input
               id="promo-end"
@@ -178,9 +178,9 @@ export function PromoForm({
         title="Применимость и лимиты"
         description="Задаём, где промокод работает и сколько раз его можно использовать."
       >
-        <div className="grid gap-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
+        <div className="controlFormBody">
+          <div className="controlFieldGrid">
+            <div className="controlField">
               <Label htmlFor="promo-max">Общий лимит</Label>
               <Input
                 id="promo-max"
@@ -194,7 +194,7 @@ export function PromoForm({
                 }
               />
             </div>
-            <div className="space-y-2">
+            <div className="controlField">
               <Label htmlFor="promo-user-limit">Лимит на пользователя</Label>
               <Input
                 id="promo-user-limit"
@@ -207,15 +207,15 @@ export function PromoForm({
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="controlField">
             <Label>Тарифы</Label>
-            <div className="grid gap-2 md:grid-cols-2">
+            <div className="controlCheckboxGrid">
               {plans.map((plan) => {
                 const checked = values.applicablePlanIds.includes(plan.id);
                 return (
                   <label
                     key={plan.id}
-                    className="flex min-h-11 items-center gap-3 rounded-2xl border border-white/10 px-4 py-3 text-sm text-zinc-300"
+                    className="controlCheckboxRow"
                   >
                     <input
                       type="checkbox"
@@ -238,8 +238,8 @@ export function PromoForm({
         </div>
       </FormSection>
 
-      <div className="grid gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-4 sm:p-5">
-        <label className="flex items-center gap-3 rounded-2xl border border-white/10 px-4 py-3 text-sm text-zinc-300">
+      <div className="grantFormSurface">
+        <label className="controlCheckboxRow">
           <input
             type="checkbox"
             checked={values.isActive}
@@ -248,16 +248,21 @@ export function PromoForm({
           Промокод активен
         </label>
 
-        {message ? <p className="text-sm text-red-300">{message}</p> : null}
+        {message ? <p className="controlMessage controlMessageError">{message}</p> : null}
 
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <Button type="button" className="w-full sm:w-auto" onClick={submit} disabled={pending}>
+        <div className="controlFormActions">
+          <Button
+            type="button"
+            className="commandButton commandButtonPrimary"
+            onClick={submit}
+            disabled={pending}
+          >
             {pending ? "Сохраняем..." : "Сохранить"}
           </Button>
           <Button
             type="button"
             variant="ghost"
-            className="w-full sm:w-auto"
+            className="commandButton commandButtonSecondary"
             onClick={() => router.push("/admin/promos")}
           >
             Отмена

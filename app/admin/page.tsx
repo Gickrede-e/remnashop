@@ -26,7 +26,7 @@ export default async function AdminDashboardPage() {
   const stats = await getAdminStats();
 
   return (
-    <div className="grid gap-4 sm:gap-6">
+    <div className="adminWorkspacePage adminWorkspace adminOverviewPage">
       <ScreenHeader
         eyebrow="Админка"
         title="Обзор"
@@ -111,5 +111,5 @@ async function AdminProviderStatusBlock() {
 }
 
 function RevenueChartFallback() {
-  return <Skeleton className="h-[260px] w-full md:h-[300px]" />;
+  return <Skeleton className="controlChartCanvas" />;
 }

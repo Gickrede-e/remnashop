@@ -22,7 +22,7 @@ const exports = [
 
 export default function AdminExportPage() {
   return (
-    <div className="grid gap-4 sm:gap-6">
+    <div className="adminWorkspacePage adminWorkspace adminSurfacePage">
       <ScreenHeader
         eyebrow="Админка"
         title="Экспорт"
@@ -33,7 +33,7 @@ export default function AdminExportPage() {
         title="Наборы для выгрузки"
         description="Файлы корректно открываются в Excel и любых табличных редакторах."
       >
-        <div className="grid gap-3">
+        <div className="adminExportGrid">
           {exports.map((item) => (
             <AdminRecordCard
               key={item.href}
@@ -44,7 +44,7 @@ export default function AdminExportPage() {
                 { label: "Совместимость", value: "Excel, Google Sheets" }
               ]}
               actions={
-                <Button asChild className="w-full sm:w-auto">
+                <Button asChild className="commandButton commandButtonPrimary">
                   <a href={item.href}>Скачать CSV</a>
                 </Button>
               }

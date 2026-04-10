@@ -3,7 +3,7 @@ import { ScreenHeader } from "@/components/shell/screen-header";
 
 export default function AdminNewPlanPage() {
   return (
-    <div className="grid gap-4 sm:gap-6">
+    <div className="adminWorkspacePage adminWorkspace adminSurfacePage adminSurfacePageForm">
       <ScreenHeader
         eyebrow="Админка"
         title="Новый тариф"

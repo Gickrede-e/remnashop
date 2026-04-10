@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { sanitizeNextPath } from "@/lib/auth/navigation";
+import { cn } from "@/lib/utils";
 
 declare global {
   interface Window {
@@ -13,10 +14,12 @@ declare global {
 
 export function TelegramLoginButton({
   botUsername,
-  nextPath
+  nextPath,
+  className
 }: {
   botUsername?: string;
   nextPath?: string;
+  className?: string;
 }) {
   const router = useRouter();
   const safeNextPath = sanitizeNextPath(nextPath);
@@ -63,5 +66,5 @@ export function TelegramLoginButton({
     return null;
   }
 
-  return <div id="telegram-login-container" className="flex justify-center" />;
+  return <div id="telegram-login-container" className={cn("authTelegramWidget", className)} />;
 }

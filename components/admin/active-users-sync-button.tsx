@@ -25,7 +25,7 @@ export function ActiveUsersSyncButton() {
     <Button
       type="button"
       variant="outline"
-      className="w-full justify-center sm:w-auto"
+      className="activeUsersSyncButton commandButton commandButtonSecondary"
       disabled={pending}
       onClick={() =>
         startTransition(async () => {

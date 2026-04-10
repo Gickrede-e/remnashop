@@ -83,8 +83,8 @@ describe("app shell structure", () => {
     );
 
     expect(markup).toContain('data-testid="app-nav-rail"');
-    expect(markup).toContain('aria-label="Primary navigation"');
-    expect(markup).toContain('aria-label="Sidebar footer actions"');
+    expect(markup).toContain('aria-label="Основная навигация"');
+    expect(markup).toContain('aria-label="Действия аккаунта"');
     expect(markup).not.toContain('data-slot="bottom-nav"');
   });
 });

@@ -36,9 +36,10 @@ export function AppShellFooterActions({
   onAction
 }: AppShellFooterActionsProps) {
   const classes = variantClasses[variant];
+  const landmarkLabel = variant === "rail" ? "Действия аккаунта" : "Действия в меню";
 
   return (
-    <section className={classes.container} aria-label="Sidebar footer actions">
+    <section className={classes.container} aria-label={landmarkLabel}>
       {variant === "rail" ? <p className="appNavRailSectionLabel">Аккаунт</p> : null}
 
       <div className={classes.list}>

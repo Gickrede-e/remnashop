@@ -55,25 +55,25 @@ const adminSecondaryNavItems: AppNavItem[] = [
 ];
 
 const guestFooterActions: AppFooterAction[] = [
-  { href: "/login", label: "Login", kind: "link", intent: "guest" },
-  { href: "/register", label: "Register", kind: "link", intent: "guest" }
+  { href: "/login", label: "Войти", kind: "link", intent: "guest" },
+  { href: "/register", label: "Регистрация", kind: "link", intent: "guest" }
 ];
 
-const profileFooterAction: AppFooterAction = { label: "Profile", kind: "summary", intent: "system" };
+const profileFooterAction: AppFooterAction = { label: "Профиль", kind: "summary", intent: "system" };
 const dashboardSwitchFooterAction: AppFooterAction = {
   href: "/admin",
-  label: "Switch role",
+  label: "Админка",
   kind: "link",
   intent: "system"
 };
 const adminSwitchFooterAction: AppFooterAction = {
   href: "/dashboard",
-  label: "Switch role",
+  label: "Кабинет",
   kind: "link",
   intent: "system"
 };
 const logoutFooterAction: AppFooterAction = {
-  label: "Logout",
+  label: "Выйти",
   kind: "command",
   command: "logout",
   intent: "system"

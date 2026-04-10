@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 export default function AdminError({ reset }: { error: Error; reset: () => void }) {
   return (
     <Card className="surface-feature">
-      <CardHeader className="p-5 sm:p-6">
+      <CardHeader>
         <ScreenHeader
           eyebrow="Админ-панель"
           title="Ошибка в админке"
@@ -15,9 +15,9 @@ export default function AdminError({ reset }: { error: Error; reset: () => void 
           actions={<Button onClick={reset}>Повторить</Button>}
         />
       </CardHeader>
-      <CardContent className="grid gap-3 p-5 pt-0 text-sm text-zinc-400 sm:p-6 sm:pt-0">
-        <CardTitle className="text-base text-white">Что можно сделать сейчас</CardTitle>
-        <CardDescription className="text-sm text-zinc-400">
+      <CardContent className="routeStateInfo">
+        <CardTitle className="routeStateInfoTitle">Что можно сделать сейчас</CardTitle>
+        <CardDescription className="routeStateInfoCopy">
           Повторная загрузка не меняет маршрут и не обходит проверки доступа. После сброса вы останетесь в текущем
           разделе админки.
         </CardDescription>

@@ -27,7 +27,7 @@ type PaymentHistoryListProps = {
 
 function PaymentHistorySummary({ payments }: PaymentHistoryListProps) {
   return (
-    <div className="surface-soft grid gap-3 p-4 sm:grid-cols-2">
+    <div className="dataSummaryGrid">
       <SummaryItem label="Операций" value={String(payments.length)} />
       <SummaryItem
         label="Последнее обновление"
@@ -39,34 +39,36 @@ function PaymentHistorySummary({ payments }: PaymentHistoryListProps) {
 
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="space-y-1">
-      <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">{label}</p>
-      <p className="text-sm font-medium text-white">{value}</p>
+    <div className="dataSummaryItem">
+      <p className="dataSummaryLabel">{label}</p>
+      <p className="dataSummaryValue">{value}</p>
     </div>
   );
 }
 
 function PaymentHistoryEmptyState() {
   return (
-    <div className="rounded-[24px] border border-dashed border-white/12 bg-white/[0.02] p-5 text-sm text-zinc-300">
-      <p className="font-medium text-white">Платежей пока нет</p>
-      <p className="mt-2 leading-6 text-zinc-400">После первой оплаты здесь появится история операций по тарифам и промокодам.</p>
+    <div className="dataEmptyState">
+      <p className="dataEmptyStateTitle">Платежей пока нет</p>
+      <p className="dataEmptyStateDescription">
+        После первой оплаты здесь появится история операций по тарифам и промокодам.
+      </p>
     </div>
   );
 }
 
 function PaymentHistoryCard({ payment }: { payment: PaymentHistoryItem }) {
   return (
-    <article className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0 space-y-1">
-          <p className="text-sm font-medium text-white">{payment.plan.name}</p>
-          <p className="text-xs text-zinc-400">{formatDateTime(payment.paidAt ?? payment.createdAt)}</p>
+    <article className="dataCard">
+      <div className="dataCardHeader">
+        <div className="dataCardCopy">
+          <p className="dataCardTitle">{payment.plan.name}</p>
+          <p className="dataCardMeta">{formatDateTime(payment.paidAt ?? payment.createdAt)}</p>
         </div>
         <PaymentStatusBadge status={payment.status} />
       </div>
 
-      <div className="mt-4 grid gap-3">
+      <div className="dataCardDetails">
         <DetailItem label="Сумма" value={formatPrice(payment.amount)} />
         <DetailItem label="Промокод" value={payment.promoCode?.code ?? "—"} />
       </div>
@@ -76,21 +78,21 @@ function PaymentHistoryCard({ payment }: { payment: PaymentHistoryItem }) {
 
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-      <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">{label}</p>
-      <p className="mt-2 break-words text-sm text-white">{value}</p>
+    <div className="dataDetailPill">
+      <p className="dataDetailLabel">{label}</p>
+      <p className="dataDetailValue">{value}</p>
     </div>
   );
 }
 
 export function PaymentHistoryList({ payments }: PaymentHistoryListProps) {
   return (
-    <Card className="surface-feature">
-      <CardHeader className="space-y-4 p-5 sm:p-6">
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(260px,0.7fr)] xl:items-end">
-          <div className="space-y-2">
-            <CardTitle className="text-xl text-white sm:text-2xl">История операций</CardTitle>
-            <p className="max-w-2xl text-sm leading-6 text-zinc-300">
+    <Card className="dashboardWorkspace dashboardSection historyWorkspace dataPanel dataPanelFeature">
+      <CardHeader className="dataPanelHeaderFeature">
+        <div className="dataPanelHeader">
+          <div className="dataPanelCopy">
+            <CardTitle className="dataPanelTitle">История операций</CardTitle>
+            <p className="dataPanelDescription">
               Все платежи по тарифам собраны в одном месте. На телефоне список идёт карточками, на широком экране
               включается табличный режим.
             </p>
@@ -99,18 +101,18 @@ export function PaymentHistoryList({ payments }: PaymentHistoryListProps) {
         </div>
       </CardHeader>
 
-      <CardContent className="grid gap-4 p-5 pt-0 sm:p-6 sm:pt-0">
+      <CardContent className="dataPanelBody">
         {payments.length === 0 ? (
           <PaymentHistoryEmptyState />
         ) : (
           <>
-            <div className="grid gap-3 xl:hidden">
+            <div className="dataResponsiveStack">
               {payments.map((payment) => (
                 <PaymentHistoryCard key={payment.id} payment={payment} />
               ))}
             </div>
 
-            <div className="hidden xl:block">
+            <div className="dataDesktopTable">
               <Table>
                 <TableHeader>
                   <TableRow>

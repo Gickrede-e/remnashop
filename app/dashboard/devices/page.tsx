@@ -39,32 +39,34 @@ export default async function DevicesPage() {
     ];
 
     return (
-      <div className="grid gap-4 sm:gap-6">
+      <div className="dashboardWorkspacePage dashboardSurfacePage dashboardSurfacePageDevices">
         <ScreenHeader
           eyebrow="Устройства"
           title="Подключённые устройства"
           description="Оформите подписку, чтобы увидеть подключённые устройства."
         />
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
-          <div className="mb-4 flex items-center gap-3">
-            <MonitorSmartphone className="h-6 w-6 text-zinc-400" />
-            <p className="text-sm leading-6 text-zinc-300">Здесь будут отображаться все устройства, привязанные к вашей подписке. Для начала:</p>
+        <div className="deviceGuidePanel panel">
+          <div className="deviceGuideLead">
+            <MonitorSmartphone className="deviceGuideLeadIcon iconMd" />
+            <p className="deviceGuideLeadText">
+              Здесь будут отображаться все устройства, привязанные к вашей подписке. Для начала:
+            </p>
           </div>
-          <ol className="grid gap-4 sm:grid-cols-3">
-            {steps.map((step, i) => (
-              <li key={i} className="flex gap-3 rounded-xl border border-white/8 bg-white/[0.02] p-4">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-zinc-300">
-                  <step.icon className="h-4 w-4" />
+          <ol className="deviceGuideList">
+            {steps.map((step) => (
+              <li key={step.title} className="deviceGuideStep">
+                <span className="deviceGuideIcon">
+                  <step.icon className="iconSm" />
                 </span>
-                <div>
-                  <p className="text-sm font-medium text-white">{step.title}</p>
-                  <p className="mt-1 text-xs leading-5 text-zinc-400">{step.text}</p>
+                <div className="deviceGuideCopy">
+                  <p className="deviceGuideTitle">{step.title}</p>
+                  <p className="deviceGuideDescription">{step.text}</p>
                 </div>
               </li>
             ))}
           </ol>
         </div>
-        <Button asChild className="w-fit">
+        <Button asChild className="commandButton commandButtonPrimary deviceGuideAction">
           <Link href="/dashboard/buy">Купить подписку</Link>
         </Button>
       </div>
@@ -75,7 +77,7 @@ export default async function DevicesPage() {
   const deviceLimit = user.subscription?.plan?.remnawaveHwidDeviceLimit ?? null;
 
   return (
-    <div className="grid gap-4 sm:gap-6">
+    <div className="dashboardWorkspacePage dashboardSurfacePage dashboardSurfacePageDevices">
       <ScreenHeader
         eyebrow="Устройства"
         title="Подключённые устройства"
