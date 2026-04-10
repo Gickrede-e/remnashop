@@ -25,10 +25,11 @@ vi.mock("@/lib/public-env", () => ({
 
 import { LoginForm } from "@/components/auth/login-form";
 import { RegisterForm } from "@/components/auth/register-form";
-import { AuthStandaloneCard } from "@/components/blocks/auth/auth-standalone-card";
 
 describe("auth surfaces", () => {
-  it("renders the standalone auth card with semantic shell hooks", () => {
+  it("renders the standalone auth card with semantic shell hooks", async () => {
+    const { AuthStandaloneCard } = await import("@/components/blocks/auth/auth-standalone-card");
+
     const markup = renderToStaticMarkup(
       React.createElement(
         AuthStandaloneCard,
@@ -43,6 +44,9 @@ describe("auth surfaces", () => {
     expect(markup).toMatch(/class="[^"]*\bauthStandaloneCard\b[^"]*"/);
     expect(markup).toMatch(/class="[^"]*\bauthStandaloneBody\b[^"]*"/);
     expect(markup).not.toContain("Навигация авторизации");
+    expect(markup).not.toMatch(/class="[^"]*\bauthCardTabs\b[^"]*"/);
+    expect(markup).not.toMatch(/class="[^"]*\bauthEntryTabs\b[^"]*"/);
+    expect(markup).not.toContain('aria-current="page"');
   });
 
   it("renders the login form with a register footer link and no telegram block", () => {
@@ -59,6 +63,7 @@ describe("auth surfaces", () => {
     expect(markup).not.toMatch(/class="[^"]*\bauthTelegram\b[^"]*"/);
     expect(markup).not.toMatch(/class="[^"]*\bauthHint\b[^"]*"/);
     expect(markup).toContain('href="/register?next=%2Fdashboard%2Fbuy"');
+    expect(markup).toContain("Регистрация");
   });
 
   it("renders the register form with a login footer link and referral code", () => {
@@ -72,6 +77,7 @@ describe("auth surfaces", () => {
     expect(markup).toMatch(/class="[^"]*\bauthForm\b[^"]*"/);
     expect(markup).toMatch(/class="[^"]*\bauthFormGrid\b[^"]*"/);
     expect(markup).toContain('href="/login?next=%2Fdashboard"');
+    expect(markup).toContain("Войти");
     expect(markup).toContain("ALLY42");
   });
 });
