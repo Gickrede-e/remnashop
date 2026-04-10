@@ -23,14 +23,6 @@ vi.mock("@/lib/auth/session", () => ({
   getSession: getSessionMock
 }));
 
-vi.mock("@/components/shell/app-topbar", () => ({
-  AppTopbar: () => React.createElement("div", { "data-slot": "topbar" })
-}));
-
-vi.mock("@/components/shell/app-more-sheet", () => ({
-  AppMoreSheet: () => React.createElement("div", { "data-slot": "more-sheet" })
-}));
-
 import FaqPage from "@/app/faq/page";
 import HomePage from "@/app/page";
 import PricingPage from "@/app/pricing/page";
@@ -48,8 +40,8 @@ describe("public pages", () => {
     const markup = renderToStaticMarkup(await HomePage());
 
     expect(markup).toContain('data-testid="app-nav-rail"');
-    expect(markup).toContain("Войти");
-    expect(markup).toContain("Регистрация");
+    expect(markup).toContain("ВОЙТИ");
+    expect(markup).not.toContain("Регистрация");
     expect(markup).not.toContain('data-slot="topbar"');
     expect(markup).not.toContain('data-slot="more-sheet"');
   });

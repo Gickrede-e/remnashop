@@ -18,11 +18,18 @@ import { GrantSubscriptionForm } from "@/components/forms/grant-subscription-for
 import { FormSection } from "@/components/blocks/forms/form-section";
 import AdminExportPage from "@/app/admin/export/page";
 
+const TestableFormSection = FormSection as React.ComponentType<
+  React.PropsWithChildren<{
+    title: string;
+    description?: string;
+  }>
+>;
+
 describe("admin secondary surfaces", () => {
   it("renders form primitives with semantic control-form hooks", () => {
     const formSectionMarkup = renderToStaticMarkup(
       React.createElement(
-        FormSection,
+        TestableFormSection,
         {
           title: "Секция формы",
           description: "Описание"

@@ -26,13 +26,20 @@ vi.mock("@/lib/public-env", () => ({
 import { LoginForm } from "@/components/auth/login-form";
 import { RegisterForm } from "@/components/auth/register-form";
 
+type AuthStandaloneCardComponent = React.ComponentType<
+  React.PropsWithChildren<{
+    title: string;
+  }>
+>;
+
 describe("auth surfaces", () => {
   it("renders the standalone auth card with semantic shell hooks", async () => {
     const { AuthStandaloneCard } = await import("@/components/blocks/auth/auth-standalone-card");
+    const TestableAuthStandaloneCard = AuthStandaloneCard as AuthStandaloneCardComponent;
 
     const markup = renderToStaticMarkup(
       React.createElement(
-        AuthStandaloneCard,
+        TestableAuthStandaloneCard,
         { title: "Вход" },
         React.createElement("div", { className: "authStandaloneForm" }, "Children")
       )

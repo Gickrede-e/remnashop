@@ -15,14 +15,6 @@ vi.mock("@/lib/public-env", () => ({
   publicEnv: { NEXT_PUBLIC_SITE_NAME: "GickShop" }
 }));
 
-vi.mock("@/components/shell/app-topbar", () => ({
-  AppTopbar: () => React.createElement("div", { "data-testid": "app-topbar" }, "Topbar")
-}));
-
-vi.mock("@/components/shell/app-more-sheet", () => ({
-  AppMoreSheet: () => React.createElement("div", { "data-testid": "app-more-sheet" }, "More sheet")
-}));
-
 import { AppShell } from "@/components/shell/app-shell";
 
 const TestableAppShell = AppShell as React.ComponentType<

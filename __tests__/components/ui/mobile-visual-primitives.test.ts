@@ -87,7 +87,7 @@ describe("mobile visual primitives", () => {
     expect(source).toContain("--accent-primary");
     expect(source).toContain("--canvas-0: #090909");
     expect(source).toContain("--text-primary: #f3efe6");
-    expect(source).toContain(".appNavRail");
+    expect(source).toContain(".dashSidebar");
     expect(source).toContain(".authCard");
     expect(source).toContain("@media (prefers-reduced-motion: reduce)");
   });

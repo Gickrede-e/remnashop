@@ -49,11 +49,11 @@ describe("root layout foundation", () => {
     expect(source).toContain(".sr-only");
     expect(source).not.toContain('tailwindcss');
     expect(source).not.toContain('tailwind.config.mjs');
-    expect(source).toContain(".appNavRail");
+    expect(source).toContain(".dashSidebar");
     expect(source).toContain(".authCard");
     expect(source).toContain(".page-surface");
     expect(source).toContain("@media (prefers-reduced-motion: reduce)");
-    expect(source).toContain("overscroll-behavior: contain");
+    expect(source).toContain(".dashShellMain");
     expect(source).toContain(".screenHeaderTitle");
     expect(source).toContain("text-wrap: balance");
   });

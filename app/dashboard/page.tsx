@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import type { ComponentProps } from "react";
 
 import { DashboardOverviewBlocks } from "@/components/blocks/dashboard/dashboard-overview-blocks";
 import { DashboardPageHeader } from "@/components/blocks/dashboard/dashboard-page-header";
@@ -9,6 +10,8 @@ import { getUserPaymentHistory } from "@/lib/services/payments";
 import { syncUserSubscription } from "@/lib/services/subscriptions";
 
 export const dynamic = "force-dynamic";
+
+type RecentPayments = ComponentProps<typeof DashboardOverviewBlocks>["recentPayments"];
 
 export default async function DashboardPage() {
   const session = await getSession();
@@ -31,7 +34,7 @@ export default async function DashboardPage() {
     activeUser?.remnawaveShortUuid && remnawaveBaseUrl
       ? `${remnawaveBaseUrl}/api/sub/${activeUser.remnawaveShortUuid}`
       : null;
-  const recentPayments = payments.slice(0, 5).map((payment) => ({
+  const recentPayments: RecentPayments = payments.slice(0, 5).map((payment) => ({
     id: payment.id,
     userInitial: session.email.slice(0, 1).toUpperCase(),
     userLabel: session.email,

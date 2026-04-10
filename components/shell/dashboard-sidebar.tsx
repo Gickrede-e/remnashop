@@ -90,5 +90,3 @@ export function DashboardSidebar({
     </aside>
   );
 }
-
-export const AppNavRail = DashboardSidebar;
