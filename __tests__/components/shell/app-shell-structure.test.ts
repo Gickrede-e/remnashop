@@ -66,16 +66,20 @@ describe("app shell structure", () => {
     expect(publicMarkup).not.toContain("OTHER STUFF");
   });
 
-  it("renders the footer CTA pill and logout form only when account summary exists", () => {
+  it("omits the dashboard CTA but keeps footer controls for other shell areas", () => {
     const withAccountMarkup = renderShell();
     const withoutAccountMarkup = renderShell({ area: "dashboard", canAccessAdmin: true, accountSummary: null });
+    const publicMarkup = renderShell({ area: "public" });
+    const adminMarkup = renderShell({ area: "admin", accountSummary: { email: "admin@example.com" } });
 
-    expect(withAccountMarkup).toContain("КУПИТЬ ПОДПИСКУ");
+    expect(withAccountMarkup).not.toContain("КУПИТЬ ПОДПИСКУ");
     expect(withAccountMarkup).toContain('action="/api/auth/logout"');
     expect(withAccountMarkup).toContain('method="post"');
     expect(withAccountMarkup).toContain("user@example.com");
     expect(withoutAccountMarkup).not.toContain('action="/api/auth/logout"');
     expect(withoutAccountMarkup).not.toContain("user@example.com");
+    expect(publicMarkup).toContain("ВОЙТИ");
+    expect(adminMarkup).toContain("В КАБИНЕТ");
   });
 
   it("renders the new main anchor and excludes legacy shell affordances", () => {

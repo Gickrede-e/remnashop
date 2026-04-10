@@ -34,6 +34,8 @@ export function DashboardSidebar({
   primaryCta,
   accountSummary
 }: DashboardSidebarProps) {
+  const showPrimaryCta = area !== "dashboard";
+
   return (
     <aside className="dashSidebar" data-testid="app-nav-rail" aria-label="Навигация кабинета">
       <div className="dashSidebarBrand">
@@ -74,9 +76,11 @@ export function DashboardSidebar({
       ) : null}
 
       <div className="dashSidebarFooter">
-        <Link href={primaryCta.href} className="dashSidebarCta">
-          {primaryCta.label}
-        </Link>
+        {showPrimaryCta ? (
+          <Link href={primaryCta.href} className="dashSidebarCta">
+            {primaryCta.label}
+          </Link>
+        ) : null}
         {accountSummary ? (
           <form action="/api/auth/logout" method="post" className="dashSidebarLogoutRow">
             <button type="submit" className="dashSidebarLogoutBtn">

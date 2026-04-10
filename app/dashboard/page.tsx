@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import type { ComponentProps } from "react";
 
 import { DashboardOverviewBlocks } from "@/components/blocks/dashboard/dashboard-overview-blocks";
@@ -57,11 +56,6 @@ export default async function DashboardPage() {
           { label: "Dashboard", href: "/dashboard" },
           { label: "Обзор" }
         ]}
-        action={
-          <Link href="/dashboard/buy" className="dashSidebarCta">
-            КУПИТЬ ПОДПИСКУ
-          </Link>
-        }
       />
       <DashboardOverviewBlocks
         subscription={
