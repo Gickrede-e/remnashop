@@ -120,5 +120,6 @@ describe("shared shell more triggers", () => {
     const source = fs.readFileSync(globalsCssPath, "utf8");
     expect(source).toContain(".dialogSurface.appMoreSheetContent");
     expect(source).toContain("bottom: 0;");
+    expect(source).not.toContain("padding-bottom: calc(env(safe-area-inset-bottom) + 6.5rem);");
   });
 });
