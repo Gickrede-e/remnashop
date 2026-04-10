@@ -4,7 +4,7 @@ export type AppShellNavArea = AppShellArea | "public";
 export type AppNavItem = {
   href: string;
   label: string;
-  slot: "primary" | "secondary";
+  slot: "primary" | "other";
 };
 
 export type AppFooterAction = {
@@ -15,8 +15,12 @@ export type AppFooterAction = {
   command?: "logout";
 };
 
-type SecondaryNavOptions = {
+type OtherNavOptions = {
   canAccessAdmin?: boolean;
+};
+
+type PrimaryCtaOptions = {
+  authenticated: boolean;
 };
 
 const publicPrimaryNavItems: AppNavItem[] = [
@@ -30,54 +34,24 @@ const dashboardPrimaryNavItems: AppNavItem[] = [
   { href: "/dashboard", label: "Обзор", slot: "primary" },
   { href: "/dashboard/buy", label: "Купить", slot: "primary" },
   { href: "/dashboard/devices", label: "Устройства", slot: "primary" },
-  { href: "#more", label: "Ещё", slot: "primary" }
-];
-
-const dashboardSecondaryNavItems: AppNavItem[] = [
-  { href: "/dashboard/history", label: "История", slot: "secondary" },
-  { href: "/dashboard/referrals", label: "Рефералы", slot: "secondary" }
+  { href: "/dashboard/history", label: "История", slot: "primary" },
+  { href: "/dashboard/referrals", label: "Рефералы", slot: "primary" }
 ];
 
 const adminPrimaryNavItems: AppNavItem[] = [
   { href: "/admin", label: "Обзор", slot: "primary" },
   { href: "/admin/users", label: "Пользователи", slot: "primary" },
   { href: "/admin/payments", label: "Платежи", slot: "primary" },
-  { href: "#more", label: "Ещё", slot: "primary" }
+  { href: "/admin/plans", label: "Тарифы", slot: "primary" },
+  { href: "/admin/promos", label: "Промокоды", slot: "primary" }
 ];
 
-const adminSecondaryNavItems: AppNavItem[] = [
-  { href: "/admin/plans", label: "Тарифы", slot: "secondary" },
-  { href: "/admin/promos", label: "Промокоды", slot: "secondary" },
-  { href: "/admin/referrals", label: "Рефералы", slot: "secondary" },
-  { href: "/admin/logs", label: "Логи", slot: "secondary" },
-  { href: "/admin/export", label: "Экспорт", slot: "secondary" },
-  { href: "/dashboard", label: "Личный кабинет", slot: "secondary" }
+const adminOtherNavItems: AppNavItem[] = [
+  { href: "/admin/referrals", label: "Рефералы", slot: "other" },
+  { href: "/admin/logs", label: "Логи", slot: "other" },
+  { href: "/admin/export", label: "Экспорт", slot: "other" },
+  { href: "/dashboard", label: "Личный кабинет", slot: "other" }
 ];
-
-const guestFooterActions: AppFooterAction[] = [
-  { href: "/login", label: "Войти", kind: "link", intent: "guest" },
-  { href: "/register", label: "Регистрация", kind: "link", intent: "guest" }
-];
-
-const profileFooterAction: AppFooterAction = { label: "Профиль", kind: "summary", intent: "system" };
-const dashboardSwitchFooterAction: AppFooterAction = {
-  href: "/admin",
-  label: "Админка",
-  kind: "link",
-  intent: "system"
-};
-const adminSwitchFooterAction: AppFooterAction = {
-  href: "/dashboard",
-  label: "Кабинет",
-  kind: "link",
-  intent: "system"
-};
-const logoutFooterAction: AppFooterAction = {
-  label: "Выйти",
-  kind: "command",
-  command: "logout",
-  intent: "system"
-};
 
 export function getPrimaryNavItems(area: AppShellNavArea): AppNavItem[] {
   if (area === "public") {
@@ -87,39 +61,33 @@ export function getPrimaryNavItems(area: AppShellNavArea): AppNavItem[] {
   return area === "dashboard" ? dashboardPrimaryNavItems : adminPrimaryNavItems;
 }
 
-export function getSecondaryNavItems(area: AppShellNavArea, options: SecondaryNavOptions = {}): AppNavItem[] {
+export function getOtherNavItems(area: AppShellNavArea, options: OtherNavOptions = {}): AppNavItem[] {
   if (area === "public") {
     return [];
   }
 
   if (area === "dashboard") {
     return options.canAccessAdmin
-      ? [...dashboardSecondaryNavItems, { href: "/admin", label: "Админка", slot: "secondary" }]
-      : dashboardSecondaryNavItems;
+      ? [
+          { href: "#profile", label: "Профиль", slot: "other" },
+          { href: "/admin", label: "Админка", slot: "other" }
+        ]
+      : [{ href: "#profile", label: "Профиль", slot: "other" }];
   }
 
-  return adminSecondaryNavItems;
+  return adminOtherNavItems;
 }
 
-export function getFooterActions(
-  area: AppShellNavArea,
-  options: { authenticated: boolean; canAccessAdmin?: boolean }
-): AppFooterAction[] {
-  if (!options.authenticated) {
-    return guestFooterActions;
+export function getPrimaryCta(area: AppShellNavArea, options: PrimaryCtaOptions) {
+  if (!options.authenticated || area === "public") {
+    return { label: "ВОЙТИ", href: "/login" };
   }
 
-  const actions: AppFooterAction[] = [profileFooterAction];
-
-  if (area === "dashboard" && options.canAccessAdmin) {
-    actions.push(dashboardSwitchFooterAction);
-  } else if (area === "admin") {
-    actions.push(adminSwitchFooterAction);
+  if (area === "admin") {
+    return { label: "В КАБИНЕТ", href: "/dashboard" };
   }
 
-  actions.push(logoutFooterAction);
-
-  return actions;
+  return { label: "КУПИТЬ ПОДПИСКУ", href: "/dashboard/buy" };
 }
 
 export function isNavItemActive(pathname: string, href: string) {
