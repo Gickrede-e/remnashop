@@ -886,23 +886,11 @@ p {
     margin: 0 auto;
   }
 
-  .authSceneStatus {
-    min-height: 100%;
-  }
-
   .authCard,
   .authEntry {
     display: grid;
     overflow: hidden;
     gap: 0;
-  }
-
-  .authEntryWorkspace {
-    display: grid;
-    align-content: start;
-    min-width: 0;
-    background:
-      linear-gradient(180deg, color-mix(in srgb, hsl(var(--app-surface-strong)) 96%, transparent) 0%, color-mix(in srgb, hsl(var(--app-surface)) 98%, transparent) 100%);
   }
 
   .authCardHeader,
@@ -923,8 +911,7 @@ p {
   }
 
   .authCardHeading,
-  .authEntryEyebrowRow,
-  .authEntryMeta {
+  .authEntryEyebrowRow {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1027,34 +1014,6 @@ p {
     gap: 1rem;
     padding: clamp(1.4rem, 4vw, 2rem);
     background: rgba(250, 248, 243, 0.8);
-  }
-
-  .authEntryMeta {
-    padding-top: 0.25rem;
-  }
-
-  .authEntryMetaItem {
-    display: grid;
-    gap: 0.28rem;
-    min-width: 12rem;
-    padding: 0.9rem 1rem;
-    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 86%, transparent);
-    border-radius: calc(var(--radius) + 0.25rem);
-    background: color-mix(in srgb, hsl(var(--app-surface-overlay)) 82%, transparent);
-  }
-
-  .authEntryMetaLabel {
-    color: hsl(var(--app-muted));
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-  }
-
-  .authEntryMetaValue {
-    color: hsl(var(--app-fg));
-    font-size: 0.95rem;
-    font-weight: 600;
   }
 
   .authCardBody,
@@ -1193,12 +1152,6 @@ p {
     min-width: 3.5rem;
     padding-inline: 0.5rem;
     background: hsl(var(--app-surface));
-  }
-
-  .authTelegramWidget {
-    display: flex;
-    justify-content: center;
-    min-height: 3rem;
   }
 
   .authFormFooter {
@@ -2709,11 +2662,6 @@ p {
       border-bottom: none;
       min-height: 100%;
       align-content: space-between;
-    }
-
-    .authEntryWorkspace {
-      grid-template-rows: auto 1fr;
-      min-height: 100%;
     }
 
     .authEntryBody {
