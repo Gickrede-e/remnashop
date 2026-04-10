@@ -63,7 +63,7 @@ describe("auth surfaces", () => {
     expect(markup).not.toMatch(/class="[^"]*\bauthTelegram\b[^"]*"/);
     expect(markup).not.toMatch(/class="[^"]*\bauthHint\b[^"]*"/);
     expect(markup).toContain('href="/register?next=%2Fdashboard%2Fbuy"');
-    expect(markup).toContain("Регистрация");
+    expect(markup).toContain("Зарегистрироваться");
   });
 
   it("renders the register form with a login footer link and referral code", () => {
