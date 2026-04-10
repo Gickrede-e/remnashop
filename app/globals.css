@@ -1016,6 +1016,531 @@ p {
     border-bottom-color: var(--text-primary);
   }
 
+  .dashShell {
+    display: grid;
+    grid-template-columns: clamp(15rem, 18vw, 16.5rem) minmax(0, 1fr);
+    min-height: 100dvh;
+    background: var(--canvas-0);
+    color: var(--text-primary);
+    font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  .dashShellMain {
+    min-width: 0;
+    margin-left: clamp(15rem, 18vw, 16.5rem);
+    padding: clamp(1.75rem, 3vw, 2.75rem);
+    padding-left: clamp(1.75rem, 3vw, 2.75rem);
+    display: grid;
+    gap: clamp(1.5rem, 2.5vw, 2rem);
+    align-content: start;
+  }
+
+  .dashSkipLink {
+    position: absolute;
+    left: -9999px;
+  }
+
+  .dashSkipLink:focus {
+    left: 1rem;
+    top: 1rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--text-primary);
+    color: var(--canvas-0);
+    z-index: 9999;
+  }
+
+  .dashSidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: clamp(15rem, 18vw, 16.5rem);
+    display: grid;
+    grid-template-rows: auto auto auto 1fr auto;
+    gap: 1.25rem;
+    padding: 1.5rem 1rem 1.25rem;
+    background: var(--canvas-0);
+    border-right: 1px solid var(--surface-line);
+    z-index: 50;
+    overflow-y: auto;
+  }
+
+  .dashSidebarBrand {
+    display: grid;
+    gap: 0.35rem;
+    padding: 0.5rem 0.75rem 1rem;
+    border-bottom: 1px solid var(--surface-line);
+  }
+
+  .dashSidebarBrandWordmark {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  .dashSidebarBrandTagline {
+    margin: 0;
+    color: var(--text-tertiary);
+    font-size: 0.62rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .dashSidebarNav {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .dashSidebarLink {
+    display: grid;
+    grid-template-columns: 1.25rem 1fr;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.6rem 0.9rem;
+    border-radius: 0.65rem;
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+  }
+
+  .dashSidebarLink:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-primary);
+  }
+
+  .dashSidebarLink.is-active {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-primary);
+    font-weight: 700;
+    border-color: var(--surface-line);
+    box-shadow: inset 2px 0 0 var(--text-primary);
+  }
+
+  .dashSidebarLinkIcon {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .dashSidebarOther {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .dashSidebarOther > .dashSidebarOtherSummary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.9rem;
+    color: var(--text-tertiary);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  .dashSidebarOther > .dashSidebarOtherSummary::-webkit-details-marker {
+    display: none;
+  }
+
+  .dashSidebarOtherChevron {
+    width: 0.85rem;
+    height: 0.85rem;
+    transition: transform 140ms ease;
+  }
+
+  .dashSidebarOther[open] .dashSidebarOtherChevron {
+    transform: rotate(90deg);
+  }
+
+  .dashSidebarOtherBody {
+    display: grid;
+    gap: 0.25rem;
+    padding-top: 0.25rem;
+  }
+
+  .dashSidebarFooter {
+    display: grid;
+    gap: 0.85rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--surface-line);
+  }
+
+  .dashSidebarCta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    border-radius: 999px;
+    background: var(--text-primary);
+    color: var(--canvas-0);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background-color 140ms ease, transform 140ms ease;
+  }
+
+  .dashSidebarCta:hover {
+    background: #ffffff;
+    transform: translateY(-1px);
+  }
+
+  .dashSidebarLogoutRow {
+    display: grid;
+    gap: 0.15rem;
+    margin: 0;
+  }
+
+  .dashSidebarLogoutBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .dashSidebarLogoutBtn:hover {
+    color: var(--text-primary);
+  }
+
+  .dashSidebarLogoutIcon {
+    width: 0.9rem;
+    height: 0.9rem;
+  }
+
+  .dashSidebarLogoutEmail {
+    margin: 0;
+    color: var(--text-tertiary);
+    font-size: 0.66rem;
+    letter-spacing: 0.04em;
+  }
+
+  .dashWorkspace {
+    display: grid;
+    gap: clamp(1.5rem, 2.5vw, 2rem);
+  }
+
+  .dashPageHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+  }
+
+  .dashPageHeaderText {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .dashPageTitle {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .dashBreadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--text-tertiary);
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+  }
+
+  .dashBreadcrumbItem {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .dashBreadcrumbLink {
+    color: var(--text-tertiary);
+    text-decoration: none;
+  }
+
+  .dashBreadcrumbLink:hover {
+    color: var(--text-primary);
+  }
+
+  .dashBreadcrumbCurrent {
+    color: var(--text-primary);
+  }
+
+  .dashBreadcrumbSep {
+    width: 0.85rem;
+    height: 0.85rem;
+  }
+
+  .dashPageHeaderAction .dashSidebarCta {
+    /* The header action shares the CTA visual; prefer composing it via class. */
+  }
+
+  .dashStatGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 1.25rem;
+  }
+
+  .dashStatTile {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    padding: 1.4rem;
+    background: var(--canvas-1);
+    border: 1px solid var(--surface-line);
+    border-radius: 1.25rem;
+  }
+
+  .dashStatTileIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.75rem;
+    height: 3.75rem;
+    border: 1px solid var(--surface-line);
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-primary);
+  }
+
+  .dashStatTileGlyph {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .dashStatTileBody {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .dashStatTileValue {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .dashStatTileLabel {
+    margin: 0;
+    color: var(--text-tertiary);
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .dashCardGrid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+
+  .dashCardGrid > .dashCardWide {
+    flex: 1 1 30rem;
+    min-width: 0;
+  }
+
+  .dashCardGrid > .dashCardNarrow {
+    flex: 1 1 20rem;
+    min-width: 0;
+  }
+
+  .dashCard {
+    display: grid;
+    background: var(--canvas-1);
+    border: 1px solid var(--surface-line);
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+  }
+
+  .dashCardHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--surface-line);
+  }
+
+  .dashCardTitle {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+
+  .dashCardActions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--text-tertiary);
+  }
+
+  .dashCardActions button,
+  .dashCardActions a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--surface-line);
+    border-radius: 0.55rem;
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-tertiary);
+    cursor: pointer;
+  }
+
+  .dashCardActions button:hover,
+  .dashCardActions a:hover {
+    color: var(--text-primary);
+  }
+
+  .dashTable {
+    width: 100%;
+    border-collapse: collapse;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+  }
+
+  .dashTable thead th {
+    text-align: left;
+    padding: 0 0 0.85rem;
+    border-bottom: 1px solid var(--surface-line);
+    color: var(--text-tertiary);
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .dashTable tbody td {
+    padding: 0.95rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    vertical-align: middle;
+  }
+
+  .dashTable tbody tr:hover td {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .dashTable .dashTableLead {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .dashTableAvatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.6rem;
+    background: var(--canvas-0);
+    border: 1px solid var(--surface-line);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+
+  .dashStatusPill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .dashStatusPill.is-completed {
+    background: var(--text-primary);
+    color: var(--canvas-0);
+  }
+
+  .dashStatusPill.is-pending {
+    background: transparent;
+    border: 1px solid var(--text-secondary);
+    color: var(--text-secondary);
+  }
+
+  .dashStatusPill.is-process {
+    background: transparent;
+    border: 1px dashed var(--text-tertiary);
+    color: var(--text-tertiary);
+  }
+
+  .dashStatusPill.is-failed {
+    background: transparent;
+    border: 1px solid #c46a6a;
+    color: #e89494;
+  }
+
+  .dashList {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .dashListItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.85rem;
+    padding: 0.85rem 1.1rem;
+    background: var(--canvas-0);
+    border: 1px solid var(--surface-line);
+    border-radius: 0.85rem;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+  }
+
+  .dashListItem.is-completed {
+    border-left: 2px solid var(--text-primary);
+    color: var(--text-primary);
+  }
+
+  .dashListItem.is-not-completed {
+    border-left: 2px solid var(--text-tertiary);
+  }
+
+  .dashListItem .dashListIcon {
+    width: 1rem;
+    height: 1rem;
+    color: var(--text-tertiary);
+    cursor: pointer;
+  }
+
   .dashboardWorkspacePage,
   .dashboardOverviewPage,
   .dashboardSurfacePage,
@@ -3445,6 +3970,26 @@ p {
     .dialogSurface {
       width: min(94vw, 40rem);
       padding-block: 1.25rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .dashShell {
+      grid-template-columns: 1fr;
+    }
+
+    .dashShellMain {
+      margin-left: 0;
+      padding: 1.25rem;
+    }
+
+    .dashSidebar {
+      position: sticky;
+      width: 100%;
+      height: auto;
+      grid-template-rows: auto auto auto auto auto;
+      border-right: none;
+      border-bottom: 1px solid var(--surface-line);
     }
   }
 }

@@ -1,28 +1,38 @@
 import { describe, expect, it } from "vitest";
 
 import * as navModule from "@/lib/ui/app-shell-nav";
+import type { AppNavItem, AppShellNavArea } from "@/lib/ui/app-shell-nav";
+
+type PrimaryCta = {
+  label: string;
+  href: string;
+};
+
+type FutureNavModule = typeof navModule & {
+  getOtherNavItems: (area: AppShellNavArea, options?: { canAccessAdmin?: boolean }) => AppNavItem[];
+  getPrimaryCta: (area: AppShellNavArea, options: { authenticated: boolean }) => PrimaryCta;
+};
+
+const futureNavModule = navModule as FutureNavModule;
 
 describe("app shell nav", () => {
   it("describes dashboard primary nav items", () => {
-    const items = navModule.getPrimaryNavItems("dashboard");
-
-    expect(items.map((item) => item.label)).toEqual([
-      "Обзор",
-      "Купить",
-      "Устройства",
-      "История",
-      "Рефералы"
+    expect(navModule.getPrimaryNavItems("dashboard")).toEqual([
+      { href: "/dashboard", label: "Обзор", slot: "primary" },
+      { href: "/dashboard/buy", label: "Купить", slot: "primary" },
+      { href: "/dashboard/devices", label: "Устройства", slot: "primary" },
+      { href: "/dashboard/history", label: "История", slot: "primary" },
+      { href: "/dashboard/referrals", label: "Рефералы", slot: "primary" }
     ]);
-    expect(items.map((item) => item.href)).not.toContain("#more");
   });
 
   it("describes admin primary nav items", () => {
-    expect(navModule.getPrimaryNavItems("admin").map((item) => item.label)).toEqual([
-      "Обзор",
-      "Пользователи",
-      "Платежи",
-      "Тарифы",
-      "Промокоды"
+    expect(navModule.getPrimaryNavItems("admin")).toEqual([
+      { href: "/admin", label: "Обзор", slot: "primary" },
+      { href: "/admin/users", label: "Пользователи", slot: "primary" },
+      { href: "/admin/payments", label: "Платежи", slot: "primary" },
+      { href: "/admin/plans", label: "Тарифы", slot: "primary" },
+      { href: "/admin/promos", label: "Промокоды", slot: "primary" }
     ]);
   });
 
@@ -36,44 +46,46 @@ describe("app shell nav", () => {
   });
 
   it("keeps dashboard other nav items aligned with admin access", () => {
-    const withAdmin = (navModule as any).getOtherNavItems("dashboard", { canAccessAdmin: true });
-    const withoutAdmin = (navModule as any).getOtherNavItems("dashboard", { canAccessAdmin: false });
+    expect(navModule).toHaveProperty("getOtherNavItems");
 
-    expect(withAdmin.find((item: { href: string }) => item.href === "/admin")).toMatchObject({
-      href: "/admin",
-      slot: "other"
-    });
-    expect(withoutAdmin.find((item: { href: string }) => item.href === "/admin")).toBeUndefined();
+    expect(futureNavModule.getOtherNavItems("dashboard", { canAccessAdmin: true })).toEqual([
+      { href: "#profile", label: "Профиль", slot: "other" },
+      { href: "/admin", label: "Админка", slot: "other" }
+    ]);
+    expect(futureNavModule.getOtherNavItems("dashboard", { canAccessAdmin: false })).toEqual([
+      { href: "#profile", label: "Профиль", slot: "other" }
+    ]);
   });
 
   it("describes admin other nav items", () => {
-    const items = (navModule as any).getOtherNavItems("admin");
-    const hrefs = items.map((item: { href: string }) => item.href);
+    expect(navModule).toHaveProperty("getOtherNavItems");
 
-    expect(hrefs).toContain("/admin/referrals");
-    expect(hrefs).toContain("/admin/logs");
-    expect(hrefs).toContain("/admin/export");
-    expect(hrefs).toContain("/dashboard");
-    expect(items.find((item: { href: string }) => item.href === "/dashboard")).toMatchObject({
-      href: "/dashboard",
-      slot: "other"
-    });
+    expect(futureNavModule.getOtherNavItems("admin")).toEqual([
+      { href: "/admin/referrals", label: "Рефералы", slot: "other" },
+      { href: "/admin/logs", label: "Логи", slot: "other" },
+      { href: "/admin/export", label: "Экспорт", slot: "other" },
+      { href: "/dashboard", label: "Личный кабинет", slot: "other" }
+    ]);
   });
 
   it("describes public other nav items", () => {
-    expect((navModule as any).getOtherNavItems("public")).toEqual([]);
+    expect(navModule).toHaveProperty("getOtherNavItems");
+
+    expect(futureNavModule.getOtherNavItems("public")).toEqual([]);
   });
 
   it("describes primary CTA by shell and authentication", () => {
-    expect((navModule as any).getPrimaryCta("dashboard", { authenticated: true })).toEqual({
+    expect(navModule).toHaveProperty("getPrimaryCta");
+
+    expect(futureNavModule.getPrimaryCta("dashboard", { authenticated: true })).toEqual({
       label: "КУПИТЬ ПОДПИСКУ",
       href: "/dashboard/buy"
     });
-    expect((navModule as any).getPrimaryCta("admin", { authenticated: true })).toEqual({
+    expect(futureNavModule.getPrimaryCta("admin", { authenticated: true })).toEqual({
       label: "В КАБИНЕТ",
       href: "/dashboard"
     });
-    expect((navModule as any).getPrimaryCta("public", { authenticated: false })).toEqual({
+    expect(futureNavModule.getPrimaryCta("public", { authenticated: false })).toEqual({
       label: "ВОЙТИ",
       href: "/login"
     });

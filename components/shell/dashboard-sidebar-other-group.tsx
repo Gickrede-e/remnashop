@@ -1,20 +1,22 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
 
 const STORAGE_KEY = "dashboardSidebar.otherStuff.open";
 
 export function DashboardSidebarOtherGroup({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    try {
-      setOpen(window.localStorage.getItem(STORAGE_KEY) === "1");
-    } catch {
-      // ignore
+  const [open, setOpen] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
     }
-  }, []);
+
+    try {
+      return window.localStorage.getItem(STORAGE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
 
   return (
     <details
