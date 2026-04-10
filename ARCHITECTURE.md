@@ -26,10 +26,10 @@ _Initial architecture map captured on 2026-03-19 15:07 UTC. Updated manually on 
   - `tsconfig.json`
   - `ARCHITECTURE.md`
   - `components.json`
-  - `docker-compose.hub.yml`
   - `docker-compose.yml`
+  - `docker-compose.hub.yml`
   - `next-env.d.ts`
-- Notes: `Dockerfile` now packages a standalone Next.js runtime together with Prisma CLI/runtime files so one Docker Hub image can serve `app`, `worker`, and one-shot `migrate`. `docker-compose.hub.yml` is the pull-only deployment manifest: `postgres` + `migrate` + `app` + `worker` + `caddy`, with `migrate` running `prisma migrate deploy` or `prisma db push` plus seed before the app starts. `vitest.config.ts` provides the repository test harness: Node-based Vitest execution, `@/` path alias resolution, and runtime aliases for `server-only` and mocked Prisma enums.
+- Notes: `Dockerfile` now packages a standalone Next.js runtime together with Prisma CLI/runtime files so one Docker Hub image can serve `app`, `worker`, and one-shot `migrate`. `docker-compose.yml` is the pull-only deployment manifest: `postgres` + `migrate` + `app` + `worker` + `caddy`, with `migrate` running `prisma migrate deploy` or `prisma db push` before the app starts. `docker-compose.hub.yml` is the local build manifest for `docker compose ... --build`. `vitest.config.ts` provides the repository test harness: Node-based Vitest execution, `@/` path alias resolution, and runtime aliases for `server-only` and mocked Prisma enums.
 
 ### `app`
 - Responsibility: App Router pages, layouts, and route handlers for the auth-first entry flow, authenticated dashboard/admin surfaces, and APIs.
@@ -92,4 +92,5 @@ _Initial architecture map captured on 2026-03-19 15:07 UTC. Updated manually on 
 - 2026-03-20: Restyled the non-home public pages and key dashboard/admin landing pages for mobile-first presentation: `pricing`, `faq`, `setup`, `login`, `register`, `dashboard`, `dashboard/buy`, and `admin/export` now use intentional summary surfaces instead of plain desktop card stacks, and `site-footer` matches the updated visual system.
 - 2026-03-20: Redesigned the public homepage visual language in `app/page.tsx` and `app/globals.css` using a new `surface-soft` / `surface-feature` layer, a stronger two-column hero, featured pricing layout, and a compact FAQ + privacy composition.
 - 2026-03-19: Extended tariff configuration with Remnawave provisioning settings in `Plan` and wired `slug -> Remnawave tag` through plan services, admin UI, and subscription activation/admin grant flows.
-- 2026-03-19: Added Docker Hub deployment flow via `docker-compose.hub.yml` and updated `Dockerfile` runtime packaging so the published `gickrede/remnashop:latest` image can be used directly for `migrate`, `app`, and `worker` without a local build step.
+- 2026-04-10: Swapped compose manifest roles so `docker-compose.yml` is now the Docker Hub pull-only deployment file and `docker-compose.hub.yml` is the local build manifest; also removed automatic `db:seed` from the image-based `migrate` service.
+- 2026-03-19: Added Docker Hub deployment flow and updated `Dockerfile` runtime packaging so the published `gickrede/remnashop:latest` image can be used directly for `migrate`, `app`, and `worker` without a local build step.

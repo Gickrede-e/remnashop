@@ -15,12 +15,9 @@ services:
       retries: 10
 
   migrate:
-    image: ${APP_IMAGE:-gickrede/remnashop:latest}
-    pull_policy: always
-    command:
-      - sh
-      - -c
-      - if [ -d prisma/migrations ] && [ "$(ls -A prisma/migrations 2>/dev/null)" ]; then npx prisma migrate deploy; else npx prisma db push; fi && npm run db:seed
+    build:
+      context: .
+      target: tools
     env_file:
       - .env
     depends_on:
@@ -29,10 +26,13 @@ services:
     restart: "no"
 
   app:
-    image: ${APP_IMAGE:-gickrede/remnashop:latest}
-    pull_policy: always
+    build:
+      context: .
+      target: runner
     env_file:
       - .env
+    ports:
+      - "127.0.0.1:3000:3000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -46,8 +46,9 @@ services:
       retries: 10
 
   worker:
-    image: ${APP_IMAGE:-gickrede/remnashop:latest}
-    pull_policy: always
+    build:
+      context: .
+      target: runner
     command: ["node", "scripts/worker.mjs"]
     env_file:
       - .env

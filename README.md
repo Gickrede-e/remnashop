@@ -56,7 +56,7 @@ cp .env.example .env
 ### 3. Запустите через Docker
 
 ```bash
-docker compose up -d --build
+docker compose -f docker-compose.hub.yml up -d --build
 ```
 
 Это поднимет:
@@ -78,13 +78,19 @@ docker compose up -d --build
 
 ## Развёртывание из Docker Hub
 
-Для продакшн-деплоя без сборки используйте готовый образ:
+Для продакшн-деплоя без локальной сборки используйте дефолтный compose-файл с готовым образом из Docker Hub:
 
 ```bash
-docker compose -f docker-compose.hub.yml up -d
+docker compose up -d
 ```
 
-Образ: `gickrede/remnashop:latest`
+По умолчанию используется образ `gickrede/remnashop:latest`.
+
+При необходимости можно переопределить его через `APP_IMAGE`:
+
+```bash
+APP_IMAGE=gickrede/remnashop:stable docker compose up -d
+```
 
 ## Разработка без Docker
 
