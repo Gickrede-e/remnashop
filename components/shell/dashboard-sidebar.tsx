@@ -34,7 +34,7 @@ export function DashboardSidebar({
   primaryCta,
   accountSummary
 }: DashboardSidebarProps) {
-  const showPrimaryCta = area !== "dashboard";
+  const showPrimaryCta = area === "public";
 
   return (
     <aside className="dashSidebar" data-testid="app-nav-rail" aria-label="Навигация кабинета">

@@ -66,7 +66,7 @@ describe("app shell structure", () => {
     expect(publicMarkup).not.toContain("OTHER STUFF");
   });
 
-  it("omits the dashboard CTA but keeps footer controls for other shell areas", () => {
+  it("omits shell CTA pills in dashboard and admin while keeping public auth entry", () => {
     const withAccountMarkup = renderShell();
     const withoutAccountMarkup = renderShell({ area: "dashboard", canAccessAdmin: true, accountSummary: null });
     const publicMarkup = renderShell({ area: "public" });
@@ -79,7 +79,8 @@ describe("app shell structure", () => {
     expect(withoutAccountMarkup).not.toContain('action="/api/auth/logout"');
     expect(withoutAccountMarkup).not.toContain("user@example.com");
     expect(publicMarkup).toContain("ВОЙТИ");
-    expect(adminMarkup).toContain("В КАБИНЕТ");
+    expect(adminMarkup).not.toContain("В КАБИНЕТ");
+    expect(adminMarkup).toContain("admin@example.com");
   });
 
   it("renders the new main anchor and excludes legacy shell affordances", () => {
