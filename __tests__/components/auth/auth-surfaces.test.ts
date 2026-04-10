@@ -33,20 +33,19 @@ describe("auth surfaces", () => {
     const markup = renderToStaticMarkup(
       React.createElement(
         AuthStandaloneCard,
-        { title: "Вход в кабинет", description: "Используйте email и пароль." },
-        React.createElement("div", null, "Children")
+        { title: "Вход" },
+        React.createElement("div", { className: "authStandaloneForm" }, "Children")
       )
     );
 
-    expect(markup).toContain("RemnaShop");
-    expect(markup).toContain("Вход в кабинет");
-    expect(markup).toContain("Используйте email и пароль.");
     expect(markup).toMatch(/class="[^"]*\bauthStandaloneCard\b[^"]*"/);
+    expect(markup).toMatch(/class="[^"]*\bauthStandaloneHeader\b[^"]*"/);
+    expect(markup).toMatch(/class="[^"]*\bauthStandaloneTitle\b[^"]*"/);
     expect(markup).toMatch(/class="[^"]*\bauthStandaloneBody\b[^"]*"/);
-    expect(markup).not.toContain("Навигация авторизации");
+    expect(markup).toContain("RemnaShop");
+    expect(markup).toContain("Вход");
     expect(markup).not.toMatch(/class="[^"]*\bauthCardTabs\b[^"]*"/);
-    expect(markup).not.toMatch(/class="[^"]*\bauthEntryTabs\b[^"]*"/);
-    expect(markup).not.toContain('aria-current="page"');
+    expect(markup).not.toMatch(/class="[^"]*\bauthEntryWorkspace\b[^"]*"/);
   });
 
   it("renders the login form with a register footer link and no telegram block", () => {
@@ -56,13 +55,15 @@ describe("auth surfaces", () => {
       })
     );
 
-    expect(markup).toMatch(/class="[^"]*\bauthForm\b[^"]*"/);
-    expect(markup).toMatch(/class="[^"]*\bauthFormGrid\b[^"]*"/);
-    expect(markup).not.toMatch(/class="[^"]*\bauthTelegramSection\b[^"]*"/);
-    expect(markup).not.toMatch(/class="[^"]*\bauthTelegram\b[^"]*"/);
+    expect(markup).toMatch(/class="[^"]*\bauthStandaloneForm\b[^"]*"/);
+    expect(markup).toMatch(/class="[^"]*\bauthStandaloneInput\b[^"]*"/);
+    expect(markup).toMatch(/class="[^"]*\bauthStandaloneSubmit\b[^"]*"/);
+    expect(markup).toMatch(/class="[^"]*\bauthStandaloneFooterLink\b[^"]*"/);
     expect(markup).not.toMatch(/class="[^"]*\bauthHint\b[^"]*"/);
+    expect(markup).not.toMatch(/class="[^"]*\bauthTelegram(Section)?\b[^"]*"/);
     expect(markup).toContain('href="/register?next=%2Fdashboard%2Fbuy"');
-    expect(markup).toContain("Зарегистрироваться");
+    expect(markup).toContain('placeholder="Email"');
+    expect(markup).toContain('placeholder="Пароль"');
   });
 
   it("renders the register form with a login footer link and referral code", () => {
@@ -73,10 +74,13 @@ describe("auth surfaces", () => {
       })
     );
 
-    expect(markup).toMatch(/class="[^"]*\bauthForm\b[^"]*"/);
-    expect(markup).toMatch(/class="[^"]*\bauthFormGrid\b[^"]*"/);
+    expect(markup).toMatch(/class="[^"]*\bauthStandaloneForm\b[^"]*"/);
+    expect(markup).toMatch(/class="[^"]*\bauthStandaloneInput\b[^"]*"/);
+    expect(markup).toMatch(/class="[^"]*\bauthStandaloneSubmit\b[^"]*"/);
+    expect(markup).toMatch(/class="[^"]*\bauthStandaloneFooterLink\b[^"]*"/);
     expect(markup).toContain('href="/login?next=%2Fdashboard"');
-    expect(markup).toContain("Войти");
-    expect(markup).toContain("ALLY42");
+    expect(markup).toContain('value="ALLY42"');
+    expect(markup).not.toMatch(/class="[^"]*\bauthHint\b[^"]*"/);
+    expect(markup).toContain('placeholder="Реферальный код"');
   });
 });
