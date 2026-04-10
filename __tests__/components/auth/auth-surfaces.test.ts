@@ -52,7 +52,6 @@ describe("auth surfaces", () => {
   it("renders the login form with a register footer link and no telegram block", () => {
     const markup = renderToStaticMarkup(
       React.createElement(LoginForm, {
-        telegramUsername: "remnashop_bot",
         nextPath: "/dashboard/buy"
       })
     );
