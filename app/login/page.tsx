@@ -2,6 +2,7 @@ import { AuthStandaloneCard } from "@/components/blocks/auth/auth-standalone-car
 import { LoginForm } from "@/components/auth/login-form";
 import { getSession } from "@/lib/auth/session";
 import { sanitizeNextPath } from "@/lib/auth/navigation";
+import { publicEnv } from "@/lib/public-env";
 import { redirect } from "next/navigation";
 
 export default async function LoginPage({
@@ -24,7 +25,10 @@ export default async function LoginPage({
           title="Вход в кабинет"
           description="Используйте email и пароль или Telegram, если он уже подключен к аккаунту."
         >
-          <LoginForm nextPath={nextPath} />
+          <LoginForm
+            telegramUsername={publicEnv.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}
+            nextPath={nextPath}
+          />
         </AuthStandaloneCard>
       </div>
     </main>
