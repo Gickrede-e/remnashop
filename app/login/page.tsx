@@ -20,10 +20,7 @@ export default async function LoginPage({
   return (
     <main className="authScene">
       <div className="authSceneViewport">
-        <AuthStandaloneCard
-          title="Вход в кабинет"
-          description="Используйте email и пароль, чтобы войти в кабинет."
-        >
+        <AuthStandaloneCard title="Вход">
           <LoginForm nextPath={nextPath} />
         </AuthStandaloneCard>
       </div>

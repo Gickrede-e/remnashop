@@ -7,9 +7,6 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { buildRegisterHref, sanitizeNextPath } from "@/lib/auth/navigation";
 import { loginSchema } from "@/lib/schemas/auth";
 
@@ -57,37 +54,43 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
   });
 
   return (
-    <div className="authFormPanel authCardForm">
-      <form onSubmit={onSubmit} className="authForm">
-        <div className="authFormGrid">
-          <div className="authField">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" autoComplete="email" {...form.register("email")} />
-          </div>
-          <div className="authField">
-            <Label htmlFor="password">Пароль</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              {...form.register("password")}
-            />
-          </div>
-          {error ? <p className="authError">{error}</p> : null}
-          <Button type="submit" className="authSubmit" disabled={pending}>
-            {pending ? "Входим..." : "Войти"}
-          </Button>
-        </div>
-      </form>
-
-      <div className="authFormFooter">
-        <p className="authFormFooterText">
-          Нет аккаунта?{" "}
-          <Link href={buildRegisterHref(safeNextPath)} className="authFormFooterLink">
-            Зарегистрироваться
-          </Link>
-        </p>
+    <form onSubmit={onSubmit} className="authStandaloneForm" noValidate>
+      <div className="authStandaloneField">
+        <label htmlFor="email" className="srOnly">
+          Email
+        </label>
+        <input
+          id="email"
+          type="email"
+          autoComplete="email"
+          placeholder="Email"
+          className="authStandaloneInput"
+          {...form.register("email")}
+        />
       </div>
-    </div>
+      <div className="authStandaloneField">
+        <label htmlFor="password" className="srOnly">
+          Пароль
+        </label>
+        <input
+          id="password"
+          type="password"
+          autoComplete="current-password"
+          placeholder="Пароль"
+          className="authStandaloneInput"
+          {...form.register("password")}
+        />
+      </div>
+      {error ? <p className="authStandaloneError">{error}</p> : null}
+      <button type="submit" className="authStandaloneSubmit" disabled={pending}>
+        {pending ? "Входим..." : "Войти"}
+      </button>
+      <p className="authStandaloneFooter">
+        Нет аккаунта?{" "}
+        <Link href={buildRegisterHref(safeNextPath)} className="authStandaloneFooterLink">
+          Зарегистрироваться
+        </Link>
+      </p>
+    </form>
   );
 }

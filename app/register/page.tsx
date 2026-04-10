@@ -21,10 +21,7 @@ export default async function RegisterPage({
   return (
     <main className="authScene">
       <div className="authSceneViewport">
-        <AuthStandaloneCard
-          title="Создание аккаунта"
-          description="Новый аккаунт сразу открывает доступ к покупке, продлению и управлению подпиской."
-        >
+        <AuthStandaloneCard title="Регистрация">
           <RegisterForm referralCode={referralCode} nextPath={nextPath} />
         </AuthStandaloneCard>
       </div>

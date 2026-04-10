@@ -840,351 +840,180 @@ p {
     font-size: 1rem;
   }
 
+  .srOnly {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   .authScene {
     position: relative;
+    display: grid;
+    place-items: center;
     min-height: 100dvh;
-    padding: clamp(1.25rem, 4vw, 3rem);
+    padding: clamp(1.25rem, 3vw, 2.5rem);
+    background: var(--canvas-0);
+    color: var(--text-primary);
+    font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     overflow: hidden;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, transparent 16%),
-      linear-gradient(180deg, #0d0d0d 0%, #080808 100%);
   }
 
   .authScene::before,
   .authScene::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-  }
-
-  .authScene::before {
-    background:
-      linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.018) 50%, transparent 100%);
-    opacity: 0.6;
-  }
-
-  .authScene::after {
-    background:
-      radial-gradient(circle at top, rgba(255, 255, 255, 0.045) 0%, transparent 38%);
-    opacity: 0.45;
+    content: none;
   }
 
   .authSceneViewport {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    align-items: center;
-    width: min(100%, 31rem);
-    min-height: calc(100dvh - clamp(2.5rem, 8vw, 6rem));
+    width: min(100%, 26rem);
     margin: 0 auto;
   }
 
-  .authScenePanel {
+  .authCard.authStandaloneCard {
+    display: grid;
+    gap: 1.75rem;
     width: 100%;
-    max-width: 30rem;
-    margin: 0 auto;
-  }
-
-  .authCard,
-  .authEntry {
-    display: grid;
-    overflow: hidden;
-    gap: 0;
-  }
-
-  .authCardHeader,
-  .authEntryHeader,
-  .authCardBody,
-  .authEntryBody {
-    padding: clamp(1.25rem, 3vw, 2rem);
-  }
-
-  .authCardHeader,
-  .authEntryHeader {
-    display: grid;
-    gap: 0.85rem;
-    border-bottom: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
-    background:
-      linear-gradient(135deg, color-mix(in srgb, var(--accent-primary) 8%, transparent) 0%, transparent 48%),
-      linear-gradient(180deg, color-mix(in srgb, hsl(var(--app-surface-overlay)) 98%, transparent) 0%, color-mix(in srgb, hsl(var(--app-surface)) 94%, transparent) 100%);
-  }
-
-  .authCardHeading,
-  .authEntryEyebrowRow {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.9rem;
-    flex-wrap: wrap;
-  }
-
-  .authCardEyebrow,
-  .authEntryEyebrow {
-    color: hsl(var(--app-muted));
-    font-size: 0.76rem;
-    font-weight: 700;
-    letter-spacing: 0.24em;
-    text-transform: uppercase;
-  }
-
-  .authCardHeading {
-    display: grid;
-    gap: 0.65rem;
-  }
-
-  .authEntryBadge {
-    display: inline-flex;
-    align-items: center;
-    min-height: 2rem;
-    padding-inline: 0.85rem;
-    border: 1px solid color-mix(in srgb, hsl(var(--app-border-strong)) 34%, hsl(var(--app-border)));
-    border-radius: 999px;
-    background: color-mix(in srgb, hsl(var(--app-accent)) 10%, transparent);
-    color: color-mix(in srgb, hsl(var(--app-accent-strong)) 54%, white);
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-
-  .authEntryHeading {
-    display: grid;
-    gap: 0.65rem;
-    max-width: 38rem;
-  }
-
-  .authCardTitle,
-  .authEntryTitle {
-    font-size: clamp(2.1rem, 5vw, 2.9rem);
-    font-weight: 600;
-    line-height: 0.98;
-    text-wrap: balance;
-  }
-
-  .authCardDescription,
-  .authEntryDescription {
-    color: hsl(var(--app-muted-strong));
-    font-size: 1rem;
-    line-height: 1.7;
-  }
-
-  .authScenePanel.authStandaloneCard {
-    border: 1px solid rgba(27, 24, 21, 0.12);
+    padding: clamp(2rem, 5vw, 2.75rem) clamp(1.5rem, 4vw, 2.25rem);
+    border: 1px solid var(--surface-line);
     border-radius: 1.75rem;
-    background:
-      linear-gradient(180deg, #f6f2ea 0%, #f1ece2 100%);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.72),
-      0 24px 60px rgba(0, 0, 0, 0.28);
-    color: #181411;
+    background: var(--canvas-1);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
   }
 
   .authStandaloneHeader {
-    gap: 1rem;
-    padding: clamp(1.5rem, 4vw, 2rem);
-    border-bottom: 1px solid rgba(24, 20, 17, 0.08);
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.44) 0%, rgba(255, 255, 255, 0.14) 100%);
+    display: grid;
+    gap: 0.5rem;
+    text-align: center;
   }
 
   .authStandaloneBrand {
-    color: rgba(24, 20, 17, 0.54);
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.18em;
+    margin: 0;
+    color: var(--text-tertiary);
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
   }
 
   .authStandaloneTitle {
-    color: #16120f;
-    font-size: clamp(2rem, 5vw, 2.65rem);
-    font-weight: 600;
-    line-height: 0.98;
-  }
-
-  .authStandaloneDescription {
-    max-width: 34ch;
-    color: rgba(32, 27, 24, 0.72);
-    font-size: 0.98rem;
-    line-height: 1.65;
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
   }
 
   .authStandaloneBody {
     display: grid;
-    gap: 1rem;
-    padding: clamp(1.4rem, 4vw, 2rem);
-    background: rgba(250, 248, 243, 0.8);
+    gap: 0;
   }
 
-  .authCardBody,
-  .authEntryBody {
+  .authStandaloneForm {
     display: grid;
     gap: 1rem;
   }
 
-  .authFormPanel,
-  .authForm {
+  .authStandaloneField {
     display: grid;
-    gap: 1rem;
   }
 
-  .authFormGrid {
-    display: grid;
-    gap: 1rem;
-  }
-
-  .authField {
-    display: grid;
-    gap: 0.55rem;
-  }
-
-  .authSubmit {
+  .authStandaloneInput {
     width: 100%;
-  }
-
-  .authStandaloneBody .authField {
-    gap: 0.5rem;
-  }
-
-  .authStandaloneBody .label {
-    color: rgba(44, 36, 31, 0.84);
-    font-size: 0.79rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-  }
-
-  .authStandaloneBody .controlSurface {
-    border-color: rgba(30, 26, 23, 0.12);
-    border-radius: 1rem;
-    background: rgba(255, 255, 255, 0.92);
-    color: #181411;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
-  }
-
-  .authStandaloneBody .controlSurface:hover:not(:disabled) {
-    border-color: rgba(30, 26, 23, 0.2);
-  }
-
-  .authStandaloneBody .controlSurface:focus-visible {
-    border-color: rgba(24, 20, 17, 0.46);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.9),
-      0 0 0 3px rgba(24, 20, 17, 0.08);
-  }
-
-  .authStandaloneBody .input::placeholder {
-    color: rgba(61, 52, 44, 0.44);
-  }
-
-  .authError {
-    margin: 0;
-    border: 1px solid color-mix(in srgb, hsl(var(--app-danger)) 26%, transparent);
-    border-radius: calc(var(--radius) + 0.1rem);
-    padding: 0.8rem 0.9rem;
-    background: color-mix(in srgb, hsl(var(--app-danger)) 10%, transparent);
-    color: color-mix(in srgb, hsl(var(--app-danger-strong)) 76%, white);
+    padding: 0.85rem 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-primary);
+    font-family: inherit;
     font-size: 0.9rem;
-    line-height: 1.5;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-align: center;
+    outline: none;
+    transition: border-color 140ms ease, background-color 140ms ease;
   }
 
-  .authStandaloneBody .authError {
-    border-color: rgba(164, 74, 52, 0.22);
-    background: rgba(255, 241, 237, 0.96);
-    color: #8c3526;
+  .authStandaloneInput::placeholder {
+    color: var(--text-tertiary);
+    font-weight: 500;
+    letter-spacing: 0.08em;
   }
 
-  .authStandaloneBody .authSubmit.buttonPrimary {
-    min-height: 3.1rem;
-    border-color: rgba(18, 15, 13, 0.92);
-    border-radius: 1rem;
-    background:
-      linear-gradient(180deg, #221d19 0%, #14110f 100%);
-    color: #f7f3ec;
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.08),
-      0 14px 24px rgba(0, 0, 0, 0.16);
+  .authStandaloneInput:hover {
+    background: rgba(255, 255, 255, 0.06);
   }
 
-  .authStandaloneBody .authSubmit.buttonPrimary:hover:not(:disabled) {
-    background:
-      linear-gradient(180deg, #2a241f 0%, #171310 100%);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.1),
-      0 16px 26px rgba(0, 0, 0, 0.18);
+  .authStandaloneInput:focus,
+  .authStandaloneInput:focus-visible {
+    border-color: rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.07);
   }
 
-  .authDivider {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 1.25rem;
-    color: hsl(var(--app-muted));
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-  }
-
-  .authDivider::before,
-  .authDivider::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    width: calc(50% - 2.5rem);
-    height: 1px;
-    background: linear-gradient(90deg, transparent 0%, color-mix(in srgb, hsl(var(--app-border-strong)) 34%, hsl(var(--app-border))) 100%);
-  }
-
-  .authDivider::before {
-    left: 0;
-  }
-
-  .authDivider::after {
-    right: 0;
-    transform: scaleX(-1);
-  }
-
-  .authDivider span {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 3.5rem;
-    padding-inline: 0.5rem;
-    background: hsl(var(--app-surface));
-  }
-
-  .authFormFooter {
-    padding-top: 0.25rem;
-    border-top: 1px solid rgba(24, 20, 17, 0.08);
-  }
-
-  .authFormFooterText {
-    color: rgba(43, 36, 30, 0.66);
-    font-size: 0.93rem;
-    line-height: 1.6;
+  .authStandaloneError {
+    margin: 0;
+    padding: 0.65rem 0.9rem;
+    border: 1px solid rgba(214, 89, 89, 0.32);
+    border-radius: 0.85rem;
+    background: rgba(214, 89, 89, 0.08);
+    color: #ec9b9b;
+    font-size: 0.82rem;
     text-align: center;
   }
 
-  .authFormFooterLink {
-    color: #181411;
+  .authStandaloneSubmit {
+    justify-self: center;
+    min-width: 9rem;
+    margin-top: 0.25rem;
+    padding: 0.7rem 2.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    background: var(--text-primary);
+    color: var(--canvas-0);
+    font-family: inherit;
+    font-size: 0.85rem;
     font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+  }
+
+  .authStandaloneSubmit:hover:not(:disabled) {
+    background: #ffffff;
+    transform: translateY(-1px);
+  }
+
+  .authStandaloneSubmit:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    transform: none;
+  }
+
+  .authStandaloneFooter {
+    margin: 0.5rem 0 0;
+    color: var(--text-tertiary);
+    font-size: 0.78rem;
+    font-weight: 500;
+    text-align: center;
+    letter-spacing: 0.04em;
+  }
+
+  .authStandaloneFooterLink {
+    color: var(--text-secondary);
     text-decoration: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+    padding-bottom: 1px;
+    transition: color 140ms ease, border-color 140ms ease;
   }
 
-  .authFormFooterLink:hover {
-    text-decoration: underline;
-    text-underline-offset: 0.16em;
-  }
-
-  .authHint {
-    padding: 1rem 1.05rem;
-    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
-    border-radius: calc(var(--radius) + 0.3rem);
-    background: color-mix(in srgb, hsl(var(--app-surface-soft)) 76%, transparent);
-    color: hsl(var(--app-muted-strong));
-    font-size: 0.92rem;
-    line-height: 1.7;
+  .authStandaloneFooterLink:hover {
+    color: var(--text-primary);
+    border-bottom-color: var(--text-primary);
   }
 
   .dashboardWorkspacePage,
@@ -2653,22 +2482,6 @@ p {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .authEntry {
-      grid-template-columns: minmax(0, 0.98fr) minmax(30rem, 1.02fr);
-    }
-
-    .authEntryHeader {
-      border-right: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
-      border-bottom: none;
-      min-height: 100%;
-      align-content: space-between;
-    }
-
-    .authEntryBody {
-      padding: clamp(1.4rem, 3vw, 2rem);
-      align-content: start;
-    }
-
     .dashboardOverview {
       gap: 1.25rem;
     }
@@ -3545,13 +3358,9 @@ p {
       padding-inline: 1rem;
     }
 
-    .authSceneViewport {
-      min-height: auto;
-    }
-
-    .authEntryHeader,
-    .authEntryBody {
-      padding-inline: 1rem;
+    .authCard.authStandaloneCard {
+      border-radius: 1.25rem;
+      padding: 1.75rem 1.25rem;
     }
 
     .checkoutPlanMeta,

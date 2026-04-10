@@ -7,9 +7,6 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { buildLoginHref, sanitizeNextPath } from "@/lib/auth/navigation";
 import { registerSchema } from "@/lib/schemas/auth";
 
@@ -62,46 +59,56 @@ export function RegisterForm({
   });
 
   return (
-    <div className="authFormPanel authCardForm">
-      <form onSubmit={onSubmit} className="authForm">
-        <div className="authFormGrid">
-          <div className="authField">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" autoComplete="email" {...form.register("email")} />
-          </div>
-          <div className="authField">
-            <Label htmlFor="password">Пароль</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="new-password"
-              {...form.register("password")}
-            />
-          </div>
-          <div className="authField">
-            <Label htmlFor="referralCode">Реферальный код</Label>
-            <Input
-              id="referralCode"
-              defaultValue={referralCode ?? ""}
-              {...form.register("referralCode")}
-              placeholder="Необязательно"
-            />
-          </div>
-          {error ? <p className="authError">{error}</p> : null}
-          <Button type="submit" className="authSubmit" disabled={pending}>
-            {pending ? "Создаем аккаунт..." : "Создать аккаунт"}
-          </Button>
-        </div>
-      </form>
-
-      <div className="authFormFooter">
-        <p className="authFormFooterText">
-          Уже есть аккаунт?{" "}
-          <Link href={buildLoginHref(safeNextPath)} className="authFormFooterLink">
-            Войти
-          </Link>
-        </p>
+    <form onSubmit={onSubmit} className="authStandaloneForm" noValidate>
+      <div className="authStandaloneField">
+        <label htmlFor="email" className="srOnly">
+          Email
+        </label>
+        <input
+          id="email"
+          type="email"
+          autoComplete="email"
+          placeholder="Email"
+          className="authStandaloneInput"
+          {...form.register("email")}
+        />
       </div>
-    </div>
+      <div className="authStandaloneField">
+        <label htmlFor="password" className="srOnly">
+          Пароль
+        </label>
+        <input
+          id="password"
+          type="password"
+          autoComplete="new-password"
+          placeholder="Пароль"
+          className="authStandaloneInput"
+          {...form.register("password")}
+        />
+      </div>
+      <div className="authStandaloneField">
+        <label htmlFor="referralCode" className="srOnly">
+          Реферальный код
+        </label>
+        <input
+          id="referralCode"
+          type="text"
+          defaultValue={referralCode ?? ""}
+          placeholder="Реферальный код"
+          className="authStandaloneInput"
+          {...form.register("referralCode")}
+        />
+      </div>
+      {error ? <p className="authStandaloneError">{error}</p> : null}
+      <button type="submit" className="authStandaloneSubmit" disabled={pending}>
+        {pending ? "Создаем аккаунт..." : "Создать аккаунт"}
+      </button>
+      <p className="authStandaloneFooter">
+        Уже есть аккаунт?{" "}
+        <Link href={buildLoginHref(safeNextPath)} className="authStandaloneFooterLink">
+          Войти
+        </Link>
+      </p>
+    </form>
   );
 }
