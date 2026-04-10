@@ -83,12 +83,8 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
       <div className="authFormFooter">
         <p className="authFormFooterText">
           Нет аккаунта?{" "}
-          <Link
-            href={buildRegisterHref(safeNextPath)}
-            className="authFormFooterLink"
-            aria-label="Регистрация"
-          >
-            Зарегистрироваться
+          <Link href={buildRegisterHref(safeNextPath)} className="authFormFooterLink">
+            Регистрация
           </Link>
         </p>
       </div>

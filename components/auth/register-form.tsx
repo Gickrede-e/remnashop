@@ -80,7 +80,12 @@ export function RegisterForm({
           </div>
           <div className="authField">
             <Label htmlFor="referralCode">Реферальный код</Label>
-            <Input id="referralCode" {...form.register("referralCode")} placeholder="Необязательно" />
+            <Input
+              id="referralCode"
+              defaultValue={referralCode ?? ""}
+              {...form.register("referralCode")}
+              placeholder="Необязательно"
+            />
           </div>
           {error ? <p className="authError">{error}</p> : null}
           <Button type="submit" className="authSubmit" disabled={pending}>
@@ -96,7 +101,6 @@ export function RegisterForm({
             Войти
           </Link>
         </p>
-        {referralCode ? <strong>{referralCode}</strong> : null}
       </div>
     </div>
   );
