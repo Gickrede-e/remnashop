@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -9,7 +10,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { sanitizeNextPath } from "@/lib/auth/navigation";
+import { buildLoginHref, sanitizeNextPath } from "@/lib/auth/navigation";
 import { registerSchema } from "@/lib/schemas/auth";
 
 const clientRegisterSchema = registerSchema.extend({
@@ -88,14 +89,14 @@ export function RegisterForm({
         </div>
       </form>
 
-      <div className="authHint">
-        После регистрации можно сразу выбрать тариф, применить промокод и оплатить подписку.
-        {referralCode ? (
-          <>
-            {" "}
-            Активный реферальный код: <strong>{referralCode}</strong>.
-          </>
-        ) : null}
+      <div className="authFormFooter">
+        <p className="authFormFooterText">
+          Уже есть аккаунт?{" "}
+          <Link href={buildLoginHref(safeNextPath)} className="authFormFooterLink">
+            Войти
+          </Link>
+        </p>
+        {referralCode ? <strong>{referralCode}</strong> : null}
       </div>
     </div>
   );

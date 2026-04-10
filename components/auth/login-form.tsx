@@ -1,27 +1,21 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 
-import { TelegramLoginButton } from "@/components/auth/telegram-login-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { sanitizeNextPath } from "@/lib/auth/navigation";
+import { buildRegisterHref, sanitizeNextPath } from "@/lib/auth/navigation";
 import { loginSchema } from "@/lib/schemas/auth";
 
 type LoginValues = z.infer<typeof loginSchema>;
 
-export function LoginForm({
-  telegramUsername,
-  nextPath
-}: {
-  telegramUsername?: string;
-  nextPath?: string;
-}) {
+export function LoginForm({ nextPath }: { nextPath?: string }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -86,19 +80,17 @@ export function LoginForm({
         </div>
       </form>
 
-      <div className="authTelegramSection">
-        <div className="authDivider" aria-hidden="true">
-          <span>или</span>
-        </div>
-
-        <div className="authTelegram">
-          <p className="authTelegramLabel">Telegram gateway</p>
-          <TelegramLoginButton botUsername={telegramUsername} nextPath={safeNextPath} />
-        </div>
-      </div>
-
-      <div className="authHint">
-        После входа вы вернетесь в кабинет или продолжите покупку без лишних шагов.
+      <div className="authFormFooter">
+        <p className="authFormFooterText">
+          Нет аккаунта?{" "}
+          <Link
+            href={buildRegisterHref(safeNextPath)}
+            className="authFormFooterLink"
+            aria-label="Регистрация"
+          >
+            Зарегистрироваться
+          </Link>
+        </p>
       </div>
     </div>
   );
