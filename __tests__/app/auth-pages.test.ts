@@ -28,8 +28,7 @@ vi.mock("@/lib/auth/session", () => ({
 
 vi.mock("@/lib/public-env", () => ({
   publicEnv: {
-    NEXT_PUBLIC_SITE_NAME: "RemnaShop",
-    NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: "remnashop_bot"
+    NEXT_PUBLIC_SITE_NAME: "RemnaShop"
   }
 }));
 
@@ -54,9 +53,13 @@ describe("auth pages", () => {
     expect(markup).toMatch(/<main[^>]*class="[^"]*\bauthScene\b[^"]*"/);
     expect(markup).toMatch(/class="[^"]*\bauthSceneViewport\b[^"]*"/);
     expect(markup).toMatch(/class="[^"]*\bauthStandaloneCard\b[^"]*"/);
-    expect(markup).not.toContain('aria-label="Навигация авторизации"');
-    expect(markup).not.toMatch(/class="[^"]*\bauthEntryTabs\b[^"]*"/);
-    expect(markup).toContain("Вход в кабинет");
+    expect(markup).toMatch(/class="[^"]*\bauthStandaloneTitle\b[^"]*"/);
+    expect(markup).toMatch(/class="[^"]*\bauthStandaloneForm\b[^"]*"/);
+    expect(markup).not.toMatch(/class="[^"]*\bauthEntryWorkspace\b[^"]*"/);
+    expect(markup).not.toMatch(/class="[^"]*\bauthCardTabs\b[^"]*"/);
+    expect(markup).not.toMatch(/class="[^"]*\bauthTelegram\b[^"]*"/);
+    expect(markup).not.toMatch(/class="[^"]*\bauthHint\b[^"]*"/);
+    expect(markup).toContain("Вход");
   });
 
   it("renders the register page inside the semantic auth scene", async () => {
@@ -71,8 +74,13 @@ describe("auth pages", () => {
     expect(markup).toMatch(/<main[^>]*class="[^"]*\bauthScene\b[^"]*"/);
     expect(markup).toMatch(/class="[^"]*\bauthSceneViewport\b[^"]*"/);
     expect(markup).toMatch(/class="[^"]*\bauthStandaloneCard\b[^"]*"/);
-    expect(markup).not.toContain('aria-label="Навигация авторизации"');
-    expect(markup).not.toMatch(/class="[^"]*\bauthEntryTabs\b[^"]*"/);
-    expect(markup).toContain("Создание аккаунта");
+    expect(markup).toMatch(/class="[^"]*\bauthStandaloneTitle\b[^"]*"/);
+    expect(markup).toMatch(/class="[^"]*\bauthStandaloneForm\b[^"]*"/);
+    expect(markup).not.toMatch(/class="[^"]*\bauthEntryWorkspace\b[^"]*"/);
+    expect(markup).not.toMatch(/class="[^"]*\bauthCardTabs\b[^"]*"/);
+    expect(markup).not.toMatch(/class="[^"]*\bauthTelegram\b[^"]*"/);
+    expect(markup).not.toMatch(/class="[^"]*\bauthHint\b[^"]*"/);
+    expect(markup).toContain("Регистрация");
+    expect(markup).toContain("ALLY42");
   });
 });
