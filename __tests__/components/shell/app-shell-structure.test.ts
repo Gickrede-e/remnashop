@@ -4,6 +4,11 @@ import { describe, expect, it, vi } from "vitest";
 
 const mockedPathname = vi.hoisted(() => ({ value: "/dashboard" }));
 
+vi.mock("next/link", () => ({
+  default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) =>
+    React.createElement("a", { href, ...props }, children)
+}));
+
 vi.mock("next/navigation", () => ({
   usePathname: () => mockedPathname.value
 }));
@@ -14,16 +19,6 @@ vi.mock("@/components/shell/app-topbar", () => ({
       "data-slot": "topbar",
       "data-area": area
     })
-}));
-
-vi.mock("@/components/shell/app-nav-rail", () => ({
-  AppNavRail: () =>
-    React.createElement(
-      "aside",
-      { "data-testid": "app-nav-rail", "aria-label": "Sidebar navigation" },
-      React.createElement("nav", { "aria-label": "Primary navigation" }),
-      React.createElement("div", { "aria-label": "Sidebar footer actions" })
-    )
 }));
 
 vi.mock("@/components/shell/app-bottom-nav", () => ({

@@ -45,7 +45,7 @@ export function AppShellFooterActions({
         {actions.map((action) => {
           if (action.kind === "summary") {
             return (
-              <div key={`${action.label}-${action.kind}`} className={classes.summary} role="status">
+              <div key={`${action.label}-${action.kind}`} className={classes.summary}>
                 <span className={variant === "rail" ? "appNavRailLinkText" : "appMoreSheetLabel"}>{action.label}</span>
                 <span className={classes.summaryMeta}>Активная сессия</span>
               </div>
