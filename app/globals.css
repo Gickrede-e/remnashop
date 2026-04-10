@@ -242,7 +242,6 @@ p {
 
   .appNavRailLink:hover,
   .appMoreSheetLink:hover,
-  .authEntryTab:hover,
   .appSkipLink {
     transform: none;
   }
@@ -844,35 +843,31 @@ p {
   .authScene {
     position: relative;
     min-height: 100dvh;
-    padding: clamp(1.25rem, 3vw, 2.5rem);
+    padding: clamp(1.25rem, 4vw, 3rem);
     overflow: hidden;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, transparent 16%),
+      linear-gradient(180deg, #0d0d0d 0%, #080808 100%);
   }
 
   .authScene::before,
   .authScene::after {
     content: "";
     position: absolute;
-    inset: auto;
+    inset: 0;
     pointer-events: none;
   }
 
   .authScene::before {
-    top: -12rem;
-    left: -8rem;
-    width: 24rem;
-    height: 24rem;
-    border-radius: 50%;
-    background: radial-gradient(circle, color-mix(in srgb, hsl(var(--app-accent)) 18%, transparent) 0%, transparent 70%);
-    filter: blur(12px);
+    background:
+      linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.018) 50%, transparent 100%);
+    opacity: 0.6;
   }
 
   .authScene::after {
-    right: -10rem;
-    bottom: -8rem;
-    width: 30rem;
-    height: 30rem;
-    border-radius: 50%;
-    background: radial-gradient(circle, color-mix(in srgb, hsl(var(--app-border-strong)) 12%, transparent) 0%, transparent 72%);
+    background:
+      radial-gradient(circle at top, rgba(255, 255, 255, 0.045) 0%, transparent 38%);
+    opacity: 0.45;
   }
 
   .authSceneViewport {
@@ -880,8 +875,8 @@ p {
     z-index: 1;
     display: grid;
     align-items: center;
-    width: min(100%, 32rem);
-    min-height: calc(100dvh - clamp(2.5rem, 6vw, 5rem));
+    width: min(100%, 31rem);
+    min-height: calc(100dvh - clamp(2.5rem, 8vw, 6rem));
     margin: 0 auto;
   }
 
@@ -987,6 +982,53 @@ p {
     line-height: 1.7;
   }
 
+  .authScenePanel.authStandaloneCard {
+    border: 1px solid rgba(27, 24, 21, 0.12);
+    border-radius: 1.75rem;
+    background:
+      linear-gradient(180deg, #f6f2ea 0%, #f1ece2 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.72),
+      0 24px 60px rgba(0, 0, 0, 0.28);
+    color: #181411;
+  }
+
+  .authStandaloneHeader {
+    gap: 1rem;
+    padding: clamp(1.5rem, 4vw, 2rem);
+    border-bottom: 1px solid rgba(24, 20, 17, 0.08);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.44) 0%, rgba(255, 255, 255, 0.14) 100%);
+  }
+
+  .authStandaloneBrand {
+    color: rgba(24, 20, 17, 0.54);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+  }
+
+  .authStandaloneTitle {
+    color: #16120f;
+    font-size: clamp(2rem, 5vw, 2.65rem);
+    font-weight: 600;
+    line-height: 0.98;
+  }
+
+  .authStandaloneDescription {
+    max-width: 34ch;
+    color: rgba(32, 27, 24, 0.72);
+    font-size: 0.98rem;
+    line-height: 1.65;
+  }
+
+  .authStandaloneBody {
+    display: grid;
+    gap: 1rem;
+    padding: clamp(1.4rem, 4vw, 2rem);
+    background: rgba(250, 248, 243, 0.8);
+  }
+
   .authEntryMeta {
     padding-top: 0.25rem;
   }
@@ -1015,57 +1057,6 @@ p {
     font-weight: 600;
   }
 
-  .authCardTabs,
-  .authEntryTabs {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
-    padding: 1rem clamp(1.25rem, 3vw, 2rem);
-    border-bottom: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
-    background: color-mix(in srgb, hsl(var(--app-surface-overlay)) 80%, transparent);
-  }
-
-  .authCardTab,
-  .authEntryTab {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 3rem;
-    padding-inline: 1rem;
-    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 86%, transparent);
-    border-radius: calc(var(--radius) + 0.25rem);
-    background: color-mix(in srgb, hsl(var(--app-surface-soft)) 60%, transparent);
-    color: hsl(var(--app-muted-strong));
-    font-size: 0.92rem;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-    text-decoration: none;
-    transition:
-      transform 140ms ease,
-      border-color 140ms ease,
-      background-color 140ms ease,
-      color 140ms ease,
-      box-shadow 140ms ease;
-  }
-
-  .authCardTab:hover,
-  .authEntryTab:hover {
-    color: hsl(var(--app-fg));
-    border-color: color-mix(in srgb, hsl(var(--app-border-strong)) 36%, hsl(var(--app-border)));
-    background: color-mix(in srgb, hsl(var(--app-accent)) 8%, hsl(var(--app-surface-soft)));
-    transform: translateY(-1px);
-  }
-
-  .authCardTabCurrent,
-  .authEntryTabCurrent {
-    color: hsl(var(--app-fg));
-    border-color: color-mix(in srgb, hsl(var(--app-accent)) 30%, hsl(var(--app-border)));
-    background: linear-gradient(135deg, color-mix(in srgb, hsl(var(--app-accent)) 14%, hsl(var(--app-surface-soft))) 0%, color-mix(in srgb, hsl(var(--app-surface-strong)) 96%, transparent) 100%);
-    box-shadow:
-      inset 0 1px 0 color-mix(in srgb, white 8%, transparent),
-      0 14px 24px color-mix(in srgb, hsl(var(--app-shadow)) 28%, transparent);
-  }
-
   .authCardBody,
   .authEntryBody {
     display: grid;
@@ -1092,6 +1083,40 @@ p {
     width: 100%;
   }
 
+  .authStandaloneBody .authField {
+    gap: 0.5rem;
+  }
+
+  .authStandaloneBody .label {
+    color: rgba(44, 36, 31, 0.84);
+    font-size: 0.79rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .authStandaloneBody .controlSurface {
+    border-color: rgba(30, 26, 23, 0.12);
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.92);
+    color: #181411;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
+  }
+
+  .authStandaloneBody .controlSurface:hover:not(:disabled) {
+    border-color: rgba(30, 26, 23, 0.2);
+  }
+
+  .authStandaloneBody .controlSurface:focus-visible {
+    border-color: rgba(24, 20, 17, 0.46);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      0 0 0 3px rgba(24, 20, 17, 0.08);
+  }
+
+  .authStandaloneBody .input::placeholder {
+    color: rgba(61, 52, 44, 0.44);
+  }
+
   .authError {
     margin: 0;
     border: 1px solid color-mix(in srgb, hsl(var(--app-danger)) 26%, transparent);
@@ -1101,6 +1126,32 @@ p {
     color: color-mix(in srgb, hsl(var(--app-danger-strong)) 76%, white);
     font-size: 0.9rem;
     line-height: 1.5;
+  }
+
+  .authStandaloneBody .authError {
+    border-color: rgba(164, 74, 52, 0.22);
+    background: rgba(255, 241, 237, 0.96);
+    color: #8c3526;
+  }
+
+  .authStandaloneBody .authSubmit.buttonPrimary {
+    min-height: 3.1rem;
+    border-color: rgba(18, 15, 13, 0.92);
+    border-radius: 1rem;
+    background:
+      linear-gradient(180deg, #221d19 0%, #14110f 100%);
+    color: #f7f3ec;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 14px 24px rgba(0, 0, 0, 0.16);
+  }
+
+  .authStandaloneBody .authSubmit.buttonPrimary:hover:not(:disabled) {
+    background:
+      linear-gradient(180deg, #2a241f 0%, #171310 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 16px 26px rgba(0, 0, 0, 0.18);
   }
 
   .authDivider {
@@ -1144,27 +1195,33 @@ p {
     background: hsl(var(--app-surface));
   }
 
-  .authTelegram {
-    display: grid;
-    gap: 0.85rem;
-    padding: 1rem 1.05rem;
-    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 86%, transparent);
-    border-radius: calc(var(--radius) + 0.35rem);
-    background: linear-gradient(180deg, color-mix(in srgb, hsl(var(--app-surface-soft)) 82%, transparent) 0%, color-mix(in srgb, hsl(var(--app-surface-overlay)) 90%, transparent) 100%);
-  }
-
-  .authTelegramLabel {
-    color: hsl(var(--app-muted));
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-  }
-
   .authTelegramWidget {
     display: flex;
     justify-content: center;
     min-height: 3rem;
+  }
+
+  .authFormFooter {
+    padding-top: 0.25rem;
+    border-top: 1px solid rgba(24, 20, 17, 0.08);
+  }
+
+  .authFormFooterText {
+    color: rgba(43, 36, 30, 0.66);
+    font-size: 0.93rem;
+    line-height: 1.6;
+    text-align: center;
+  }
+
+  .authFormFooterLink {
+    color: #181411;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .authFormFooterLink:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.16em;
   }
 
   .authHint {
@@ -2659,14 +2716,6 @@ p {
       min-height: 100%;
     }
 
-    .authEntryTabs {
-      align-content: start;
-      padding-block: clamp(1.4rem, 3vw, 2rem);
-      padding-inline: clamp(1.4rem, 3vw, 2rem);
-      border-bottom: 1px solid color-mix(in srgb, hsl(var(--app-border)) 84%, transparent);
-      background: color-mix(in srgb, hsl(var(--app-surface-overlay)) 36%, transparent);
-    }
-
     .authEntryBody {
       padding: clamp(1.4rem, 3vw, 2rem);
       align-content: start;
@@ -3557,10 +3606,6 @@ p {
       padding-inline: 1rem;
     }
 
-    .authEntryTabs {
-      padding-inline: 1rem;
-    }
-
     .checkoutPlanMeta,
     .dataSummaryGridTertiary {
       grid-template-columns: 1fr;
@@ -3700,7 +3745,3 @@ p {
     transform: translate(-50%, calc(-50% + 8px));
   }
 }
-  .authTelegramSection {
-    display: grid;
-    gap: 0.85rem;
-  }
