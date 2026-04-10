@@ -45,10 +45,9 @@ export function ReissueSubscriptionButton() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="destructive" className="commandButton commandButtonDanger">
-          Перевыпустить подписку
-          <span className="commandButtonGlyph">↻</span>
-        </Button>
+        <button type="button" className="dashSidebarCta">
+          ПЕРЕВЫПУСТИТЬ ССЫЛКУ
+        </button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -64,23 +63,11 @@ export function ReissueSubscriptionButton() {
           </DialogDescription>
         </DialogHeader>
         <div className="commandDialogActions">
-          {error ? (
-            <p className="commandError">{error}</p>
-          ) : null}
-          <Button
-            variant="destructive"
-            className="commandButton commandButtonDanger"
-            disabled={pending}
-            onClick={handleReissue}
-          >
+          {error ? <p className="commandError">{error}</p> : null}
+          <Button variant="destructive" disabled={pending} onClick={handleReissue}>
             {pending ? "Перевыпуск..." : "Подтвердить перевыпуск"}
           </Button>
-          <Button
-            variant="secondary"
-            className="commandButton commandButtonSecondary"
-            disabled={pending}
-            onClick={() => setOpen(false)}
-          >
+          <Button variant="secondary" disabled={pending} onClick={() => setOpen(false)}>
             Отмена
           </Button>
         </div>

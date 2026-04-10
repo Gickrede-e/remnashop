@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
+import { DashboardPageHeader } from "@/components/blocks/dashboard/dashboard-page-header";
 import { PaymentCheckout } from "@/components/dashboard/payment-checkout";
-import { ScreenHeader } from "@/components/shell/screen-header";
 import { buildLoginHref } from "@/lib/auth/navigation";
 import { getSession } from "@/lib/auth/session";
 import { getActivePlans } from "@/lib/services/plans";
@@ -17,11 +17,10 @@ export default async function DashboardBuyPage() {
   const plans = await getActivePlans();
 
   return (
-    <div className="dashboardWorkspacePage dashboardSurfacePage dashboardSurfacePageBuy">
-      <ScreenHeader
-        eyebrow="Покупка"
-        title="Купить тариф"
-        description={`Выберите план, проверьте итоговую цену${plans.length > 0 ? ` из ${plans.length} доступных` : ""} и перейдите к оплате.`}
+    <div className="dashboardWorkspacePage dashboardSurfacePage dashboardSurfacePageBuy dashShellPageWrapper">
+      <DashboardPageHeader
+        title="Купить"
+        crumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Купить" }]}
       />
       <PaymentCheckout plans={plans} />
     </div>

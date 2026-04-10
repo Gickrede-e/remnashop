@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
+import { DashboardPageHeader } from "@/components/blocks/dashboard/dashboard-page-header";
 import { PaymentHistoryList } from "@/components/blocks/dashboard/payment-history-list";
-import { ScreenHeader } from "@/components/shell/screen-header";
 import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 
@@ -27,11 +27,10 @@ export default async function DashboardHistoryPage() {
   });
 
   return (
-    <div className="dashboardWorkspacePage dashboardSurfacePage dashboardSurfacePageHistory">
-      <ScreenHeader
-        eyebrow="Личный кабинет"
-        title="История платежей"
-        description="Список операций по тарифам, промокодам и текущим статусам оплаты без переключения между экранами."
+    <div className="dashboardWorkspacePage dashboardSurfacePage dashboardSurfacePageHistory dashShellPageWrapper">
+      <DashboardPageHeader
+        title="История"
+        crumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "История" }]}
       />
       <PaymentHistoryList payments={payments} />
     </div>

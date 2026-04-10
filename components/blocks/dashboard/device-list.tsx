@@ -1,10 +1,12 @@
 "use client";
 
+import { HardDrive, ShieldPlus, Smartphone } from "lucide-react";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
+import { DashboardCard } from "@/components/blocks/dashboard/dashboard-card";
+import { DashboardStatTile } from "@/components/blocks/dashboard/dashboard-stat-tile";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -28,13 +30,19 @@ type DeviceListProps = {
   deviceLimit: number | null;
 };
 
+const onboardingSteps = [
+  { title: "Выберите тариф", text: "Перейдите на страницу покупки и оплатите подходящий план." },
+  { title: "Получите данные", text: "После оплаты в кабинете появится ссылка для подключения." },
+  { title: "Подключайтесь", text: "Установите приложение на устройство и вставьте ссылку." }
+] as const;
+
 function getPlatformIcon(platform: string | null) {
   if (!platform) return "📟";
-  const p = platform.toLowerCase();
-  if (p.includes("ios") || p.includes("android")) return "📱";
-  if (p.includes("mac")) return "🖥";
-  if (p.includes("linux")) return "🐧";
-  if (p.includes("windows")) return "💻";
+  const normalized = platform.toLowerCase();
+  if (normalized.includes("ios") || normalized.includes("android")) return "📱";
+  if (normalized.includes("mac")) return "🖥";
+  if (normalized.includes("linux")) return "🐧";
+  if (normalized.includes("windows")) return "💻";
   return "📟";
 }
 
@@ -50,34 +58,36 @@ function formatDeviceDate(dateString: string) {
   }
 }
 
-function DeviceCard({ device, onDelete, deleting }: { device: Device; onDelete: (hwid: string) => void; deleting: boolean }) {
+function DeviceRow({
+  device,
+  deleting,
+  onDelete
+}: {
+  device: Device;
+  deleting: boolean;
+  onDelete: (hwid: string) => void;
+}) {
   const model = device.deviceModel ?? device.platform ?? "Неизвестное устройство";
-  const details = [device.platform, device.osVersion, device.createdAt ? `Добавлено ${formatDeviceDate(device.createdAt)}` : null]
+  const details = [
+    device.platform,
+    device.osVersion,
+    device.createdAt ? `Добавлено ${formatDeviceDate(device.createdAt)}` : null
+  ]
     .filter(Boolean)
     .join(" · ");
 
   return (
-    <Card className="devicePanel">
-      <CardContent className="devicePanelBody">
-        <div className="devicePanelCopy">
-          <p className="devicePanelTitle">
-            {getPlatformIcon(device.platform)} {model}
-          </p>
-          {details ? (
-            <p className="devicePanelMeta">{details}</p>
-          ) : null}
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={deleting}
-          className="commandButton commandButtonDanger devicePanelAction"
-          onClick={() => onDelete(device.hwid)}
-        >
-          {deleting ? "..." : "Удалить"}
-        </Button>
-      </CardContent>
-    </Card>
+    <li className="dashListItem is-not-completed">
+      <div>
+        <strong>
+          {getPlatformIcon(device.platform)} {model}
+        </strong>
+        {details ? <p>{details}</p> : null}
+      </div>
+      <Button type="button" variant="outline" size="sm" disabled={deleting} onClick={() => onDelete(device.hwid)}>
+        {deleting ? "..." : "Удалить"}
+      </Button>
+    </li>
   );
 }
 
@@ -87,6 +97,8 @@ export function DeviceList({ devices, total, deviceLimit }: DeviceListProps) {
   const [deletingHwid, setDeletingHwid] = useState<string | null>(null);
   const [deleteAllOpen, setDeleteAllOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const freeSlots = deviceLimit === null ? null : Math.max(deviceLimit - total, 0);
 
   function handleDelete(hwid: string) {
     if (!window.confirm("Удалить это устройство?")) return;
@@ -136,75 +148,85 @@ export function DeviceList({ devices, total, deviceLimit }: DeviceListProps) {
     });
   }
 
-  if (devices.length === 0) {
-    return (
-      <Card className="dashboardWorkspace deviceWorkspace devicePanel">
-        <CardContent className="deviceEmptyState">
-          Нет подключённых устройств. Устройства появятся автоматически при подключении.
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const counter = deviceLimit
-    ? `${total} из ${deviceLimit} устройств`
-    : `${total} устройств`;
-
   return (
-    <div className="dashboardWorkspace deviceWorkspace">
-      <div className="deviceToolbar">
-        <p className="deviceCounter">{counter}</p>
-        <Dialog open={deleteAllOpen} onOpenChange={setDeleteAllOpen}>
-          <DialogTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="commandButton commandButtonDanger deviceToolbarAction"
-            >
-              Удалить все
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Удалить все устройства</DialogTitle>
-              <DialogDescription>
-                Все привязанные устройства будут удалены. Это действие нельзя отменить.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="commandDialogActions">
-              <Button
-                variant="destructive"
-                className="commandButton commandButtonDanger"
-                disabled={pending}
-                onClick={handleDeleteAll}
-              >
-                {pending ? "Удаление..." : "Подтвердить удаление"}
-              </Button>
-              <Button
-                variant="secondary"
-                className="commandButton commandButtonSecondary"
-                disabled={pending}
-                onClick={() => setDeleteAllOpen(false)}
-              >
-                Отмена
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+    <div className="dashWorkspace dashDevices">
+      <div className="dashStatGrid">
+        <DashboardStatTile icon={Smartphone} label="Устройств" value={String(total)} />
+        <DashboardStatTile
+          icon={HardDrive}
+          label="Лимит"
+          value={deviceLimit === null ? "—" : String(deviceLimit)}
+        />
+        <DashboardStatTile
+          icon={ShieldPlus}
+          label="Свободно"
+          value={freeSlots === null ? "—" : String(freeSlots)}
+        />
       </div>
 
       {error ? <p className="commandError">{error}</p> : null}
 
-      <div className="deviceListStack">
-        {devices.map((device) => (
-          <DeviceCard
-            key={device.hwid}
-            device={device}
-            onDelete={handleDelete}
-            deleting={deletingHwid === device.hwid}
-          />
-        ))}
-      </div>
+      <DashboardCard title="Подключенные устройства">
+        {devices.length > 0 ? (
+          <>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1rem" }}>
+              <Dialog open={deleteAllOpen} onOpenChange={setDeleteAllOpen}>
+                <DialogTrigger asChild>
+                  <Button type="button" variant="outline" size="sm">
+                    Удалить все
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Удалить все устройства</DialogTitle>
+                    <DialogDescription>
+                      Все привязанные устройства будут удалены. Это действие нельзя отменить.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="commandDialogActions">
+                    <Button variant="destructive" disabled={pending} onClick={handleDeleteAll}>
+                      {pending ? "Удаление..." : "Подтвердить удаление"}
+                    </Button>
+                    <Button variant="secondary" disabled={pending} onClick={() => setDeleteAllOpen(false)}>
+                      Отмена
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <ul className="dashList">
+              {devices.map((device) => (
+                <DeviceRow
+                  key={device.hwid}
+                  device={device}
+                  deleting={deletingHwid === device.hwid}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </ul>
+          </>
+        ) : (
+          <p>Нет подключённых устройств. Устройства появятся автоматически при подключении.</p>
+        )}
+      </DashboardCard>
+
+      {devices.length === 0 ? (
+        <DashboardCard title="Как подключить устройство">
+          <ol className="dashList">
+            {onboardingSteps.map((step, index) => (
+              <li key={step.title} className="dashListItem is-not-completed">
+                <div>
+                  <strong>
+                    {index + 1}. {step.title}
+                  </strong>
+                  <p>{step.text}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </DashboardCard>
+      ) : null}
     </div>
   );
 }

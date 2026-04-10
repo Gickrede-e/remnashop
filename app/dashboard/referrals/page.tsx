@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
+import { DashboardPageHeader } from "@/components/blocks/dashboard/dashboard-page-header";
 import { ReferralSummaryBlocks } from "@/components/blocks/dashboard/referral-summary-blocks";
-import { ScreenHeader } from "@/components/shell/screen-header";
 import { getSession } from "@/lib/auth/session";
 import { getUserById } from "@/lib/services/auth";
 import { getMyReferralSummary } from "@/lib/services/referrals";
@@ -19,11 +19,10 @@ export default async function DashboardReferralsPage() {
   const referralLink = user?.referralCode ? `${siteUrl}/register?ref=${user.referralCode}` : "";
 
   return (
-    <div className="dashboardWorkspacePage dashboardSurfacePage dashboardSurfacePageReferrals">
-      <ScreenHeader
-        eyebrow="Личный кабинет"
+    <div className="dashboardWorkspacePage dashboardSurfacePage dashboardSurfacePageReferrals dashShellPageWrapper">
+      <DashboardPageHeader
         title="Рефералы"
-        description="Ваша ссылка для приглашений, список регистраций и история начисленных наград в мобильном формате."
+        crumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Рефералы" }]}
       />
       <ReferralSummaryBlocks
         referralLink={referralLink}

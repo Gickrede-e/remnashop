@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 import { DashboardOverviewBlocks } from "@/components/blocks/dashboard/dashboard-overview-blocks";
-import { ScreenHeader } from "@/components/shell/screen-header";
+import { DashboardPageHeader } from "@/components/blocks/dashboard/dashboard-page-header";
 import { getSession } from "@/lib/auth/session";
 import { getUserById } from "@/lib/services/auth";
+import { getUserPaymentHistory } from "@/lib/services/payments";
 import { syncUserSubscription } from "@/lib/services/subscriptions";
 
 export const dynamic = "force-dynamic";
@@ -14,9 +16,10 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const [user, syncedUser] = await Promise.all([
+  const [user, syncedUser, payments] = await Promise.all([
     getUserById(session.userId),
-    syncUserSubscription(session.userId)
+    syncUserSubscription(session.userId),
+    getUserPaymentHistory(session.userId)
   ]);
 
   const activeUser = syncedUser ?? user;
@@ -28,13 +31,34 @@ export default async function DashboardPage() {
     activeUser?.remnawaveShortUuid && remnawaveBaseUrl
       ? `${remnawaveBaseUrl}/api/sub/${activeUser.remnawaveShortUuid}`
       : null;
+  const recentPayments = payments.slice(0, 5).map((payment) => ({
+    id: payment.id,
+    userInitial: session.email.slice(0, 1).toUpperCase(),
+    userLabel: session.email,
+    createdAt: payment.createdAt,
+    status:
+      payment.status === "SUCCEEDED"
+        ? "completed"
+        : payment.status === "FAILED"
+          ? "failed"
+          : payment.status === "PENDING"
+            ? "pending"
+            : "process"
+  }));
 
   return (
-    <div className="dashboardWorkspacePage dashboardOverviewPage">
-      <ScreenHeader
-        eyebrow="Личный кабинет"
+    <div className="dashShellPageWrapper">
+      <DashboardPageHeader
         title="Обзор"
-        description="Подписка, быстрые действия и ссылка для доступа к вашему профилю."
+        crumbs={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Обзор" }
+        ]}
+        action={
+          <Link href="/dashboard/buy" className="dashSidebarCta">
+            КУПИТЬ ПОДПИСКУ
+          </Link>
+        }
       />
       <DashboardOverviewBlocks
         subscription={
@@ -48,6 +72,7 @@ export default async function DashboardPage() {
               }
             : null
         }
+        recentPayments={recentPayments}
         referralLink={referralLink}
         externalSubscriptionUrl={externalSubscriptionUrl}
         remnawaveUuid={activeUser?.remnawaveUuid ?? null}

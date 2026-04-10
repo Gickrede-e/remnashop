@@ -20,7 +20,7 @@ import { ReferralSummaryBlocks } from "@/components/blocks/dashboard/referral-su
 import { DeviceList } from "@/components/blocks/dashboard/device-list";
 
 describe("dashboard secondary surfaces", () => {
-  it("renders checkout with semantic workspace and plan hooks", () => {
+  it("renders checkout with the shared dashboard checkout shell", () => {
     const markup = renderToStaticMarkup(
       React.createElement(PaymentCheckout, {
         plans: [
@@ -45,13 +45,16 @@ describe("dashboard secondary surfaces", () => {
       })
     );
 
-    expect(markup).toMatch(/class="[^"]*\bcheckoutWorkspace\b[^"]*"/);
-    expect(markup).toMatch(/class="[^"]*\bcheckoutPlanOption\b[^"]*"/);
-    expect(markup).toMatch(/class="[^"]*\bcheckoutSummaryPanel\b[^"]*"/);
-    expect(markup).toContain("Оплатить через ЮKassa");
+    expect(markup).toMatch(/class="[^"]*\bdashWorkspace\b[^"]*\bdashCheckout\b[^"]*"/);
+    expect(markup).toMatch(/class="[^"]*\bdashCardGrid\b[^"]*"/);
+    expect(markup.match(/class="[^"]*\bdashCard\b[^"]*"/g) ?? []).toHaveLength(2);
+    expect(markup).toContain("WELCOME10");
+    expect(markup).not.toMatch(/\btelemetryHero\b/);
+    expect(markup).not.toMatch(/\bcommandPanel\b/);
+    expect(markup).not.toMatch(/\bcheckoutWorkspace\b/);
   });
 
-  it("renders history, referral, and devices surfaces through the shared secondary vocabulary", () => {
+  it("renders payment history with dashboard stats and a table card", () => {
     const historyMarkup = renderToStaticMarkup(
       React.createElement(PaymentHistoryList, {
         payments: [
@@ -68,6 +71,17 @@ describe("dashboard secondary surfaces", () => {
       })
     );
 
+    expect(historyMarkup).toMatch(/class="[^"]*\bdashWorkspace\b[^"]*\bdashHistory\b[^"]*"/);
+    expect(historyMarkup).toContain('class="dashStatGrid"');
+    expect(historyMarkup.match(/class="dashStatTile"/g) ?? []).toHaveLength(3);
+    expect(historyMarkup).toMatch(/class="[^"]*\bdashCard\b[^"]*"/);
+    expect(historyMarkup).toContain('class="dashTable"');
+    expect(historyMarkup).not.toMatch(/\btelemetryHero\b/);
+    expect(historyMarkup).not.toMatch(/\bcommandPanel\b/);
+    expect(historyMarkup).not.toMatch(/\bhistoryWorkspace\b/);
+  });
+
+  it("renders devices and referrals through the shared secondary vocabulary", () => {
     const referralsMarkup = renderToStaticMarkup(
       React.createElement(ReferralSummaryBlocks, {
         referralLink: "https://example.com/register?ref=ALLY42",
@@ -109,12 +123,19 @@ describe("dashboard secondary surfaces", () => {
       })
     );
 
-    expect(historyMarkup).toMatch(/class="[^"]*\bhistoryWorkspace\b[^"]*"/);
-    expect(historyMarkup).toMatch(/class="[^"]*\bdataPanel\b[^"]*"/);
-    expect(referralsMarkup).toMatch(/class="[^"]*\breferralWorkspace\b[^"]*"/);
-    expect(referralsMarkup).toMatch(/class="[^"]*\bdataPanel\b[^"]*"/);
-    expect(devicesMarkup).toMatch(/class="[^"]*\bdeviceWorkspace\b[^"]*"/);
-    expect(devicesMarkup).toMatch(/class="[^"]*\bdevicePanel\b[^"]*"/);
-    expect(devicesMarkup).toMatch(/class="[^"]*\bcommandButtonDanger\b[^"]*"/);
+    expect(referralsMarkup).toMatch(/class="[^"]*\bdashWorkspace\b[^"]*\bdashReferrals\b[^"]*"/);
+    expect(referralsMarkup).toContain('class="dashStatGrid"');
+    expect(referralsMarkup).toMatch(/class="[^"]*\bdashCardGrid\b[^"]*"/);
+    expect(referralsMarkup.match(/class="[^"]*\bdashCard\b[^"]*"/g) ?? []).toHaveLength(2);
+    expect(referralsMarkup).not.toMatch(/\btelemetryHero\b/);
+    expect(referralsMarkup).not.toMatch(/\breferralLinkLabel\b/);
+    expect(referralsMarkup).not.toMatch(/\breferralWorkspace\b/);
+
+    expect(devicesMarkup).toMatch(/class="[^"]*\bdashWorkspace\b[^"]*\bdashDevices\b[^"]*"/);
+    expect(devicesMarkup).toContain('class="dashStatGrid"');
+    expect(devicesMarkup).toMatch(/class="[^"]*\bdashCard\b[^"]*"/);
+    expect(devicesMarkup).not.toMatch(/\btelemetryHero\b/);
+    expect(devicesMarkup).not.toMatch(/\bdevicePanel\b/);
+    expect(devicesMarkup).not.toMatch(/\bcommandPanel\b/);
   });
 });

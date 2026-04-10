@@ -1,11 +1,11 @@
-import type { ComponentProps } from "react";
+import { CalendarClock, CreditCard, Wallet } from "lucide-react";
 
-import { PaymentStatusBadge } from "@/components/shared/status-badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DashboardCard } from "@/components/blocks/dashboard/dashboard-card";
+import { DashboardStatTile } from "@/components/blocks/dashboard/dashboard-stat-tile";
+import { PAYMENT_STATUS_LABELS } from "@/lib/constants";
 import { formatDateTime, formatPrice } from "@/lib/utils";
 
-type PaymentStatus = ComponentProps<typeof PaymentStatusBadge>["status"];
+type PaymentStatus = keyof typeof PAYMENT_STATUS_LABELS;
 
 type PaymentHistoryItem = {
   id: string;
@@ -25,122 +25,75 @@ type PaymentHistoryListProps = {
   payments: PaymentHistoryItem[];
 };
 
-function PaymentHistorySummary({ payments }: PaymentHistoryListProps) {
-  return (
-    <div className="dataSummaryGrid">
-      <SummaryItem label="Операций" value={String(payments.length)} />
-      <SummaryItem
-        label="Последнее обновление"
-        value={payments[0] ? formatDateTime(payments[0].paidAt ?? payments[0].createdAt) : "—"}
-      />
-    </div>
-  );
+function getPaymentStatusTone(status: PaymentStatus) {
+  if (status === "SUCCEEDED") {
+    return "completed";
+  }
+
+  if (status === "PENDING") {
+    return "pending";
+  }
+
+  if (status === "FAILED" || status === "CANCELED") {
+    return "failed";
+  }
+
+  return "process";
 }
 
-function SummaryItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="dataSummaryItem">
-      <p className="dataSummaryLabel">{label}</p>
-      <p className="dataSummaryValue">{value}</p>
-    </div>
-  );
-}
-
-function PaymentHistoryEmptyState() {
-  return (
-    <div className="dataEmptyState">
-      <p className="dataEmptyStateTitle">Платежей пока нет</p>
-      <p className="dataEmptyStateDescription">
-        После первой оплаты здесь появится история операций по тарифам и промокодам.
-      </p>
-    </div>
-  );
-}
-
-function PaymentHistoryCard({ payment }: { payment: PaymentHistoryItem }) {
-  return (
-    <article className="dataCard">
-      <div className="dataCardHeader">
-        <div className="dataCardCopy">
-          <p className="dataCardTitle">{payment.plan.name}</p>
-          <p className="dataCardMeta">{formatDateTime(payment.paidAt ?? payment.createdAt)}</p>
-        </div>
-        <PaymentStatusBadge status={payment.status} />
-      </div>
-
-      <div className="dataCardDetails">
-        <DetailItem label="Сумма" value={formatPrice(payment.amount)} />
-        <DetailItem label="Промокод" value={payment.promoCode?.code ?? "—"} />
-      </div>
-    </article>
-  );
-}
-
-function DetailItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="dataDetailPill">
-      <p className="dataDetailLabel">{label}</p>
-      <p className="dataDetailValue">{value}</p>
-    </div>
-  );
+function PaymentHistoryStatusPill({ status }: { status: PaymentStatus }) {
+  return <span className={`dashStatusPill is-${getPaymentStatusTone(status)}`}>{PAYMENT_STATUS_LABELS[status]}</span>;
 }
 
 export function PaymentHistoryList({ payments }: PaymentHistoryListProps) {
+  const successfulPayments = payments.filter((payment) => payment.status === "SUCCEEDED");
+  const lastPayment = payments[0];
+  const totalSpent = successfulPayments.reduce((sum, payment) => sum + payment.amount, 0);
+
   return (
-    <Card className="dashboardWorkspace dashboardSection historyWorkspace dataPanel dataPanelFeature">
-      <CardHeader className="dataPanelHeaderFeature">
-        <div className="dataPanelHeader">
-          <div className="dataPanelCopy">
-            <CardTitle className="dataPanelTitle">История операций</CardTitle>
-            <p className="dataPanelDescription">
-              Все платежи по тарифам собраны в одном месте. На телефоне список идёт карточками, на широком экране
-              включается табличный режим.
-            </p>
-          </div>
-          <PaymentHistorySummary payments={payments} />
-        </div>
-      </CardHeader>
+    <div className="dashWorkspace dashHistory">
+      <div className="dashStatGrid">
+        <DashboardStatTile icon={CreditCard} label="Платежей" value={String(payments.length)} />
+        <DashboardStatTile
+          icon={CalendarClock}
+          label="Последний платёж"
+          value={lastPayment ? formatDateTime(lastPayment.paidAt ?? lastPayment.createdAt) : "—"}
+        />
+        <DashboardStatTile
+          icon={Wallet}
+          label="Потрачено"
+          value={successfulPayments.length > 0 ? formatPrice(totalSpent) : "—"}
+        />
+      </div>
 
-      <CardContent className="dataPanelBody">
+      <DashboardCard title="История платежей">
         {payments.length === 0 ? (
-          <PaymentHistoryEmptyState />
+          <p>Платежей пока нет. После первой оплаты здесь появится история операций по тарифам.</p>
         ) : (
-          <>
-            <div className="dataResponsiveStack">
+          <table className="dashTable">
+            <thead>
+              <tr>
+                <th>Дата</th>
+                <th>План</th>
+                <th>Сумма</th>
+                <th>Статус</th>
+              </tr>
+            </thead>
+            <tbody>
               {payments.map((payment) => (
-                <PaymentHistoryCard key={payment.id} payment={payment} />
+                <tr key={payment.id}>
+                  <td>{formatDateTime(payment.paidAt ?? payment.createdAt)}</td>
+                  <td>{payment.plan.name}</td>
+                  <td>{formatPrice(payment.amount)}</td>
+                  <td>
+                    <PaymentHistoryStatusPill status={payment.status} />
+                  </td>
+                </tr>
               ))}
-            </div>
-
-            <div className="dataDesktopTable">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Тариф</TableHead>
-                    <TableHead>Сумма</TableHead>
-                    <TableHead>Статус</TableHead>
-                    <TableHead>Промокод</TableHead>
-                    <TableHead>Дата</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {payments.map((payment) => (
-                    <TableRow key={payment.id}>
-                      <TableCell>{payment.plan.name}</TableCell>
-                      <TableCell>{formatPrice(payment.amount)}</TableCell>
-                      <TableCell>
-                        <PaymentStatusBadge status={payment.status} />
-                      </TableCell>
-                      <TableCell>{payment.promoCode?.code ?? "—"}</TableCell>
-                      <TableCell>{formatDateTime(payment.paidAt ?? payment.createdAt)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </>
+            </tbody>
+          </table>
         )}
-      </CardContent>
-    </Card>
+      </DashboardCard>
+    </div>
   );
 }
