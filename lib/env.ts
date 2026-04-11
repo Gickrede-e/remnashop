@@ -32,7 +32,8 @@ const DEV_ENV_FALLBACKS = {
   EMAIL_FROM: "GickShop <notifications@example.com>",
   REFERRAL_REWARD_TYPE: "FREE_DAYS",
   REFERRAL_REWARD_VALUE: "3",
-  CRON_SECRET: "change_me_internal_cron_secret"
+  CRON_SECRET: "change_me_internal_cron_secret",
+  LOG_LEVEL: "debug"
 } as const;
 
 const EXAMPLE_ENV_PLACEHOLDERS = {
@@ -140,7 +141,9 @@ const rawEnv = {
   EMAIL_FROM: readEnvValue("EMAIL_FROM"),
   REFERRAL_REWARD_TYPE: readEnvValue("REFERRAL_REWARD_TYPE"),
   REFERRAL_REWARD_VALUE: readEnvValue("REFERRAL_REWARD_VALUE"),
-  CRON_SECRET: readEnvValue("CRON_SECRET")
+  CRON_SECRET: readEnvValue("CRON_SECRET"),
+  LOG_LEVEL: readEnvValue("LOG_LEVEL"),
+  LOG_FORMAT: process.env.LOG_FORMAT
 };
 
 const envSchema = z.object({
@@ -174,7 +177,9 @@ const envSchema = z.object({
   EMAIL_FROM: z.string().min(1),
   REFERRAL_REWARD_TYPE: z.enum(["FREE_DAYS", "FREE_TRAFFIC_GB", "DISCOUNT_PERCENT"]).default("FREE_DAYS"),
   REFERRAL_REWARD_VALUE: z.coerce.number().int().positive().default(3),
-  CRON_SECRET: requiredSecret("CRON_SECRET", 16)
+  CRON_SECRET: requiredSecret("CRON_SECRET", 16),
+  LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
+  LOG_FORMAT: z.enum(["json", "pretty"]).optional()
 });
 
 const parsed = envSchema.safeParse(rawEnv);
