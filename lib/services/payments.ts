@@ -1,5 +1,3 @@
-import { timingSafeEqual } from "node:crypto";
-
 import { PaymentProvider, PaymentStatus } from "@prisma/client";
 
 import { env } from "@/lib/env";
@@ -116,30 +114,25 @@ export async function createPaymentForUser(input: {
 
 export const createPaymentIntent = createPaymentForUser;
 
-export class WebhookAuthorizationError extends Error {
-  constructor(message: string) {
+export class WebhookIpForbiddenError extends Error {
+  constructor(message = "Webhook source IP is not allowlisted") {
     super(message);
-    this.name = "WebhookAuthorizationError";
+    this.name = "WebhookIpForbiddenError";
   }
 }
 
-function compareWebhookSecret(
-  providedSecret: string | null | undefined,
-  expectedSecret: string
-) {
-  if (!providedSecret) {
-    return false;
+export class WebhookDropSilentlyError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "WebhookDropSilentlyError";
   }
+}
 
-  const expectedBuffer = Buffer.from(expectedSecret, "utf8");
-  const providedRawBuffer = Buffer.from(providedSecret, "utf8");
-  const providedBuffer = Buffer.alloc(expectedBuffer.length);
-  providedRawBuffer.copy(providedBuffer, 0, 0, expectedBuffer.length);
-
-  return (
-    timingSafeEqual(providedBuffer, expectedBuffer) &&
-    providedRawBuffer.length === expectedBuffer.length
-  );
+export class WebhookIntegrityError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "WebhookIntegrityError";
+  }
 }
 
 export async function getUserPaymentHistory(userId: string) {
@@ -386,7 +379,6 @@ async function processPlategaPaymentStatus(input: {
 
 export async function handleYookassaWebhook(input: {
   ip: string;
-  providedSecret?: string | null;
   event: {
     object?: {
       id?: string;
@@ -395,39 +387,35 @@ export async function handleYookassaWebhook(input: {
     };
   };
 }) {
-  if (!input.providedSecret) {
-    throw new WebhookAuthorizationError("Webhook secret is required");
-  }
-
-  if (!compareWebhookSecret(input.providedSecret, env.YOOKASSA_WEBHOOK_SECRET)) {
-    throw new WebhookAuthorizationError("Webhook secret mismatch");
-  }
-
   if (!verifyYooKassaIp(input.ip)) {
-    throw new Error("Webhook IP is not allowlisted");
+    throw new WebhookIpForbiddenError();
   }
 
   const remoteId = input.event.object?.id;
   if (!remoteId) {
-    throw new Error("Payment id missing in YooKassa webhook");
+    throw new WebhookDropSilentlyError("remote id missing");
   }
 
-  const remotePayment = await getYooKassaPayment(remoteId);
-  const localPaymentId = remotePayment.metadata?.paymentId;
-  if (!localPaymentId) {
-    throw new Error("Local payment id missing in YooKassa metadata");
+  const hintedLocalPaymentId = input.event.object?.metadata?.paymentId;
+  if (!hintedLocalPaymentId) {
+    throw new WebhookDropSilentlyError("local payment id missing in hint");
   }
 
   const localPayment = await prisma.payment.findUnique({
-    where: { id: localPaymentId }
+    where: { id: hintedLocalPaymentId }
   });
 
   if (!localPayment) {
-    throw new Error("Local payment not found");
+    throw new WebhookDropSilentlyError("local payment not found");
   }
 
   if (localPayment.status === PaymentStatus.SUCCEEDED && localPayment.subscriptionId) {
     return localPayment;
+  }
+
+  const remotePayment = await getYooKassaPayment(remoteId);
+  if (remotePayment.metadata?.paymentId !== localPayment.id) {
+    throw new WebhookIntegrityError("metadata paymentId mismatch");
   }
 
   return processYooKassaRemotePayment({

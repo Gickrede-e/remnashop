@@ -16,14 +16,14 @@ const {
   mockVerifyYooKassaIp
 } = vi.hoisted(() => ({
   mockEnv: {
-    NEXT_PUBLIC_SITE_URL: "https://vpn.example.com",
-    YOOKASSA_WEBHOOK_SECRET: "live-yookassa-webhook-secret"
+    NEXT_PUBLIC_SITE_URL: "https://vpn.example.com"
   },
   mockPrisma: {
     payment: {
       create: vi.fn(),
       findMany: vi.fn(),
       findUnique: vi.fn(),
+      findUniqueOrThrow: vi.fn(),
       update: vi.fn()
     },
     plan: {
@@ -108,7 +108,6 @@ describe("handleYookassaWebhook", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mockEnv.YOOKASSA_WEBHOOK_SECRET = "live-yookassa-webhook-secret";
     mockVerifyYooKassaIp.mockReturnValue(true);
     mockGetYooKassaPayment.mockResolvedValue({
       id: "remote-payment-1",
@@ -119,18 +118,75 @@ describe("handleYookassaWebhook", () => {
     });
     mockPrisma.payment.findUnique.mockResolvedValue({
       id: "payment-1",
+      status: PaymentStatus.PENDING,
+      subscriptionId: null,
+      externalPaymentId: null,
+      providerPayload: null
+    });
+    mockPrisma.payment.update.mockResolvedValue({
+      id: "payment-1",
+      status: PaymentStatus.SUCCEEDED,
+      subscriptionId: "subscription-1"
+    });
+    mockActivateSubscriptionFromPayment.mockResolvedValue({
+      id: "payment-1",
       status: PaymentStatus.SUCCEEDED,
       subscriptionId: "subscription-1"
     });
   });
 
-  it("rejects a YooKassa webhook when the secret is missing", async () => {
-    const { WebhookAuthorizationError, handleYookassaWebhook } = await import(
+  it("throws WebhookIpForbiddenError when IP is not allowlisted", async () => {
+    const { WebhookIpForbiddenError, handleYookassaWebhook } = await import(
       "@/lib/services/payments"
     );
+    mockVerifyYooKassaIp.mockReturnValue(false);
+
+    const promise = handleYookassaWebhook({
+      ip: "198.51.100.10",
+      event: {
+        object: {
+          id: "remote-payment-1",
+          metadata: {
+            paymentId: "payment-1"
+          }
+        }
+      }
+    });
+
+    await expect(promise).rejects.toThrow(WebhookIpForbiddenError);
+    await expect(promise).rejects.toThrow("Webhook source IP is not allowlisted");
+    expect(mockGetYooKassaPayment).not.toHaveBeenCalled();
+    expect(mockPrisma.payment.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("throws WebhookDropSilentlyError when remoteId is missing", async () => {
+    const { WebhookDropSilentlyError, handleYookassaWebhook } = await import(
+      "@/lib/services/payments"
+    );
+
     const promise = handleYookassaWebhook({
       ip: "203.0.113.10",
-      providedSecret: null,
+      event: {
+        object: {
+          metadata: {
+            paymentId: "payment-1"
+          }
+        }
+      }
+    });
+
+    await expect(promise).rejects.toThrow(WebhookDropSilentlyError);
+    await expect(promise).rejects.toThrow("remote id missing");
+    expect(mockGetYooKassaPayment).not.toHaveBeenCalled();
+  });
+
+  it("throws WebhookDropSilentlyError when metadata.paymentId is missing", async () => {
+    const { WebhookDropSilentlyError, handleYookassaWebhook } = await import(
+      "@/lib/services/payments"
+    );
+
+    const promise = handleYookassaWebhook({
+      ip: "203.0.113.10",
       event: {
         object: {
           id: "remote-payment-1"
@@ -138,39 +194,124 @@ describe("handleYookassaWebhook", () => {
       }
     });
 
-    await expect(promise).rejects.toThrow(WebhookAuthorizationError);
-    await expect(promise).rejects.toThrow("Webhook secret is required");
-    expect(mockVerifyYooKassaIp).not.toHaveBeenCalled();
+    await expect(promise).rejects.toThrow(WebhookDropSilentlyError);
+    await expect(promise).rejects.toThrow("local payment id missing in hint");
+    expect(mockGetYooKassaPayment).not.toHaveBeenCalled();
   });
 
-  it("rejects a YooKassa webhook when the secret mismatches", async () => {
-    const { WebhookAuthorizationError, handleYookassaWebhook } = await import(
+  it("throws WebhookDropSilentlyError when local payment is not found", async () => {
+    const { WebhookDropSilentlyError, handleYookassaWebhook } = await import(
       "@/lib/services/payments"
     );
+    mockPrisma.payment.findUnique.mockResolvedValue(null);
+
     const promise = handleYookassaWebhook({
       ip: "203.0.113.10",
-      providedSecret: "wrong-secret",
       event: {
         object: {
-          id: "remote-payment-1"
+          id: "remote-payment-1",
+          metadata: {
+            paymentId: "payment-1"
+          }
         }
       }
     });
 
-    await expect(promise).rejects.toThrow(WebhookAuthorizationError);
-    await expect(promise).rejects.toThrow("Webhook secret mismatch");
-    expect(mockVerifyYooKassaIp).not.toHaveBeenCalled();
+    await expect(promise).rejects.toThrow(WebhookDropSilentlyError);
+    await expect(promise).rejects.toThrow("local payment not found");
+    expect(mockGetYooKassaPayment).not.toHaveBeenCalled();
   });
 
-  it("returns the existing payment when the secret is valid", async () => {
+  it("returns existing payment without remote call when it is already SUCCEEDED with subscription", async () => {
     const { handleYookassaWebhook } = await import("@/lib/services/payments");
+    mockPrisma.payment.findUnique.mockResolvedValue({
+      id: "payment-1",
+      status: PaymentStatus.SUCCEEDED,
+      subscriptionId: "subscription-1"
+    });
 
     const result = await handleYookassaWebhook({
       ip: "203.0.113.10",
-      providedSecret: "live-yookassa-webhook-secret",
       event: {
         object: {
-          id: "remote-payment-1"
+          id: "remote-payment-1",
+          metadata: {
+            paymentId: "payment-1"
+          }
+        }
+      }
+    });
+
+    expect(result).toMatchObject({
+      id: "payment-1",
+      status: PaymentStatus.SUCCEEDED,
+      subscriptionId: "subscription-1"
+    });
+    expect(mockGetYooKassaPayment).not.toHaveBeenCalled();
+  });
+
+  it("throws WebhookIntegrityError when remote metadata.paymentId does not match local payment id", async () => {
+    const { WebhookIntegrityError, handleYookassaWebhook } = await import(
+      "@/lib/services/payments"
+    );
+    mockPrisma.payment.findUnique.mockResolvedValue({
+      id: "payment-1",
+      status: PaymentStatus.PENDING,
+      subscriptionId: null
+    });
+    mockGetYooKassaPayment.mockResolvedValue({
+      id: "remote-payment-1",
+      status: "succeeded",
+      metadata: {
+        paymentId: "payment-SOMETHING-ELSE"
+      }
+    });
+
+    const promise = handleYookassaWebhook({
+      ip: "203.0.113.10",
+      event: {
+        object: {
+          id: "remote-payment-1",
+          metadata: {
+            paymentId: "payment-1"
+          }
+        }
+      }
+    });
+
+    await expect(promise).rejects.toThrow(WebhookIntegrityError);
+    await expect(promise).rejects.toThrow("metadata paymentId mismatch");
+    expect(mockActivateSubscriptionFromPayment).not.toHaveBeenCalled();
+    expect(mockPrisma.payment.update).not.toHaveBeenCalled();
+  });
+
+  it("processes the payment when all checks pass", async () => {
+    const { handleYookassaWebhook } = await import("@/lib/services/payments");
+    mockPrisma.payment.findUnique
+      .mockResolvedValueOnce({
+        id: "payment-1",
+        status: PaymentStatus.PENDING,
+        subscriptionId: null,
+        externalPaymentId: null,
+        providerPayload: null
+      })
+      .mockResolvedValueOnce({
+        id: "payment-1",
+        status: PaymentStatus.PENDING,
+        subscriptionId: null,
+        externalPaymentId: null,
+        providerPayload: null
+      });
+
+    const result = await handleYookassaWebhook({
+      ip: "203.0.113.10",
+      event: {
+        object: {
+          id: "remote-payment-1",
+          status: "succeeded",
+          metadata: {
+            paymentId: "payment-1"
+          }
         }
       }
     });
@@ -181,9 +322,28 @@ describe("handleYookassaWebhook", () => {
       subscriptionId: "subscription-1"
     });
     expect(mockVerifyYooKassaIp).toHaveBeenCalledWith("203.0.113.10");
-    expect(mockGetYooKassaPayment).toHaveBeenCalledWith("remote-payment-1");
-    expect(mockPrisma.payment.findUnique).toHaveBeenCalledWith({
+    expect(mockPrisma.payment.findUnique).toHaveBeenNthCalledWith(1, {
       where: { id: "payment-1" }
     });
+    expect(mockGetYooKassaPayment).toHaveBeenCalledWith("remote-payment-1");
+    expect(mockPrisma.payment.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "payment-1" },
+        data: expect.objectContaining({
+          status: PaymentStatus.SUCCEEDED,
+          externalPaymentId: "remote-payment-1"
+        })
+      })
+    );
+    expect(mockActivateSubscriptionFromPayment).toHaveBeenCalledWith("payment-1");
+    expect(
+      mockPrisma.payment.findUnique.mock.invocationCallOrder[0]
+    ).toBeLessThan(mockGetYooKassaPayment.mock.invocationCallOrder[0]);
+    expect(
+      mockGetYooKassaPayment.mock.invocationCallOrder[0]
+    ).toBeLessThan(mockPrisma.payment.update.mock.invocationCallOrder[0]);
+    expect(
+      mockPrisma.payment.update.mock.invocationCallOrder[0]
+    ).toBeLessThan(mockActivateSubscriptionFromPayment.mock.invocationCallOrder[0]);
   });
 });

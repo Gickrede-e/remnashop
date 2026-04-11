@@ -2,15 +2,26 @@ import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
-  MockWebhookAuthorizationError,
+  MockRateLimitExceededError,
+  MockWebhookDropSilentlyError,
+  MockWebhookIntegrityError,
+  MockWebhookIpForbiddenError,
+  mockEnforceRateLimit,
   mockHandleYookassaWebhook,
   mockLogAdminAction,
   mockLogger
 } = vi.hoisted(() => {
-  class MockWebhookAuthorizationError extends Error {}
+  class MockWebhookIpForbiddenError extends Error {}
+  class MockWebhookDropSilentlyError extends Error {}
+  class MockWebhookIntegrityError extends Error {}
+  class MockRateLimitExceededError extends Error {}
 
   return {
-    MockWebhookAuthorizationError,
+    MockRateLimitExceededError,
+    MockWebhookDropSilentlyError,
+    MockWebhookIntegrityError,
+    MockWebhookIpForbiddenError,
+    mockEnforceRateLimit: vi.fn(),
     mockHandleYookassaWebhook: vi.fn(),
     mockLogAdminAction: vi.fn(),
     mockLogger: {
@@ -21,8 +32,15 @@ const {
 });
 
 vi.mock("@/lib/services/payments", () => ({
-  WebhookAuthorizationError: MockWebhookAuthorizationError,
+  WebhookDropSilentlyError: MockWebhookDropSilentlyError,
+  WebhookIntegrityError: MockWebhookIntegrityError,
+  WebhookIpForbiddenError: MockWebhookIpForbiddenError,
   handleYookassaWebhook: mockHandleYookassaWebhook
+}));
+
+vi.mock("@/lib/server/rate-limit", () => ({
+  enforceRateLimit: mockEnforceRateLimit,
+  RateLimitExceededError: MockRateLimitExceededError
 }));
 
 vi.mock("@/lib/services/admin-logs", () => ({
@@ -36,7 +54,18 @@ vi.mock("@/lib/server/logger", () => ({
   )
 }));
 
-function buildRequest(headers: HeadersInit = {}) {
+function buildRequest(
+  body: Record<string, unknown> = {
+    object: {
+      id: "remote-payment-1",
+      status: "succeeded",
+      metadata: {
+        paymentId: "payment-1"
+      }
+    }
+  },
+  headers: HeadersInit = {}
+) {
   return new NextRequest("http://localhost/api/webhook/yookassa", {
     method: "POST",
     headers: {
@@ -44,15 +73,7 @@ function buildRequest(headers: HeadersInit = {}) {
       "x-forwarded-for": "203.0.113.10",
       ...headers
     },
-    body: JSON.stringify({
-      object: {
-        id: "remote-payment-1",
-        status: "succeeded",
-        metadata: {
-          paymentId: "payment-1"
-        }
-      }
-    })
+    body: JSON.stringify(body)
   });
 }
 
@@ -62,31 +83,156 @@ describe("POST /api/webhook/yookassa", () => {
     vi.clearAllMocks();
 
     mockLogAdminAction.mockResolvedValue(undefined);
+    mockEnforceRateLimit.mockImplementation(() => undefined);
     mockHandleYookassaWebhook.mockResolvedValue({
       id: "payment-1",
       status: "SUCCEEDED"
     });
   });
 
-  it("returns 401 and logs a warning when the webhook secret header is missing", async () => {
-    mockHandleYookassaWebhook.mockRejectedValue(
-      new MockWebhookAuthorizationError("Webhook secret is required")
-    );
-
+  it.each([
+    [{}, "empty body"],
+    [{ object: {} }, "missing object.id"],
+    [{ object: { id: "remote-payment-1", metadata: {} } }, "missing metadata.paymentId"]
+  ])("returns 200 and drops silently when body is structurally invalid: %s", async (body) => {
     const { POST } = await import("@/app/api/webhook/yookassa/route");
     mockLogger.warn.mockClear();
     mockLogger.error.mockClear();
 
+    const response = await POST(buildRequest(body));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      ok: true,
+      data: {
+        accepted: true
+      }
+    });
+
+    expect(mockHandleYookassaWebhook).not.toHaveBeenCalled();
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      "webhook.dropped",
+      expect.objectContaining({
+        provider: "YOOKASSA",
+        ip: "203.0.113.10",
+        paymentId: "UNKNOWN",
+        reason: "invalid body"
+      })
+    );
+    expect(mockLogger.error).not.toHaveBeenCalled();
+    expect(mockLogAdminAction).not.toHaveBeenCalled();
+  });
+
+  it("returns 200 silently when handleYookassaWebhook throws WebhookDropSilentlyError", async () => {
+    mockHandleYookassaWebhook.mockRejectedValue(
+      new MockWebhookDropSilentlyError("local payment not found")
+    );
+
+    const { POST } = await import("@/app/api/webhook/yookassa/route");
     const response = await POST(buildRequest());
 
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
-      ok: false,
-      error: "Webhook secret is required"
+      ok: true,
+      data: {
+        accepted: true
+      }
+    });
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      "webhook.dropped",
+      expect.objectContaining({
+        provider: "YOOKASSA",
+        ip: "203.0.113.10",
+        paymentId: "remote-payment-1",
+        reason: "local payment not found"
+      })
+    );
+    expect(mockLogger.error).not.toHaveBeenCalled();
+    expect(mockLogAdminAction).not.toHaveBeenCalled();
+  });
+
+  it("returns 200 and logs error when handleYookassaWebhook throws WebhookIntegrityError", async () => {
+    mockHandleYookassaWebhook.mockRejectedValue(
+      new MockWebhookIntegrityError("metadata paymentId mismatch")
+    );
+
+    const { POST } = await import("@/app/api/webhook/yookassa/route");
+    const response = await POST(buildRequest());
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      ok: true,
+      data: {
+        accepted: true
+      }
+    });
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      "webhook.integrity",
+      expect.objectContaining({
+        provider: "YOOKASSA",
+        ip: "203.0.113.10",
+        paymentId: "remote-payment-1",
+        reason: "metadata paymentId mismatch"
+      })
+    );
+    expect(mockLogAdminAction).toHaveBeenCalledWith({
+      action: "PAYMENT_WEBHOOK_INTEGRITY",
+      targetType: "PAYMENT",
+      targetId: "remote-payment-1",
+      details: {
+        provider: "YOOKASSA",
+        ip: "203.0.113.10",
+        reason: "metadata paymentId mismatch"
+      }
+    });
+  });
+
+  it("returns 200 and logs warning when handleYookassaWebhook throws WebhookIpForbiddenError", async () => {
+    mockHandleYookassaWebhook.mockRejectedValue(
+      new MockWebhookIpForbiddenError("Webhook source IP is not allowlisted")
+    );
+
+    const { POST } = await import("@/app/api/webhook/yookassa/route");
+    const response = await POST(buildRequest());
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      ok: true,
+      data: {
+        accepted: true
+      }
+    });
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      "webhook.ip_forbidden",
+      expect.objectContaining({
+        provider: "YOOKASSA",
+        ip: "203.0.113.10",
+        paymentId: "remote-payment-1"
+      })
+    );
+    expect(mockLogAdminAction).not.toHaveBeenCalled();
+  });
+
+  it("returns 200 successfully when valid webhook is processed", async () => {
+    const { POST } = await import("@/app/api/webhook/yookassa/route");
+    const response = await POST(buildRequest());
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      ok: true,
+      data: {
+        id: "payment-1",
+        status: "SUCCEEDED"
+      }
+    });
+    expect(mockEnforceRateLimit).toHaveBeenCalledTimes(1);
+    expect(mockEnforceRateLimit).toHaveBeenCalledWith({
+      key: "webhook:yookassa:203.0.113.10",
+      max: 30,
+      windowMs: 60_000
     });
     expect(mockHandleYookassaWebhook).toHaveBeenCalledWith({
       ip: "203.0.113.10",
-      providedSecret: null,
       event: {
         object: {
           id: "remote-payment-1",
@@ -97,67 +243,30 @@ describe("POST /api/webhook/yookassa", () => {
         }
       }
     });
-    expect(mockLogger.warn).toHaveBeenCalledWith(
-      "webhook.unauthorized",
-      expect.objectContaining({
-        provider: "YOOKASSA",
-        paymentId: "remote-payment-1",
-        error: "Webhook secret is required"
-      })
-    );
-    expect(mockLogger.error).not.toHaveBeenCalled();
+    expect(mockLogger.warn).not.toHaveBeenCalled();
   });
 
-  it("returns 401 when the bearer secret mismatches", async () => {
-    mockHandleYookassaWebhook.mockRejectedValue(
-      new MockWebhookAuthorizationError("Webhook secret mismatch")
-    );
-
-    const { POST } = await import("@/app/api/webhook/yookassa/route");
-    mockLogger.warn.mockClear();
-
-    const response = await POST(
-      buildRequest({
-        authorization: "Bearer wrong-secret"
-      })
-    );
-
-    expect(response.status).toBe(401);
-    await expect(response.json()).resolves.toMatchObject({
-      ok: false,
-      error: "Webhook secret mismatch"
+  it("returns 200 and drops when rate limit exceeded", async () => {
+    mockEnforceRateLimit.mockImplementation(() => {
+      throw new MockRateLimitExceededError("Rate limit exceeded");
     });
-    expect(mockHandleYookassaWebhook).toHaveBeenCalledWith(
-      expect.objectContaining({
-        providedSecret: "wrong-secret"
-      })
-    );
-    expect(mockLogger.warn).toHaveBeenCalledTimes(1);
-  });
 
-  it("returns 200 when the X-Webhook-Secret header is valid", async () => {
     const { POST } = await import("@/app/api/webhook/yookassa/route");
-    mockLogger.warn.mockClear();
-
-    const response = await POST(
-      buildRequest({
-        "x-webhook-secret": "valid-secret"
-      })
-    );
+    const response = await POST(buildRequest());
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       ok: true,
       data: {
-        id: "payment-1",
-        status: "SUCCEEDED"
+        accepted: true
       }
     });
-    expect(mockHandleYookassaWebhook).toHaveBeenCalledWith(
-      expect.objectContaining({
-        providedSecret: "valid-secret"
-      })
-    );
-    expect(mockLogger.warn).not.toHaveBeenCalled();
+    expect(mockLogger.warn).toHaveBeenCalledWith("webhook.rate_limited", {
+      provider: "YOOKASSA",
+      ip: "203.0.113.10"
+    });
+    expect(mockHandleYookassaWebhook).not.toHaveBeenCalled();
+    expect(mockLogger.error).not.toHaveBeenCalled();
+    expect(mockLogAdminAction).not.toHaveBeenCalled();
   });
 });
