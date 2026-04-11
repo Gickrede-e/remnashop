@@ -54,7 +54,6 @@ cp .env.example .env
 | `REMNAWAVE_API_TOKEN` | API-токен Remnawave |
 | `YOOKASSA_SHOP_ID` | ID магазина ЮKassa |
 | `YOOKASSA_SECRET_KEY` | Секретный ключ ЮKassa |
-| `YOOKASSA_WEBHOOK_SECRET` | Секрет для проверки webhook ЮKassa в заголовке `X-Webhook-Secret` |
 | `CRON_SECRET` | Секрет для внутренних cron-задач (мин. 16 символов) |
 
 ### 3. Запустите локальную сборку через Docker
@@ -108,15 +107,13 @@ npm run dev
 
 ## Webhook ЮKassa
 
-В кабинете ЮKassa настройте webhook так, чтобы секрет передавался в HTTP-заголовке:
+Webhook ЮKassa обрабатывается в режиме `hint + API verification`: из тела
+используется только `object.metadata.paymentId`, а каноничный статус платежа
+подтверждается обратным вызовом в YooKassa API. Shared secret не используется;
+защита строится на IP-allowlist, per-IP rate-limit, сверке
+`metadata.paymentId` и reconciliation для `PENDING` платежей.
 
-```text
-X-Webhook-Secret: $YOOKASSA_WEBHOOK_SECRET
-```
-
-Резервно поддерживается и `Authorization: Bearer <secret>`, но основной вариант для настройки — отдельный заголовок `X-Webhook-Secret`.
-
-Список IP-адресов ЮKassa встроен в код приложения и отдельно в `.env` не настраивается.
+Подробности модели обработки — в [`docs/WEBHOOK_YOOKASSA.md`](docs/WEBHOOK_YOOKASSA.md).
 
 ### Полезные команды
 
