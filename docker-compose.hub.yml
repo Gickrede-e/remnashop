@@ -1,3 +1,31 @@
+x-build-secrets: &build-secrets
+  DATABASE_URL: ${DATABASE_URL}
+  JWT_SECRET: ${JWT_SECRET}
+  ADMIN_EMAILS: ${ADMIN_EMAILS}
+  ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD}
+  NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
+  NEXT_PUBLIC_SITE_NAME: ${NEXT_PUBLIC_SITE_NAME}
+  NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: ${NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}
+  TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+  REMNAWAVE_BASE_URL: ${REMNAWAVE_BASE_URL}
+  REMNAWAVE_API_TOKEN: ${REMNAWAVE_API_TOKEN}
+  YOOKASSA_SHOP_ID: ${YOOKASSA_SHOP_ID}
+  YOOKASSA_SECRET_KEY: ${YOOKASSA_SECRET_KEY}
+  YOOKASSA_WEBHOOK_SECRET: ${YOOKASSA_WEBHOOK_SECRET}
+  YOOKASSA_ALLOWED_IPS: ${YOOKASSA_ALLOWED_IPS}
+  PLATEGA_API_KEY: ${PLATEGA_API_KEY}
+  PLATEGA_MERCHANT_ID: ${PLATEGA_MERCHANT_ID}
+  PLATEGA_WEBHOOK_SECRET: ${PLATEGA_WEBHOOK_SECRET}
+  SMTP_HOST: ${SMTP_HOST}
+  SMTP_PORT: ${SMTP_PORT}
+  SMTP_SECURE: ${SMTP_SECURE}
+  SMTP_USER: ${SMTP_USER}
+  SMTP_PASS: ${SMTP_PASS}
+  EMAIL_FROM: ${EMAIL_FROM}
+  REFERRAL_REWARD_TYPE: ${REFERRAL_REWARD_TYPE}
+  REFERRAL_REWARD_VALUE: ${REFERRAL_REWARD_VALUE}
+  CRON_SECRET: ${CRON_SECRET}
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -29,6 +57,7 @@ services:
     build:
       context: .
       target: runner
+      args: *build-secrets
     env_file:
       - .env
     ports:
@@ -49,6 +78,7 @@ services:
     build:
       context: .
       target: runner
+      args: *build-secrets
     command: ["node", "scripts/worker.mjs"]
     env_file:
       - .env
@@ -79,7 +109,7 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost/ >/dev/null 2>&1 || exit 1"]
       interval: 20s
       timeout: 5s
       retries: 10
