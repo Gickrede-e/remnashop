@@ -1,6 +1,7 @@
 import { inspect } from "node:util";
 
 import { AppError } from "@/lib/http/errors";
+import { getLoggerContext } from "@/lib/server/logger-context";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
@@ -189,7 +190,9 @@ function createLogger(context: LogFields = {}): Logger {
       return;
     }
 
+    const loggerContext = getLoggerContext() ?? {};
     const entry = serializeLogEntry(level, msg, {
+      ...loggerContext,
       ...context,
       ...fields
     });

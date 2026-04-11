@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { PAGINATION_DEFAULT_LIMIT, PAGINATION_MAX_LIMIT } from "@/lib/constants";
 import { env } from "@/lib/env";
+import { withApiLogging } from "@/lib/server/with-api-logging";
 
 export async function parseRequestBody<T extends z.ZodTypeAny>(
   request: Request,
@@ -64,4 +65,11 @@ export function assertCronSecret(request: NextRequest) {
     : null;
 
   return header === env.CRON_SECRET || bearer === env.CRON_SECRET;
+}
+
+export function withLoggedRoute<T>(
+  request: NextRequest | Request,
+  handler: () => Promise<T>
+): Promise<T> {
+  return withApiLogging(request, handler);
 }
