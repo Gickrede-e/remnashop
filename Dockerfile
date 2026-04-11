@@ -19,7 +19,7 @@ FROM base AS tools
 ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-CMD ["sh", "-c", "npx prisma generate && if [ -d prisma/migrations ] && [ \"$(ls -A prisma/migrations 2>/dev/null)\" ]; then npx prisma migrate deploy; else npx prisma db push; fi && npm run db:seed"]
+CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && npm run db:seed"]
 
 FROM node:22-alpine AS runner
 WORKDIR /app

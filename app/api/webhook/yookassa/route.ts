@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 
 import { apiError, apiOk, getClientIp } from "@/lib/http";
+import { logger, serializeError } from "@/lib/server/logger";
 import { logAdminAction } from "@/lib/services/admin-logs";
 import { handleYookassaWebhook } from "@/lib/services/payments";
 
@@ -33,7 +34,11 @@ export async function POST(request: NextRequest) {
         message: error instanceof Error ? error.message : "YooKassa webhook failed"
       }
     }).catch(() => null);
-    console.error("[webhook:yookassa] failed", error);
+    logger.error("webhook.failed", {
+      provider: "YOOKASSA",
+      paymentId: remoteId,
+      error: serializeError(error)
+    });
     return apiError(error instanceof Error ? error.message : "YooKassa webhook failed", 400);
   }
 }
