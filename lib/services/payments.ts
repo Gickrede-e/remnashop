@@ -383,7 +383,10 @@ export async function handleYookassaWebhook(input: {
     object?: {
       id?: string;
       status?: string;
-      metadata?: Record<string, string>;
+      metadata?: {
+        paymentId?: string;
+        [key: string]: unknown;
+      };
     };
   };
 }) {
