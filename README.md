@@ -54,6 +54,7 @@ cp .env.example .env
 | `REMNAWAVE_API_TOKEN` | API-токен Remnawave |
 | `YOOKASSA_SHOP_ID` | ID магазина ЮKassa |
 | `YOOKASSA_SECRET_KEY` | Секретный ключ ЮKassa |
+| `YOOKASSA_WEBHOOK_SECRET` | Секрет для проверки webhook ЮKassa в заголовке `X-Webhook-Secret` |
 | `CRON_SECRET` | Секрет для внутренних cron-задач (мин. 16 символов) |
 
 ### 3. Запустите локальную сборку через Docker
@@ -104,6 +105,18 @@ npm run dev
 ```
 
 Для работы нужен запущенный PostgreSQL и заполненный `.env`.
+
+## Webhook ЮKassa
+
+В кабинете ЮKassa настройте webhook так, чтобы секрет передавался в HTTP-заголовке:
+
+```text
+X-Webhook-Secret: $YOOKASSA_WEBHOOK_SECRET
+```
+
+Резервно поддерживается и `Authorization: Bearer <secret>`, но основной вариант для настройки — отдельный заголовок `X-Webhook-Secret`.
+
+Список IP-адресов ЮKassa встроен в код приложения и отдельно в `.env` не настраивается.
 
 ### Полезные команды
 

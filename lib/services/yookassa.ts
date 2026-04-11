@@ -2,6 +2,16 @@ import { Buffer } from "node:buffer";
 
 import { env } from "@/lib/env";
 
+const YOOKASSA_ALLOWED_IPS = [
+  "185.71.76.0/27",
+  "185.71.77.0/27",
+  "77.75.153.0/25",
+  "77.75.156.11",
+  "77.75.156.35",
+  "77.75.154.128/25",
+  "2a02:5180::/32"
+] as const;
+
 type YooKassaCreatePaymentInput = {
   amount: number;
   description: string;
@@ -260,11 +270,5 @@ function matchesIpEntry(candidateIp: string, allowEntry: string) {
 }
 
 export function verifyYooKassaIp(ip: string) {
-  const allowlist = env.yookassaAllowedIps;
-
-  if (!allowlist.length) {
-    return env.NODE_ENV !== "production";
-  }
-
-  return allowlist.some((entry) => matchesIpEntry(ip, entry));
+  return YOOKASSA_ALLOWED_IPS.some((entry) => matchesIpEntry(ip, entry));
 }

@@ -21,8 +21,7 @@ const DEV_ENV_FALLBACKS = {
   REMNAWAVE_API_TOKEN: "placeholder_token",
   YOOKASSA_SHOP_ID: "123456",
   YOOKASSA_SECRET_KEY: "test_secret_key",
-  YOOKASSA_WEBHOOK_SECRET: "change_me_query_secret",
-  YOOKASSA_ALLOWED_IPS: "",
+  YOOKASSA_WEBHOOK_SECRET: "change_me_webhook_secret",
   PLATEGA_API_KEY: "platega_placeholder_key",
   PLATEGA_MERCHANT_ID: "",
   PLATEGA_WEBHOOK_SECRET: "platega_placeholder_secret",
@@ -136,7 +135,6 @@ const rawEnv = {
   YOOKASSA_SHOP_ID: readEnvValue("YOOKASSA_SHOP_ID"),
   YOOKASSA_SECRET_KEY: readEnvValue("YOOKASSA_SECRET_KEY"),
   YOOKASSA_WEBHOOK_SECRET: readEnvValue("YOOKASSA_WEBHOOK_SECRET"),
-  YOOKASSA_ALLOWED_IPS: readEnvValue("YOOKASSA_ALLOWED_IPS"),
   PLATEGA_API_KEY: readEnvValue("PLATEGA_API_KEY"),
   PLATEGA_MERCHANT_ID: readEnvValue("PLATEGA_MERCHANT_ID"),
   PLATEGA_WEBHOOK_SECRET: readEnvValue("PLATEGA_WEBHOOK_SECRET"),
@@ -169,7 +167,6 @@ const envSchema = z.object({
   YOOKASSA_SHOP_ID: z.string().min(1),
   YOOKASSA_SECRET_KEY: requiredSecret("YOOKASSA_SECRET_KEY"),
   YOOKASSA_WEBHOOK_SECRET: requiredSecret("YOOKASSA_WEBHOOK_SECRET"),
-  YOOKASSA_ALLOWED_IPS: z.string().default(""),
   PLATEGA_API_KEY: requiredSecret("PLATEGA_API_KEY"),
   PLATEGA_MERCHANT_ID: z.string().default(""),
   PLATEGA_WEBHOOK_SECRET: requiredSecret("PLATEGA_WEBHOOK_SECRET"),
@@ -210,9 +207,6 @@ export const env = {
   siteName: base.NEXT_PUBLIC_SITE_NAME,
   adminEmails: base.ADMIN_EMAILS.split(",")
     .map((email) => email.trim().toLowerCase())
-    .filter(Boolean),
-  yookassaAllowedIps: base.YOOKASSA_ALLOWED_IPS.split(",")
-    .map((ip) => ip.trim())
     .filter(Boolean)
 };
 

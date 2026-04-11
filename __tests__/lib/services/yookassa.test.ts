@@ -1,9 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 const { mockEnv } = vi.hoisted(() => ({
   mockEnv: {
-    NODE_ENV: "development",
-    yookassaAllowedIps: [] as string[]
+    YOOKASSA_SHOP_ID: "shop-id",
+    YOOKASSA_SECRET_KEY: "secret-key"
   }
 }));
 
@@ -14,47 +14,27 @@ vi.mock("@/lib/env", () => ({
 import { verifyYooKassaIp } from "@/lib/services/yookassa";
 
 describe("verifyYooKassaIp", () => {
-  beforeEach(() => {
-    mockEnv.NODE_ENV = "development";
-    mockEnv.yookassaAllowedIps = [];
-  });
-
-  it("allows requests in development when the allowlist is empty", () => {
-    expect(verifyYooKassaIp("1.2.3.4")).toBe(true);
-  });
-
-  it("rejects requests in production when the allowlist is empty", () => {
-    mockEnv.NODE_ENV = "production";
-    expect(verifyYooKassaIp("1.2.3.4")).toBe(false);
-  });
-
   it("matches exact IPv4 addresses", () => {
-    mockEnv.yookassaAllowedIps = ["1.2.3.4"];
-    expect(verifyYooKassaIp("1.2.3.4")).toBe(true);
+    expect(verifyYooKassaIp("77.75.156.11")).toBe(true);
   });
 
   it("matches IPv4 CIDR ranges", () => {
-    mockEnv.yookassaAllowedIps = ["10.0.0.0/24"];
-    expect(verifyYooKassaIp("10.0.0.55")).toBe(true);
+    expect(verifyYooKassaIp("185.71.76.10")).toBe(true);
   });
 
   it("matches IPv6 addresses", () => {
-    mockEnv.yookassaAllowedIps = ["2001:db8::1"];
-    expect(verifyYooKassaIp("2001:db8::1")).toBe(true);
+    expect(verifyYooKassaIp("2a02:5180::1234")).toBe(true);
   });
 
   it("matches IPv4-mapped IPv6 addresses", () => {
-    mockEnv.yookassaAllowedIps = ["192.168.1.0/24"];
-    expect(verifyYooKassaIp("::ffff:192.168.1.99")).toBe(true);
+    expect(verifyYooKassaIp("::ffff:77.75.156.35")).toBe(true);
   });
 
   it("rejects invalid IP addresses", () => {
-    mockEnv.yookassaAllowedIps = ["1.2.3.4"];
     expect(verifyYooKassaIp("not-an-ip")).toBe(false);
   });
 
   it("rejects non-matching IP addresses", () => {
-    mockEnv.yookassaAllowedIps = ["10.0.0.0/24"];
-    expect(verifyYooKassaIp("10.0.1.1")).toBe(false);
+    expect(verifyYooKassaIp("203.0.113.10")).toBe(false);
   });
 });

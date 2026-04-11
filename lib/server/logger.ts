@@ -1,4 +1,4 @@
-type LogLevel = "info" | "error";
+type LogLevel = "info" | "warn" | "error";
 
 function writeLog(level: LogLevel, msg: string, fields: Record<string, unknown> = {}) {
   process.stdout.write(
@@ -28,6 +28,9 @@ export function serializeError(error: unknown) {
 export const logger = {
   info(msg: string, fields?: Record<string, unknown>) {
     writeLog("info", msg, fields);
+  },
+  warn(msg: string, fields?: Record<string, unknown>) {
+    writeLog("warn", msg, fields);
   },
   error(msg: string, fields?: Record<string, unknown>) {
     writeLog("error", msg, fields);

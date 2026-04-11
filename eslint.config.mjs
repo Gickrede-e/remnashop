@@ -13,6 +13,7 @@ export default defineConfig([
     "out/**",
     "build/**",
     "coverage/**",
+    ".worktrees/**",
     "next-env.d.ts",
     "artifacts/**"
   ])
