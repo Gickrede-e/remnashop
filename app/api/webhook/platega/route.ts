@@ -1,4 +1,5 @@
 import { apiError, apiOk } from "@/lib/http";
+import { logger, serializeError } from "@/lib/server/logger";
 import { logAdminAction } from "@/lib/services/admin-logs";
 import { handlePlategaWebhook } from "@/lib/services/payments";
 
@@ -48,7 +49,11 @@ export async function POST(request: Request) {
         message: error instanceof Error ? error.message : "Platega webhook failed"
       }
     }).catch(() => null);
-    console.error("[webhook:platega] failed", error);
+    logger.error("webhook.failed", {
+      provider: "PLATEGA",
+      paymentId: targetId,
+      error: serializeError(error)
+    });
     return apiError(error instanceof Error ? error.message : "Platega webhook failed", 400);
   }
 }

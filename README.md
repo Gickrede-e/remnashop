@@ -1,5 +1,7 @@
 # GickShop
 
+[![CI](https://github.com/Gickrede-e/remnashop/actions/workflows/ci.yml/badge.svg)](https://github.com/Gickrede-e/remnashop/actions/workflows/ci.yml)
+
 Магазин VPN-подписок на базе [Remnawave](https://github.com/remnawave) с личным кабинетом, админ-панелью и оплатой через ЮKassa / Platega.
 
 ## Стек
@@ -44,6 +46,7 @@ cp .env.example .env
 | `DATABASE_URL` | Строка подключения к PostgreSQL |
 | `JWT_SECRET` | Секрет для JWT-токенов (мин. 32 символа) |
 | `ADMIN_EMAILS` | Email администратора (через запятую) |
+| `ADMIN_INITIAL_PASSWORD` | Начальный пароль администратора для первого `db:seed` |
 | `NEXT_PUBLIC_SITE_URL` | Публичный URL сайта |
 | `NEXT_PUBLIC_SITE_NAME` | Название сайта |
 | `SITE_ADDRESS` | Домен для Caddy (`localhost` для локальной разработки) |
@@ -72,9 +75,9 @@ docker compose -f docker-compose.hub.yml up -d --build
 
 После первого запуска создаётся администратор:
 - **Email**: значение из `ADMIN_EMAILS`
-- **Пароль**: `change-me-admin-password`
+- **Пароль**: значение из `ADMIN_INITIAL_PASSWORD`
 
-> Смените пароль после первого входа.
+> Установите `ADMIN_INITIAL_PASSWORD` в `.env` перед первым `db:seed` и сразу смените пароль после первого входа.
 
 ## Развёртывание из Docker Hub
 
