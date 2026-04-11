@@ -91,10 +91,13 @@ describe("POST /api/webhook/yookassa", () => {
   });
 
   it.each([
-    [{}, "empty body"],
-    [{ object: {} }, "missing object.id"],
-    [{ object: { id: "remote-payment-1", metadata: {} } }, "missing metadata.paymentId"]
-  ])("returns 200 and drops silently when body is structurally invalid: %s", async (body) => {
+    { body: {}, label: "empty body" },
+    { body: { object: {} }, label: "missing object.id" },
+    {
+      body: { object: { id: "remote-payment-1", metadata: {} } },
+      label: "missing metadata.paymentId"
+    }
+  ])("returns 200 and drops silently when body is structurally invalid: $label", async ({ body }) => {
     const { POST } = await import("@/app/api/webhook/yookassa/route");
     mockLogger.warn.mockClear();
     mockLogger.error.mockClear();
