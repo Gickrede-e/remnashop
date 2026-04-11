@@ -22,14 +22,14 @@ _Initial architecture map captured on 2026-03-19 15:07 UTC. Updated manually on 
   - `Dockerfile`
   - `package.json`
   - `vitest.config.ts`
-  - `prisma.config.ts`
+  - `prisma.config.mjs`
   - `tsconfig.json`
   - `ARCHITECTURE.md`
   - `components.json`
   - `docker-compose.yml`
   - `docker-compose.hub.yml`
   - `next-env.d.ts`
-- Notes: `Dockerfile` now packages a standalone Next.js runtime together with Prisma CLI/runtime files so one Docker Hub image can serve `app`, `worker`, and one-shot `migrate`. `docker-compose.yml` is the pull-only deployment manifest: `postgres` + `migrate` + `app` + `worker` + `caddy`, with `migrate` running `prisma migrate deploy` or `prisma db push` before the app starts. `docker-compose.hub.yml` is the local build manifest for `docker compose ... --build`. `vitest.config.ts` provides the repository test harness: Node-based Vitest execution, `@/` path alias resolution, and runtime aliases for `server-only` and mocked Prisma enums.
+- Notes: `Dockerfile` now packages a standalone Next.js runtime together with a separate `/app/prisma-cli` subtree so one Docker Hub image can serve `app`, `worker`, and one-shot `migrate` without copying the full production `node_modules` into the root runtime. `docker-compose.yml` is the pull-only deployment manifest: `postgres` + `migrate` + `app` + `worker` + `caddy`, with `migrate` running `scripts/migrate-and-seed.sh` before the app starts. `docker-compose.hub.yml` is the local build manifest for `docker compose ... --build`. `vitest.config.ts` provides the repository test harness: Node-based Vitest execution, `@/` path alias resolution, and runtime aliases for `server-only` and mocked Prisma enums.
 
 ### `app`
 - Responsibility: App Router pages, layouts, and route handlers for the auth-first entry flow, authenticated dashboard/admin surfaces, and APIs.
@@ -76,8 +76,8 @@ _Initial architecture map captured on 2026-03-19 15:07 UTC. Updated manually on 
 - Responsibility: Database schema and seed data for users, plans, subscriptions, payments, promos, referrals, and admin audit logs.
 - Key files:
   - `prisma/schema.prisma`
-  - `prisma/seed.ts`
-- Notes: `Plan` stores both commerce fields and Remnawave provisioning settings. The public `slug` remains the plan identifier; the Remnawave user `tag` is derived from that slug in application code.
+  - `prisma/seed.mjs`
+- Notes: `Plan` stores both commerce fields and Remnawave provisioning settings. The public `slug` remains the plan identifier; the Remnawave user `tag` is derived from that slug in application code. `prisma.config.mjs` now lives at the repo root so Prisma CLI can run in the shared Docker image without relying on TypeScript config loading.
 
 ## Change Protocol
 - Read this file before major searches or code modifications.
@@ -93,4 +93,5 @@ _Initial architecture map captured on 2026-03-19 15:07 UTC. Updated manually on 
 - 2026-03-20: Redesigned the public homepage visual language in `app/page.tsx` and `app/globals.css` using a new `surface-soft` / `surface-feature` layer, a stronger two-column hero, featured pricing layout, and a compact FAQ + privacy composition.
 - 2026-03-19: Extended tariff configuration with Remnawave provisioning settings in `Plan` and wired `slug -> Remnawave tag` through plan services, admin UI, and subscription activation/admin grant flows.
 - 2026-04-10: Swapped compose manifest roles so `docker-compose.yml` is now the Docker Hub pull-only deployment file and `docker-compose.hub.yml` is the local build manifest; also removed automatic `db:seed` from the image-based `migrate` service.
+- 2026-04-11: Reworked container packaging around Next.js standalone output plus a dedicated `/app/prisma-cli` subtree, renamed `prisma.config.ts` to `prisma.config.mjs`, and converted the seed entrypoint to `prisma/seed.mjs` so the runtime image no longer needs the full application `node_modules`.
 - 2026-03-19: Added Docker Hub deployment flow and updated `Dockerfile` runtime packaging so the published `gickrede/remnashop:latest` image can be used directly for `migrate`, `app`, and `worker` without a local build step.

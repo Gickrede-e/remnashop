@@ -31,12 +31,15 @@ vi.mock("@prisma/client", () => ({
 
 const originalEnv = { ...process.env };
 
+const seedModuleUrl = new URL("../../prisma/seed.mjs", import.meta.url).href;
+
 function setProcessEnv(overrides: Record<string, string | undefined>) {
   for (const key of Object.keys(process.env)) {
     delete process.env[key];
   }
 
   const nextEnv: Record<string, string> = {
+    DOTENV_CONFIG_PATH: "/tmp/non-existent-remnashop-seed-test.env",
     DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/gickvpn?schema=public",
     ADMIN_EMAILS: "admin@example.com"
   };
@@ -77,7 +80,7 @@ describe("prisma/seed", () => {
       throw new Error("process.exit");
     }) as never);
 
-    await expect(import("@/prisma/seed")).rejects.toThrow(/ADMIN_INITIAL_PASSWORD/);
+    await expect(import(seedModuleUrl)).rejects.toThrow(/ADMIN_INITIAL_PASSWORD/);
     expect(exitSpy).not.toHaveBeenCalled();
     expect(userUpsertMock).not.toHaveBeenCalled();
   });

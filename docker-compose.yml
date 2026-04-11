@@ -17,10 +17,7 @@ services:
   migrate:
     image: ${APP_IMAGE:-gickrede/remnashop:latest}
     pull_policy: always
-    command:
-      - sh
-      - -c
-      - npx prisma migrate deploy
+    command: ["sh", "scripts/migrate-and-seed.sh"]
     env_file:
       - .env
     depends_on:

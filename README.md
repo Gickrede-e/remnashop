@@ -56,7 +56,7 @@ cp .env.example .env
 | `YOOKASSA_SECRET_KEY` | Секретный ключ ЮKassa |
 | `CRON_SECRET` | Секрет для внутренних cron-задач (мин. 16 символов) |
 
-### 3. Запустите через Docker
+### 3. Запустите локальную сборку через Docker
 
 ```bash
 docker compose -f docker-compose.hub.yml up -d --build
@@ -116,7 +116,7 @@ npm run dev
 | `npm run db:generate` | Генерация Prisma-клиента |
 | `npm run db:migrate` | Создание миграции |
 | `npm run db:deploy` | Применение миграций |
-| `npm run db:seed` | Заполнение начальными данными |
+| `npm run db:seed` | Заполнение начальными данными через `node --env-file=.env prisma/seed.mjs` |
 | `npm run lint` | Проверка линтером |
 
 ## Структура проекта
@@ -139,7 +139,7 @@ lib/
 ├── ui/               # Конфигурация навигации
 prisma/
 ├── schema.prisma     # Схема базы данных
-├── seed.ts           # Начальные данные
+├── seed.mjs          # Начальные данные
 scripts/
 ├── worker.mjs        # Фоновый воркер
 ```

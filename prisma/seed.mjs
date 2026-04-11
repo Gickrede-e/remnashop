@@ -1,5 +1,3 @@
-import "dotenv/config";
-
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, PromoCodeType, Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
@@ -14,6 +12,7 @@ if (adminEmail && !adminInitialPassword) {
 }
 
 const connectionString = process.env.DATABASE_URL;
+
 if (!connectionString) {
   throw new Error("DATABASE_URL is not configured");
 }
