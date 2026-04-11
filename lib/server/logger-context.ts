@@ -15,3 +15,9 @@ export function runWithLoggerContext<T>(context: LoggerContext, fn: () => T): T 
 export function getLoggerContext(): LoggerContext | undefined {
   return storage.getStore();
 }
+
+export function getRequestId(): string | undefined {
+  const ctx = getLoggerContext();
+
+  return typeof ctx?.requestId === "string" ? ctx.requestId : undefined;
+}

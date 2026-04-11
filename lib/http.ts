@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { PAGINATION_DEFAULT_LIMIT, PAGINATION_MAX_LIMIT } from "@/lib/constants";
 import { env } from "@/lib/env";
+import { getRequestId } from "@/lib/server/logger-context";
 import { withApiLogging } from "@/lib/server/with-api-logging";
 
 export async function parseRequestBody<T extends z.ZodTypeAny>(
@@ -14,23 +15,37 @@ export async function parseRequestBody<T extends z.ZodTypeAny>(
 }
 
 export function apiError(message: string, status = 400, details?: unknown) {
+  const headers = new Headers();
+  const requestId = getRequestId();
+
+  if (requestId) {
+    headers.set("x-request-id", requestId);
+  }
+
   return NextResponse.json(
     {
       ok: false,
       error: message,
       details
     },
-    { status }
+    { status, headers }
   );
 }
 
 export function apiOk<T>(data: T, status = 200) {
+  const headers = new Headers();
+  const requestId = getRequestId();
+
+  if (requestId) {
+    headers.set("x-request-id", requestId);
+  }
+
   return NextResponse.json(
     {
       ok: true,
       data
     },
-    { status }
+    { status, headers }
   );
 }
 
