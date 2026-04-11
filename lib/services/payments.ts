@@ -2,6 +2,7 @@ import { PaymentProvider, PaymentStatus } from "@prisma/client";
 
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
+import { logger, serializeError } from "@/lib/server/logger";
 import { logAdminAction } from "@/lib/services/admin-logs";
 import { mapPlategaStatus, mapYooKassaStatus } from "@/lib/services/payment-status";
 import { registerPromoUsage, validatePromoCode } from "@/lib/services/promos";
@@ -181,11 +182,13 @@ async function writePaymentProcessingFailure(input: {
     select: { providerPayload: true }
   });
 
-  console.error(`[payments] ${input.phase} failed`, {
+  logger.error("payment.processing_failed", {
     paymentId: input.paymentId,
     provider: input.provider,
+    phase: input.phase,
     message,
-    ...(input.details ?? {})
+    error: serializeError(input.error),
+    details: input.details
   });
 
   await Promise.allSettled([

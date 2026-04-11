@@ -184,6 +184,8 @@ if (!parsed.success) {
   const errorDetails = Object.entries(fieldErrors)
     .flatMap(([field, messages]) => (messages ?? []).map((message) => `${field}: ${message}`));
 
+  // Intentional: env validation runs before the logger module is available.
+  // This is the only console.error in lib/.
   console.error("Invalid environment configuration", fieldErrors);
   throw new Error(
     errorDetails.length > 0

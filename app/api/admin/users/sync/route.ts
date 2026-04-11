@@ -1,5 +1,6 @@
 import { requireApiAdminSession } from "@/lib/api-session";
 import { apiError, apiOk } from "@/lib/http";
+import { logger, serializeError } from "@/lib/server/logger";
 import { logAdminAction } from "@/lib/services/admin-logs";
 import { syncActiveSubscriptionsToRemnawave } from "@/lib/services/subscriptions";
 
@@ -32,7 +33,11 @@ export async function POST() {
         }
       });
     } catch (error) {
-      console.error("Failed to write SYNC_ACTIVE_USERS admin log", error);
+      logger.error("admin_log.write_failed", {
+        action: "SYNC_ACTIVE_USERS",
+        adminId: session.userId,
+        error: serializeError(error)
+      });
     }
 
     return apiOk(summary);
