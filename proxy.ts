@@ -6,14 +6,28 @@ import { SESSION_COOKIE_NAME } from "@/lib/constants";
 
 const DASHBOARD_PATH = "/dashboard";
 const ADMIN_PATH = "/admin";
+const AUTH_PATHS = new Set(["/login", "/register"]);
+const PUBLIC_API_PREFIXES = ["/api/auth/", "/api/webhook/"];
+const PUBLIC_API_PATHS = new Set(["/api/health"]);
+
+function isPublicPath(pathname: string) {
+  if (AUTH_PATHS.has(pathname)) {
+    return true;
+  }
+
+  if (PUBLIC_API_PATHS.has(pathname)) {
+    return true;
+  }
+
+  return PUBLIC_API_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  const needsDashboardSession = pathname.startsWith(DASHBOARD_PATH);
   const needsAdminSession = pathname.startsWith(ADMIN_PATH);
   const nextPath = `${pathname}${request.nextUrl.search}`;
 
-  if (!needsDashboardSession && !needsAdminSession) {
+  if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
 
@@ -37,5 +51,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*"]
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\..*).*)"]
 };
