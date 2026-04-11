@@ -1,3 +1,5 @@
+import { timingSafeEqual } from "node:crypto";
+
 import { PaymentProvider, PaymentStatus } from "@prisma/client";
 
 import { env } from "@/lib/env";
@@ -113,6 +115,32 @@ export async function createPaymentForUser(input: {
 }
 
 export const createPaymentIntent = createPaymentForUser;
+
+export class WebhookAuthorizationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "WebhookAuthorizationError";
+  }
+}
+
+function compareWebhookSecret(
+  providedSecret: string | null | undefined,
+  expectedSecret: string
+) {
+  if (!providedSecret) {
+    return false;
+  }
+
+  const expectedBuffer = Buffer.from(expectedSecret, "utf8");
+  const providedRawBuffer = Buffer.from(providedSecret, "utf8");
+  const providedBuffer = Buffer.alloc(expectedBuffer.length);
+  providedRawBuffer.copy(providedBuffer, 0, 0, expectedBuffer.length);
+
+  return (
+    timingSafeEqual(providedBuffer, expectedBuffer) &&
+    providedRawBuffer.length === expectedBuffer.length
+  );
+}
 
 export async function getUserPaymentHistory(userId: string) {
   return prisma.payment.findMany({
@@ -358,7 +386,7 @@ async function processPlategaPaymentStatus(input: {
 
 export async function handleYookassaWebhook(input: {
   ip: string;
-  secret?: string | null;
+  providedSecret?: string | null;
   event: {
     object?: {
       id?: string;
@@ -367,8 +395,12 @@ export async function handleYookassaWebhook(input: {
     };
   };
 }) {
-  if (input.secret !== env.YOOKASSA_WEBHOOK_SECRET) {
-    throw new Error("Webhook secret mismatch");
+  if (!input.providedSecret) {
+    throw new WebhookAuthorizationError("Webhook secret is required");
+  }
+
+  if (!compareWebhookSecret(input.providedSecret, env.YOOKASSA_WEBHOOK_SECRET)) {
+    throw new WebhookAuthorizationError("Webhook secret mismatch");
   }
 
   if (!verifyYooKassaIp(input.ip)) {

@@ -18,7 +18,6 @@ const validProductionEnv = {
   YOOKASSA_SHOP_ID: "shop-id",
   YOOKASSA_SECRET_KEY: "live-yookassa-secret",
   YOOKASSA_WEBHOOK_SECRET: "live-yookassa-webhook-secret",
-  YOOKASSA_ALLOWED_IPS: "",
   PLATEGA_API_KEY: "live-platega-api-key",
   PLATEGA_MERCHANT_ID: "merchant-id",
   PLATEGA_WEBHOOK_SECRET: "live-platega-webhook-secret",
