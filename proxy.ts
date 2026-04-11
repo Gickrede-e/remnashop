@@ -4,7 +4,6 @@ import { verifySession } from "@/lib/auth/session";
 import { buildLoginHref } from "@/lib/auth/navigation";
 import { SESSION_COOKIE_NAME } from "@/lib/constants";
 
-const DASHBOARD_PATH = "/dashboard";
 const ADMIN_PATH = "/admin";
 const AUTH_PATHS = new Set(["/login", "/register"]);
 const PUBLIC_API_PREFIXES = ["/api/auth/", "/api/webhook/"];
