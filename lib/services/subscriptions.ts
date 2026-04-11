@@ -2,6 +2,7 @@ import { PaymentStatus, SubscriptionStatus } from "@prisma/client";
 
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
+import { logger, serializeError } from "@/lib/server/logger";
 import { bytesFromGb, slugToRemnawaveTag } from "@/lib/utils";
 import { logAdminAction } from "@/lib/services/admin-logs";
 import { notifyPaymentSucceeded } from "@/lib/services/notifications";
@@ -746,7 +747,12 @@ export async function activateSubscriptionFromPayment(paymentId: string) {
 
     return updatedPayment;
   } catch (error) {
-    console.error("Failed to provision Remnawave subscription", error);
+    logger.error("subscription.provision_failed", {
+      paymentId: payment.id,
+      userId: payment.userId,
+      provider: payment.provider,
+      error: serializeError(error)
+    });
     await Promise.allSettled([
       logAdminAction({
         action: "PAYMENT_ACTIVATION_FAILED",
@@ -830,7 +836,11 @@ export async function syncUserSubscription(userId: string) {
       });
     }
   } catch (error) {
-    console.error("Failed to sync subscription", error);
+    logger.error("subscription.sync_failed", {
+      userId,
+      remnawaveUuid: user.remnawaveUuid,
+      error: serializeError(error)
+    });
   }
 
   return prisma.user.findUnique({
@@ -913,7 +923,11 @@ export async function expireStaleSubscriptions() {
         try {
           await disableRemnawaveUser(subscription.user.remnawaveUuid);
         } catch (error) {
-          console.error("Failed to disable Remnawave user", error);
+          logger.error("subscription.remnawave_disable_failed", {
+            subscriptionId: subscription.id,
+            remnawaveUuid: subscription.user.remnawaveUuid,
+            error: serializeError(error)
+          });
         }
       })
     );

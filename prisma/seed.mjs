@@ -115,6 +115,7 @@ async function main() {
 
 main()
   .catch((error) => {
+    // intentional console.error: seed is a one-shot script outside the app runtime
     console.error("Seed failed", error);
     process.exit(1);
   })

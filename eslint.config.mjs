@@ -5,6 +5,21 @@ import nextTypescript from "eslint-config-next/typescript";
 export default defineConfig([
   ...nextVitals,
   ...nextTypescript,
+  {
+    rules: {
+      "no-console": "error"
+    }
+  },
+  {
+    files: [
+      "lib/env.ts",
+      "prisma/seed.mjs",
+      "scripts/worker-logger.mjs"
+    ],
+    rules: {
+      "no-console": "off"
+    }
+  },
   globalIgnores([
     ".next/**",
     ".next-local/**",
