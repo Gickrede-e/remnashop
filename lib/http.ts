@@ -4,7 +4,7 @@ import { z } from "zod";
 import { PAGINATION_DEFAULT_LIMIT, PAGINATION_MAX_LIMIT } from "@/lib/constants";
 import { env } from "@/lib/env";
 import { getRequestId } from "@/lib/server/logger-context";
-import { withApiLogging } from "@/lib/server/with-api-logging";
+export { getClientIp } from "@/lib/server/request-utils";
 
 export async function parseRequestBody<T extends z.ZodTypeAny>(
   request: Request,
@@ -63,15 +63,6 @@ export function getPagination(searchParams: URLSearchParams) {
   };
 }
 
-export function getClientIp(request: NextRequest) {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0]?.trim() ?? "";
-  }
-
-  return request.headers.get("x-real-ip")?.trim() ?? "";
-}
-
 export function assertCronSecret(request: NextRequest) {
   const header = request.headers.get("x-cron-secret");
   const authorization = request.headers.get("authorization");
@@ -80,11 +71,4 @@ export function assertCronSecret(request: NextRequest) {
     : null;
 
   return header === env.CRON_SECRET || bearer === env.CRON_SECRET;
-}
-
-export function withLoggedRoute<T>(
-  request: NextRequest | Request,
-  handler: () => Promise<T>
-): Promise<T> {
-  return withApiLogging(request, handler);
 }

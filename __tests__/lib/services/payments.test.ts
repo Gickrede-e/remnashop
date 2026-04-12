@@ -180,12 +180,25 @@ describe("handleYookassaWebhook", () => {
     expect(mockGetYooKassaPayment).not.toHaveBeenCalled();
   });
 
-  it("throws WebhookDropSilentlyError when metadata.paymentId is missing", async () => {
-    const { WebhookDropSilentlyError, handleYookassaWebhook } = await import(
-      "@/lib/services/payments"
-    );
+  it("falls back to externalPaymentId when metadata.paymentId is missing", async () => {
+    const { handleYookassaWebhook } = await import("@/lib/services/payments");
+    mockPrisma.payment.findUnique
+      .mockResolvedValueOnce({
+        id: "payment-1",
+        status: PaymentStatus.PENDING,
+        subscriptionId: null,
+        externalPaymentId: "remote-payment-1",
+        providerPayload: null
+      })
+      .mockResolvedValueOnce({
+        id: "payment-1",
+        status: PaymentStatus.PENDING,
+        subscriptionId: null,
+        externalPaymentId: "remote-payment-1",
+        providerPayload: null
+      });
 
-    const promise = handleYookassaWebhook({
+    const result = await handleYookassaWebhook({
       ip: "203.0.113.10",
       event: {
         object: {
@@ -194,9 +207,15 @@ describe("handleYookassaWebhook", () => {
       }
     });
 
-    await expect(promise).rejects.toThrow(WebhookDropSilentlyError);
-    await expect(promise).rejects.toThrow("local payment id missing in hint");
-    expect(mockGetYooKassaPayment).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      id: "payment-1",
+      status: PaymentStatus.SUCCEEDED,
+      subscriptionId: "subscription-1"
+    });
+    expect(mockPrisma.payment.findUnique).toHaveBeenNthCalledWith(1, {
+      where: { externalPaymentId: "remote-payment-1" }
+    });
+    expect(mockGetYooKassaPayment).toHaveBeenCalledWith("remote-payment-1");
   });
 
   it("throws WebhookDropSilentlyError when local payment is not found", async () => {

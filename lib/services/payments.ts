@@ -403,13 +403,18 @@ export async function handleYookassaWebhook(input: {
   }
 
   const hintedLocalPaymentId = input.event.object?.metadata?.paymentId;
-  if (!hintedLocalPaymentId) {
-    throw new WebhookDropSilentlyError("local payment id missing in hint");
-  }
+  let localPayment =
+    hintedLocalPaymentId
+      ? await prisma.payment.findUnique({
+          where: { id: hintedLocalPaymentId }
+        })
+      : null;
 
-  const localPayment = await prisma.payment.findUnique({
-    where: { id: hintedLocalPaymentId }
-  });
+  if (!localPayment) {
+    localPayment = await prisma.payment.findUnique({
+      where: { externalPaymentId: remoteId }
+    });
+  }
 
   if (!localPayment) {
     throw new WebhookDropSilentlyError("local payment not found");

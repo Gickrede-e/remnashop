@@ -37,7 +37,7 @@ afterEach(() => {
 });
 
 describe("lib/server/with-api-logging", () => {
-  it("returns the handler result and logs request start/completion", async () => {
+  it("returns the handler result without emitting lifecycle noise", async () => {
     const { setLogSink, withApiLogging } = await loadApiLoggingModules();
     const entries: Array<Record<string, unknown>> = [];
 
@@ -58,23 +58,37 @@ describe("lib/server/with-api-logging", () => {
     );
 
     expect(response).toBe("ok");
-    expect(entries).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          msg: "request.started",
-          requestId: "req-123",
-          route: "/api/test",
-          method: "POST"
-        }),
-        expect.objectContaining({
-          msg: "request.completed",
-          requestId: "req-123",
-          route: "/api/test",
-          method: "POST",
-          durationMs: expect.any(Number)
-        })
-      ])
+    expect(entries).toEqual([]);
+  });
+
+  it("extracts ip from NextRequest x-forwarded-for into nested logs", async () => {
+    const { NextRequest } = await import("next/server");
+    const { logger, setLogSink, withApiLogging } = await loadApiLoggingModules();
+    const entries: Array<Record<string, unknown>> = [];
+
+    setLogSink({
+      write(entry) {
+        entries.push(entry);
+      }
+    });
+
+    await withApiLogging(
+      new NextRequest("http://localhost/api/test", {
+        method: "GET",
+        headers: {
+          "x-forwarded-for": "198.51.100.1, 10.0.0.1"
+        }
+      }),
+      async () => {
+        logger.info("nested.ip");
+        return "ok";
+      }
     );
+
+    expect(entries[0]).toMatchObject({
+      msg: "nested.ip",
+      ip: "198.51.100.1"
+    });
   });
 
   it("logs request.failed and rethrows handler errors", async () => {
@@ -153,7 +167,7 @@ describe("lib/server/with-api-logging", () => {
   });
 
   it("reuses incoming request ids and generates ids when absent", async () => {
-    const { setLogSink, withApiLogging } = await loadApiLoggingModules();
+    const { logger, setLogSink, withApiLogging } = await loadApiLoggingModules();
     const entries: Array<Record<string, unknown>> = [];
 
     setLogSink({
@@ -169,19 +183,25 @@ describe("lib/server/with-api-logging", () => {
           "x-request-id": "req-incoming"
         }
       }),
-      async () => "incoming"
+      async () => {
+        logger.info("request.marker", { marker: "incoming" });
+        return "incoming";
+      }
     );
 
     await withApiLogging(
       new Request("http://localhost/api/generated", {
         method: "POST"
       }),
-      async () => "generated"
+      async () => {
+        logger.info("request.marker", { marker: "generated" });
+        return "generated";
+      }
     );
 
-    const startedEntries = entries.filter((entry) => entry.msg === "request.started");
-    const incomingEntry = startedEntries.find((entry) => entry.route === "/api/incoming");
-    const generatedEntry = startedEntries.find((entry) => entry.route === "/api/generated");
+    const markerEntries = entries.filter((entry) => entry.msg === "request.marker");
+    const incomingEntry = markerEntries.find((entry) => entry.marker === "incoming");
+    const generatedEntry = markerEntries.find((entry) => entry.marker === "generated");
 
     expect(incomingEntry).toMatchObject({
       requestId: "req-incoming"

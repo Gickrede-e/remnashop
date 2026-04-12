@@ -1,9 +1,10 @@
 import { type NextRequest } from "next/server";
 import { z } from "zod";
 
-import { apiOk, getClientIp, parseRequestBody, withLoggedRoute } from "@/lib/http";
+import { apiOk, getClientIp, parseRequestBody } from "@/lib/http";
 import { RateLimitExceededError, enforceRateLimit } from "@/lib/server/rate-limit";
 import { logger, serializeError } from "@/lib/server/logger";
+import { withApiLogging } from "@/lib/server/with-api-logging";
 import { logAdminAction } from "@/lib/services/admin-logs";
 import {
   WebhookDropSilentlyError,
@@ -25,7 +26,7 @@ const yookassaWebhookSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  return withLoggedRoute(request, async () => {
+  return withApiLogging(request, async () => {
     const ip = getClientIp(request);
     let remoteId = "UNKNOWN";
 
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
         });
       } catch (error) {
         if (error instanceof RateLimitExceededError) {
-          logger.warn("webhook.rate_limited", { provider: "YOOKASSA", ip });
+          logger.warn("webhook.rate_limited", { provider: "YOOKASSA" });
           return apiOk({ accepted: true });
         }
 
@@ -65,7 +66,6 @@ export async function POST(request: NextRequest) {
       if (error instanceof WebhookIpForbiddenError) {
         logger.warn("webhook.ip_forbidden", {
           provider: "YOOKASSA",
-          ip,
           paymentId: remoteId
         });
         return apiOk({ accepted: true });
@@ -74,7 +74,6 @@ export async function POST(request: NextRequest) {
       if (error instanceof WebhookDropSilentlyError) {
         logger.warn("webhook.dropped", {
           provider: "YOOKASSA",
-          ip,
           paymentId: remoteId,
           reason: message
         });
@@ -84,7 +83,6 @@ export async function POST(request: NextRequest) {
       if (error instanceof WebhookIntegrityError) {
         logger.error("webhook.integrity", {
           provider: "YOOKASSA",
-          ip,
           paymentId: remoteId,
           reason: message
         });

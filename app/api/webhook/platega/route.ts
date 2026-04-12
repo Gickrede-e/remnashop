@@ -1,10 +1,11 @@
-import { apiError, apiOk, withLoggedRoute } from "@/lib/http";
+import { apiError, apiOk } from "@/lib/http";
 import { logger, serializeError } from "@/lib/server/logger";
+import { withApiLogging } from "@/lib/server/with-api-logging";
 import { logAdminAction } from "@/lib/services/admin-logs";
 import { handlePlategaWebhook } from "@/lib/services/payments";
 
 export async function POST(request: Request) {
-  return withLoggedRoute(request, async () => {
+  return withApiLogging(request, async () => {
     let targetId = "UNKNOWN";
 
     try {

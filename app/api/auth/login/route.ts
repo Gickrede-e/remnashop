@@ -1,13 +1,14 @@
 import { type NextRequest } from "next/server";
 
 import { signSession, setSessionCookie } from "@/lib/auth/session";
-import { apiError, apiOk, getClientIp, parseRequestBody, withLoggedRoute } from "@/lib/http";
+import { apiError, apiOk, getClientIp, parseRequestBody } from "@/lib/http";
 import { loginSchema } from "@/lib/schemas/auth";
 import { RateLimitExceededError, enforceRateLimit } from "@/lib/server/rate-limit";
+import { withApiLogging } from "@/lib/server/with-api-logging";
 import { loginUser } from "@/lib/services/auth";
 
 export async function POST(request: NextRequest) {
-  return withLoggedRoute(request, async () => {
+  return withApiLogging(request, async () => {
     try {
       const body = await parseRequestBody(request, loginSchema);
 

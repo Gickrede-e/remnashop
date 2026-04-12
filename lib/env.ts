@@ -33,7 +33,7 @@ const DEV_ENV_FALLBACKS = {
   REFERRAL_REWARD_TYPE: "FREE_DAYS",
   REFERRAL_REWARD_VALUE: "3",
   CRON_SECRET: "change_me_internal_cron_secret",
-  LOG_LEVEL: "debug"
+  LOG_LEVEL: "info"
 } as const;
 
 const EXAMPLE_ENV_PLACEHOLDERS = {
