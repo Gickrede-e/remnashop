@@ -121,16 +121,5 @@ export function verifyPlategaSignature(input: {
     return safeCompare(digest, input.signature);
   }
 
-  if (input.secret) {
-    const merchantMatches =
-      !env.PLATEGA_MERCHANT_ID ||
-      (input.merchantId ? safeCompare(env.PLATEGA_MERCHANT_ID, input.merchantId) : false);
-
-    return merchantMatches && (
-      safeCompare(env.PLATEGA_WEBHOOK_SECRET, input.secret) ||
-      safeCompare(env.PLATEGA_API_KEY, input.secret)
-    );
-  }
-
   return false;
 }

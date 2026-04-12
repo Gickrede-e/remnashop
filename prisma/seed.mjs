@@ -21,57 +21,6 @@ const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString })
 });
 
-const plans = [
-  {
-    slug: "starter",
-    name: "Стартовый",
-    durationDays: 30,
-    trafficGB: 50,
-    price: 14900,
-    sortOrder: 1,
-    highlight: null,
-    remnawaveExternalSquadUuid: null,
-    remnawaveInternalSquadUuids: [],
-    remnawaveHwidDeviceLimit: null
-  },
-  {
-    slug: "pro",
-    name: "Про",
-    durationDays: 30,
-    trafficGB: 150,
-    price: 29900,
-    sortOrder: 2,
-    highlight: "Популярный",
-    remnawaveExternalSquadUuid: null,
-    remnawaveInternalSquadUuids: [],
-    remnawaveHwidDeviceLimit: null
-  },
-  {
-    slug: "ultra",
-    name: "Ультра",
-    durationDays: 30,
-    trafficGB: 500,
-    price: 49900,
-    sortOrder: 3,
-    highlight: null,
-    remnawaveExternalSquadUuid: null,
-    remnawaveInternalSquadUuids: [],
-    remnawaveHwidDeviceLimit: null
-  },
-  {
-    slug: "annual",
-    name: "Годовой",
-    durationDays: 365,
-    trafficGB: 2000,
-    price: 249900,
-    sortOrder: 4,
-    highlight: "Выгодный",
-    remnawaveExternalSquadUuid: null,
-    remnawaveInternalSquadUuids: [],
-    remnawaveHwidDeviceLimit: null
-  }
-];
-
 const promoCodes = [
   {
     code: "WELCOME10",
@@ -84,14 +33,6 @@ const promoCodes = [
 ];
 
 async function main() {
-  for (const plan of plans) {
-    await prisma.plan.upsert({
-      where: { slug: plan.slug },
-      update: plan,
-      create: plan
-    });
-  }
-
   for (const promo of promoCodes) {
     await prisma.promoCode.upsert({
       where: { code: promo.code },
@@ -113,11 +54,12 @@ async function main() {
   }
 }
 
-main()
-  .catch((error) => {
-    console.error("Seed failed", error);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} catch (error) {
+  // intentional console.error: seed is a one-shot script outside the app runtime
+  console.error("Seed failed", error);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}

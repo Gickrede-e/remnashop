@@ -1,15 +1,53 @@
+import { PaymentProvider } from "@prisma/client";
 import { apiError, apiOk } from "@/lib/http";
+import { isPaymentProviderEnabledFromEnv } from "@/lib/payments/provider-config";
 import { logger, serializeError } from "@/lib/server/logger";
 import { withApiLogging } from "@/lib/server/with-api-logging";
 import { logAdminAction } from "@/lib/services/admin-logs";
 import { handlePlategaWebhook } from "@/lib/services/payments";
+
+const WEBHOOK_BODY_LIMIT_BYTES = 64 * 1024;
+
+function isPayloadTooLarge(request: Request, rawBody?: string) {
+  const contentLengthHeader = request.headers.get("content-length");
+  const contentLength = contentLengthHeader ? Number(contentLengthHeader) : NaN;
+  if (Number.isFinite(contentLength) && contentLength > WEBHOOK_BODY_LIMIT_BYTES) {
+    return true;
+  }
+
+  if (rawBody) {
+    return Buffer.byteLength(rawBody, "utf8") > WEBHOOK_BODY_LIMIT_BYTES;
+  }
+
+  return false;
+}
 
 export async function POST(request: Request) {
   return withApiLogging(request, async () => {
     let targetId = "UNKNOWN";
 
     try {
+      if (!isPaymentProviderEnabledFromEnv(PaymentProvider.PLATEGA)) {
+        return apiError("Not found", 404);
+      }
+
+      if (isPayloadTooLarge(request)) {
+        logger.warn("webhook.payload_too_large", {
+          provider: "PLATEGA",
+          limitBytes: WEBHOOK_BODY_LIMIT_BYTES
+        });
+        return apiError("Payload too large", 413);
+      }
+
       const rawBody = await request.text();
+      if (isPayloadTooLarge(request, rawBody)) {
+        logger.warn("webhook.payload_too_large", {
+          provider: "PLATEGA",
+          limitBytes: WEBHOOK_BODY_LIMIT_BYTES
+        });
+        return apiError("Payload too large", 413);
+      }
+
       const payload = JSON.parse(rawBody) as {
         id?: string;
         order_id?: string;

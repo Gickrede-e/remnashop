@@ -98,6 +98,8 @@ COPY --chown=nextjs:nodejs --from=build /app/prisma ./prisma
 COPY --chown=nextjs:nodejs --from=build /app/prisma.config.mjs ./prisma.config.mjs
 COPY --chown=nextjs:nodejs --from=prisma-cli /prisma-cli ./prisma-cli
 COPY --chown=nextjs:nodejs --from=build /app/scripts/worker.mjs ./scripts/worker.mjs
+COPY --chown=nextjs:nodejs --from=build /app/scripts/worker-logger.mjs ./scripts/worker-logger.mjs
+COPY --chown=nextjs:nodejs --from=build /app/scripts/worker-runtime.mjs ./scripts/worker-runtime.mjs
 COPY --chown=nextjs:nodejs --from=build /app/scripts/migrate-and-seed.sh ./scripts/migrate-and-seed.sh
 RUN chmod +x scripts/migrate-and-seed.sh
 USER nextjs

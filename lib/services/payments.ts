@@ -1,6 +1,7 @@
 import { PaymentProvider, PaymentStatus } from "@prisma/client";
 
 import { env } from "@/lib/env";
+import { isPaymentProviderEnabledFromEnv } from "@/lib/payments/provider-config";
 import { prisma } from "@/lib/prisma";
 import { logger, serializeError } from "@/lib/server/logger";
 import { logAdminAction } from "@/lib/services/admin-logs";
@@ -16,6 +17,10 @@ export async function createPaymentForUser(input: {
   provider: PaymentProvider;
   promoCode?: string;
 }) {
+  if (!isPaymentProviderEnabledFromEnv(input.provider)) {
+    throw new Error("Способ оплаты недоступен");
+  }
+
   const plan = await prisma.plan.findUnique({
     where: { id: input.planId }
   });

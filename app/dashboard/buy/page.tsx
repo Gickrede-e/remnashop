@@ -4,6 +4,7 @@ import { DashboardPageHeader } from "@/components/blocks/dashboard/dashboard-pag
 import { PaymentCheckout } from "@/components/dashboard/payment-checkout";
 import { buildLoginHref } from "@/lib/auth/navigation";
 import { getSession } from "@/lib/auth/session";
+import { getEnabledPaymentProvidersFromEnv } from "@/lib/payments/provider-config";
 import { getActivePlans } from "@/lib/services/plans";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,7 @@ export default async function DashboardBuyPage() {
   }
 
   const plans = await getActivePlans();
+  const enabledProviders = getEnabledPaymentProvidersFromEnv();
 
   return (
     <div className="dashboardWorkspacePage dashboardSurfacePage dashboardSurfacePageBuy dashShellPageWrapper">
@@ -22,7 +24,7 @@ export default async function DashboardBuyPage() {
         title="Купить"
         crumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Купить" }]}
       />
-      <PaymentCheckout plans={plans} />
+      <PaymentCheckout enabledProviders={enabledProviders} plans={plans} />
     </div>
   );
 }

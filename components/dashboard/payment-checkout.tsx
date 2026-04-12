@@ -54,12 +54,20 @@ const CheckoutPlanRow = memo(function CheckoutPlanRow({
   );
 });
 
-export function PaymentCheckout({ plans }: { plans: Plan[] }) {
+export function PaymentCheckout({
+  enabledProviders,
+  plans
+}: {
+  enabledProviders: PaymentProvider[];
+  plans: Plan[];
+}) {
   const [selectedPlanId, setSelectedPlanId] = useState(plans[0]?.id ?? "");
   const [promoCode, setPromoCode] = useState("");
   const [promoState, setPromoState] = useState<PromoState>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [selectedProvider, setSelectedProvider] = useState<PaymentProvider>(PaymentProvider.YOOKASSA);
+  const [selectedProvider, setSelectedProvider] = useState<PaymentProvider | null>(
+    enabledProviders[0] ?? null
+  );
   const [pending, startTransition] = useTransition();
 
   const resolvedSelectedPlanId = useMemo(
@@ -71,6 +79,10 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
     () => plans.find((plan) => plan.id === resolvedSelectedPlanId) ?? plans[0] ?? null,
     [plans, resolvedSelectedPlanId]
   );
+  const resolvedSelectedProvider = useMemo(
+    () => (selectedProvider && enabledProviders.includes(selectedProvider) ? selectedProvider : enabledProviders[0] ?? null),
+    [enabledProviders, selectedProvider]
+  );
   const currentPlanIdRef = useRef(resolvedSelectedPlanId);
   const currentPromoCodeRef = useRef(promoCode.trim());
 
@@ -80,6 +92,10 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
     currentPlanIdRef.current = resolvedSelectedPlanId;
     currentPromoCodeRef.current = promoCode.trim();
   }, [promoCode, resolvedSelectedPlanId]);
+
+  useEffect(() => {
+    setSelectedProvider(resolvedSelectedProvider);
+  }, [resolvedSelectedProvider]);
 
   const handleSelectPlan = useCallback((planId: string) => {
     setSelectedPlanId(planId);
@@ -140,8 +156,8 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
     });
   }, [promoCode, selectedPlan, startTransition]);
 
-  const createPayment = useCallback((provider: PaymentProvider) => {
-    if (!selectedPlan) {
+  const createPayment = useCallback((provider: PaymentProvider | null) => {
+    if (!selectedPlan || !provider || !enabledProviders.includes(provider)) {
       return;
     }
 
@@ -174,7 +190,7 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
 
       window.location.href = payload.data.redirectUrl;
     });
-  }, [promoCode, selectedPlan, startTransition]);
+  }, [enabledProviders, promoCode, selectedPlan, startTransition]);
 
   if (plans.length === 0) {
     return (
@@ -270,28 +286,34 @@ export function PaymentCheckout({ plans }: { plans: Plan[] }) {
         </p>
       ) : null}
 
-      <div className="checkoutProviderStack">
-        {(Object.entries(PAYMENT_PROVIDER_LABELS) as Array<[PaymentProvider, string]>).map(([provider, label]) => (
+      {enabledProviders.length > 0 ? (
+        <div className="checkoutProviderStack">
+          {enabledProviders.map((provider) => (
           <button
             key={provider}
             type="button"
-            aria-pressed={selectedProvider === provider}
+            aria-pressed={resolvedSelectedProvider === provider}
             disabled={pending}
             onClick={() => setSelectedProvider(provider)}
-            className={cn("dashStatusPill", selectedProvider === provider ? "is-completed" : "is-pending")}
+            className={cn("dashStatusPill", resolvedSelectedProvider === provider ? "is-completed" : "is-pending")}
           >
-            {label}
+            {PAYMENT_PROVIDER_LABELS[provider]}
           </button>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <p role="status" aria-live="polite" className="checkoutStatus">
+          Платежи временно недоступны
+        </p>
+      )}
 
       <button
         type="button"
         className="dashSidebarCta"
-        disabled={pending}
-        onClick={() => createPayment(selectedProvider)}
+        disabled={pending || !resolvedSelectedProvider}
+        onClick={() => createPayment(resolvedSelectedProvider)}
       >
-        Оплатить
+        {resolvedSelectedProvider ? "Оплатить" : "Платежи недоступны"}
       </button>
     </div>
   );
