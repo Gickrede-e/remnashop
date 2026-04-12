@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { AppError, toAppError } from "@/lib/http/errors";
+import { getRequestId } from "@/lib/server/logger-context";
 
 export function ok<T>(data: T, meta?: Record<string, unknown>) {
   return NextResponse.json({ ok: true, data, meta });
@@ -21,7 +22,7 @@ export function fail(error: AppError) {
         message: error.message,
         fieldErrors: error.fieldErrors,
         retryable: error.retryable,
-        correlationId: randomUUID()
+        correlationId: getRequestId() ?? randomUUID()
       }
     },
     { status: error.status }

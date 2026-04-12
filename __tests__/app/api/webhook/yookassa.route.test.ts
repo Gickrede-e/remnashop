@@ -25,6 +25,7 @@ const {
     mockHandleYookassaWebhook: vi.fn(),
     mockLogAdminAction: vi.fn(),
     mockLogger: {
+      info: vi.fn(),
       warn: vi.fn(),
       error: vi.fn()
     }
@@ -117,7 +118,6 @@ describe("POST /api/webhook/yookassa", () => {
       "webhook.dropped",
       expect.objectContaining({
         provider: "YOOKASSA",
-        ip: "203.0.113.10",
         paymentId: "UNKNOWN",
         reason: "invalid body"
       })
@@ -145,7 +145,6 @@ describe("POST /api/webhook/yookassa", () => {
       "webhook.dropped",
       expect.objectContaining({
         provider: "YOOKASSA",
-        ip: "203.0.113.10",
         paymentId: "remote-payment-1",
         reason: "local payment not found"
       })
@@ -173,7 +172,6 @@ describe("POST /api/webhook/yookassa", () => {
       "webhook.integrity",
       expect.objectContaining({
         provider: "YOOKASSA",
-        ip: "203.0.113.10",
         paymentId: "remote-payment-1",
         reason: "metadata paymentId mismatch"
       })
@@ -209,7 +207,6 @@ describe("POST /api/webhook/yookassa", () => {
       "webhook.ip_forbidden",
       expect.objectContaining({
         provider: "YOOKASSA",
-        ip: "203.0.113.10",
         paymentId: "remote-payment-1"
       })
     );
@@ -265,8 +262,7 @@ describe("POST /api/webhook/yookassa", () => {
       }
     });
     expect(mockLogger.warn).toHaveBeenCalledWith("webhook.rate_limited", {
-      provider: "YOOKASSA",
-      ip: "203.0.113.10"
+      provider: "YOOKASSA"
     });
     expect(mockHandleYookassaWebhook).not.toHaveBeenCalled();
     expect(mockLogger.error).not.toHaveBeenCalled();

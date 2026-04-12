@@ -55,6 +55,8 @@ cp .env.example .env
 | `YOOKASSA_SHOP_ID` | ID магазина ЮKassa |
 | `YOOKASSA_SECRET_KEY` | Секретный ключ ЮKassa |
 | `CRON_SECRET` | Секрет для внутренних cron-задач (мин. 16 символов) |
+| `LOG_LEVEL` | Минимальный уровень логирования (`debug` / `info` / `warn` / `error`). По умолчанию `info`. |
+| `LOG_FORMAT` | Формат логов (`json` или `pretty`). По умолчанию `pretty` в dev, `json` в prod. |
 
 ### 3. Запустите локальную сборку через Docker
 
@@ -114,6 +116,34 @@ Webhook ЮKassa обрабатывается в режиме `hint + API verific
 `metadata.paymentId` и reconciliation для `PENDING` платежей.
 
 Подробности модели обработки — в [`docs/WEBHOOK_YOOKASSA.md`](docs/WEBHOOK_YOOKASSA.md).
+
+## Логирование
+
+Сервер использует structured-логгер `lib/server/logger.ts`. Критичные API-routes
+проходят через обёртку `withApiLogging`, которая кладёт в AsyncLocalStorage
+контекст запроса (`requestId`, `route`, `method`, `ip`). Вложенные вызовы
+сервисов автоматически логируют с этим контекстом, ничего не передавая явно.
+
+**Request correlation:** каждый ответ содержит заголовок `X-Request-Id`.
+Этот же id попадает в поле `correlationId` тела ошибочных ответов и в
+серверные логи. При расследовании инцидента клиенту достаточно прислать
+этот id — по нему находится вся цепочка логов на сервере.
+
+**Уровни:** настраиваются переменной `LOG_LEVEL`. В production по
+умолчанию `info`; для отладки временно переключи на `debug`.
+
+**Формат:** `LOG_FORMAT=json` (production) или `LOG_FORMAT=pretty` (dev).
+В prod JSON-строки удобно парсятся любым log-aggregator'ом.
+
+**Маскирование:** поля с именами `password`, `token`, `secret`,
+`authorization`, `cookie`, `session`, `apiKey` автоматически заменяются
+на `[REDACTED]` при сериализации. Это защита от случайных утечек в
+логи.
+
+**Воркер:** `scripts/worker.mjs` использует собственный inline-логгер
+`scripts/worker-logger.mjs` с тем же JSON-форматом. Все строки воркера
+помечены полем `component: "worker"`. После миграции воркера на TS
+(см. `docs/TZ_FIXES.md` задача 5) он перейдёт на основной логгер.
 
 ### Полезные команды
 
