@@ -20,6 +20,7 @@ const { mockPrisma, mockRemnawave } = vi.hoisted(() => ({
     isRemnawaveNotFoundError: vi.fn(),
     isRemnawaveRecoverableIdentityError: vi.fn(),
     listRemnawaveUsersByEmail: vi.fn(),
+    resetRemnawaveUserTraffic: vi.fn(),
     updateRemnawaveUser: vi.fn()
   }
 }));
@@ -63,6 +64,7 @@ describe("syncUserSubscription", () => {
     mockRemnawave.isRemnawaveNotFoundError.mockReset();
     mockRemnawave.isRemnawaveRecoverableIdentityError.mockReset();
     mockRemnawave.listRemnawaveUsersByEmail.mockReset();
+    mockRemnawave.resetRemnawaveUserTraffic.mockReset();
     mockRemnawave.updateRemnawaveUser.mockReset();
 
     mockPrisma.user.findMany.mockResolvedValue([]);

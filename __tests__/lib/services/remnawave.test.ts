@@ -17,6 +17,7 @@ import {
   getRemnawaveUserByUsername,
   isRemnawaveRecoverableIdentityError,
   isRemnawaveNotFoundError,
+  resetRemnawaveUserTraffic,
   updateRemnawaveUser
 } from "@/lib/services/remnawave";
 
@@ -108,5 +109,20 @@ describe("remnawave service", () => {
     const body = typeof init?.body === "string" ? JSON.parse(init.body) as Record<string, unknown> : {};
 
     expect(body).not.toHaveProperty("hwidDeviceLimit");
+  });
+
+  it("uses the documented reset-traffic action endpoint", async () => {
+    const fetchMock = vi.fn(async () => new Response("", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await resetRemnawaveUserTraffic("rw-1");
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://panel.example.com/api/users/rw-1/actions/reset-traffic",
+      expect.objectContaining({
+        method: "POST",
+        cache: "no-store"
+      })
+    );
   });
 });

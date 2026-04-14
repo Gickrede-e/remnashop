@@ -2,17 +2,9 @@ import { randomUUID } from "node:crypto";
 
 import { NextRequest } from "next/server";
 
-import { getClientIp } from "@/lib/http";
 import { logger } from "@/lib/server/logger";
 import { runWithLoggerContext } from "@/lib/server/logger-context";
-
-function logInfo(message: string, fields?: Record<string, unknown>) {
-  logger.info?.(message, fields);
-}
-
-function logError(message: string, fields?: Record<string, unknown>) {
-  logger.error?.(message, fields);
-}
+import { getClientIp } from "@/lib/server/request-utils";
 
 export async function withApiLogging<T>(
   request: NextRequest | Request,
@@ -26,18 +18,12 @@ export async function withApiLogging<T>(
   const startedAt = process.hrtime.bigint();
 
   return runWithLoggerContext({ requestId, route, method, ip }, async () => {
-    logInfo("request.started");
-
     try {
-      const result = await handler();
-      const durationMs = Number((process.hrtime.bigint() - startedAt) / 1_000_000n);
-
-      logInfo("request.completed", { durationMs });
-      return result;
+      return await handler();
     } catch (error) {
       const durationMs = Number((process.hrtime.bigint() - startedAt) / 1_000_000n);
 
-      logError("request.failed", { durationMs, error });
+      logger.error("request.failed", { durationMs, error });
       throw error;
     }
   });

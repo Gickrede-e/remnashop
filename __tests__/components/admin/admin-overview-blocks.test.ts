@@ -34,9 +34,9 @@ const providerStatuses = [
   },
   {
     label: "Webhook",
-    status: "not_configured" as const,
-    summary: "Не настроен",
-    detail: "placeholder config",
+    status: "disabled" as const,
+    summary: "Выключен",
+    detail: "module disabled by env flag",
     checkedAt: "2026-03-22T00:00:00.000Z"
   }
 ];
@@ -82,11 +82,11 @@ describe("AdminOverviewBlocks provider status section", () => {
     expect(markup).toContain("Доступен");
     expect(markup).toContain("Недоступен");
     expect(markup).toContain("Таймаут");
-    expect(markup).toContain("Не настроен");
+    expect(markup).toContain("Выключен");
     expect(markup).toContain("auth ok");
     expect(markup).toContain("401 Unauthorized");
     expect(markup).toContain("request timed out after 2500ms");
-    expect(markup).toContain("placeholder config");
+    expect(markup).toContain("module disabled by env flag");
     expect((markup.match(/data-status="/g) ?? []).length).toBe(4);
     expect(markup.indexOf("Remnawave")).toBeLessThan(markup.indexOf("YooKassa"));
     expect(markup.indexOf("YooKassa")).toBeLessThan(markup.indexOf("Platega"));
@@ -94,7 +94,7 @@ describe("AdminOverviewBlocks provider status section", () => {
     expect(markup).toContain("data-status=\"available\"");
     expect(markup).toContain("data-status=\"unavailable\"");
     expect(markup).toContain("data-status=\"timeout\"");
-    expect(markup).toContain("data-status=\"not_configured\"");
+    expect(markup).toContain("data-status=\"disabled\"");
     expect(markup).toMatch(/class="[^"]*\badminWorkspace\b[^"]*"/);
     expect(markup).toMatch(/class="[^"]*\badminHero\b[^"]*"/);
     expect(markup).toMatch(/class="[^"]*\badminSection\b[^"]*"/);

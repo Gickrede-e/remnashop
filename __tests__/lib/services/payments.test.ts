@@ -1,4 +1,4 @@
-import { PaymentStatus } from "@prisma/client";
+import { PaymentProvider, PaymentStatus } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -13,7 +13,8 @@ const {
   mockVerifyPlategaSignature,
   mockCreateYooKassaPayment,
   mockGetYooKassaPayment,
-  mockVerifyYooKassaIp
+  mockVerifyYooKassaIp,
+  mockIsPaymentProviderEnabledFromEnv
 } = vi.hoisted(() => ({
   mockEnv: {
     NEXT_PUBLIC_SITE_URL: "https://vpn.example.com"
@@ -39,7 +40,8 @@ const {
   mockVerifyPlategaSignature: vi.fn(),
   mockCreateYooKassaPayment: vi.fn(),
   mockGetYooKassaPayment: vi.fn(),
-  mockVerifyYooKassaIp: vi.fn()
+  mockVerifyYooKassaIp: vi.fn(),
+  mockIsPaymentProviderEnabledFromEnv: vi.fn()
 }));
 
 vi.mock("@/lib/env", () => ({
@@ -75,6 +77,10 @@ vi.mock("@/lib/services/yookassa", () => ({
   verifyYooKassaIp: mockVerifyYooKassaIp
 }));
 
+vi.mock("@/lib/payments/provider-config", () => ({
+  isPaymentProviderEnabledFromEnv: mockIsPaymentProviderEnabledFromEnv
+}));
+
 import { mapPlategaStatus, mapYooKassaStatus } from "@/lib/services/payment-status";
 
 describe("payment status mapping", () => {
@@ -104,10 +110,55 @@ describe("payment status mapping", () => {
   });
 });
 
+describe("createPaymentForUser", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    mockIsPaymentProviderEnabledFromEnv.mockReturnValue(true);
+    mockPrisma.plan.findUnique.mockResolvedValue({
+      id: "plan-1",
+      name: "Starter",
+      price: 99000,
+      isActive: true
+    });
+    mockValidatePromoCode.mockResolvedValue(null);
+    mockPrisma.payment.create.mockResolvedValue({
+      id: "payment-1"
+    });
+    mockCreateYooKassaPayment.mockResolvedValue({
+      id: "remote-1",
+      confirmation: {
+        confirmation_url: "https://pay.example.com/yookassa"
+      }
+    });
+    mockPrisma.payment.update.mockResolvedValue({
+      id: "payment-1",
+      confirmationUrl: "https://pay.example.com/yookassa"
+    });
+  });
+
+  it("rejects disabled providers before creating a payment", async () => {
+    const { createPaymentForUser } = await import("@/lib/services/payments");
+    mockIsPaymentProviderEnabledFromEnv.mockReturnValue(false);
+
+    await expect(
+      createPaymentForUser({
+        userId: "user-1",
+        planId: "plan-1",
+        provider: PaymentProvider.YOOKASSA
+      })
+    ).rejects.toThrow("Способ оплаты недоступен");
+
+    expect(mockPrisma.payment.create).not.toHaveBeenCalled();
+    expect(mockCreateYooKassaPayment).not.toHaveBeenCalled();
+  });
+});
+
 describe("handleYookassaWebhook", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    mockIsPaymentProviderEnabledFromEnv.mockReturnValue(true);
     mockVerifyYooKassaIp.mockReturnValue(true);
     mockGetYooKassaPayment.mockResolvedValue({
       id: "remote-payment-1",
@@ -180,12 +231,25 @@ describe("handleYookassaWebhook", () => {
     expect(mockGetYooKassaPayment).not.toHaveBeenCalled();
   });
 
-  it("throws WebhookDropSilentlyError when metadata.paymentId is missing", async () => {
-    const { WebhookDropSilentlyError, handleYookassaWebhook } = await import(
-      "@/lib/services/payments"
-    );
+  it("falls back to externalPaymentId when metadata.paymentId is missing", async () => {
+    const { handleYookassaWebhook } = await import("@/lib/services/payments");
+    mockPrisma.payment.findUnique
+      .mockResolvedValueOnce({
+        id: "payment-1",
+        status: PaymentStatus.PENDING,
+        subscriptionId: null,
+        externalPaymentId: "remote-payment-1",
+        providerPayload: null
+      })
+      .mockResolvedValueOnce({
+        id: "payment-1",
+        status: PaymentStatus.PENDING,
+        subscriptionId: null,
+        externalPaymentId: "remote-payment-1",
+        providerPayload: null
+      });
 
-    const promise = handleYookassaWebhook({
+    const result = await handleYookassaWebhook({
       ip: "203.0.113.10",
       event: {
         object: {
@@ -194,9 +258,15 @@ describe("handleYookassaWebhook", () => {
       }
     });
 
-    await expect(promise).rejects.toThrow(WebhookDropSilentlyError);
-    await expect(promise).rejects.toThrow("local payment id missing in hint");
-    expect(mockGetYooKassaPayment).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      id: "payment-1",
+      status: PaymentStatus.SUCCEEDED,
+      subscriptionId: "subscription-1"
+    });
+    expect(mockPrisma.payment.findUnique).toHaveBeenNthCalledWith(1, {
+      where: { externalPaymentId: "remote-payment-1" }
+    });
+    expect(mockGetYooKassaPayment).toHaveBeenCalledWith("remote-payment-1");
   });
 
   it("throws WebhookDropSilentlyError when local payment is not found", async () => {

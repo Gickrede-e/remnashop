@@ -16,6 +16,7 @@ import {
   isRemnawaveNotFoundError,
   isRemnawaveRecoverableIdentityError,
   listRemnawaveUsersByEmail,
+  resetRemnawaveUserTraffic,
   updateRemnawaveUser
 } from "@/lib/services/remnawave";
 import { createReferralRewardForFirstPayment } from "@/lib/services/referrals";
@@ -351,6 +352,12 @@ function buildSyncRecoverySeed(user: {
   };
 }
 
+async function resetRemnawaveTrafficIfReissuing(identity: RemnawaveIdentityResolution) {
+  if (identity.outcome !== "created") {
+    await resetRemnawaveUserTraffic(identity.uuid);
+  }
+}
+
 function buildSubscriptionIdentitySeed(subscription: {
   expiresAt: Date | null;
   trafficLimitBytes: bigint | null;
@@ -631,11 +638,7 @@ export async function activateSubscriptionFromPayment(paymentId: string) {
       );
   const newTrafficLimit = savedActivationMeta
     ? BigInt(savedActivationMeta.trafficLimitBytes)
-    : (
-        (isActive && existingSubscription?.trafficLimitBytes
-          ? existingSubscription.trafficLimitBytes
-          : BigInt(0)) + bytesFromGb(payment.plan.trafficGB + promoBonusTrafficGb)
-      );
+    : bytesFromGb(payment.plan.trafficGB + promoBonusTrafficGb);
   const remnawaveTag = slugToRemnawaveTag(payment.plan.slug);
   const activationMeta = savedActivationMeta ?? {
     startsAt: startsAt.toISOString(),
@@ -667,6 +670,7 @@ export async function activateSubscriptionFromPayment(paymentId: string) {
       externalSquadUuid: payment.plan.remnawaveExternalSquadUuid,
       hwidDeviceLimit: payment.plan.remnawaveHwidDeviceLimit
     });
+    await resetRemnawaveTrafficIfReissuing(remnawave);
 
     const snapshot = await updateRemnawaveUser(remnawave.uuid, {
       expireAt: expiresAt.toISOString(),
@@ -690,7 +694,7 @@ export async function activateSubscriptionFromPayment(paymentId: string) {
             expiresAt,
             trafficLimitBytes: newTrafficLimit,
             remnawaveLastSyncAt: new Date(),
-            trafficUsedBytes: existingSubscription.trafficUsedBytes ?? BigInt(0)
+            trafficUsedBytes: BigInt(0)
           }
         })
       : await prisma.subscription.create({
@@ -972,9 +976,7 @@ export async function grantSubscriptionByAdmin(input: {
   const now = new Date();
   const baseDate = current?.expiresAt && current.expiresAt > now ? current.expiresAt : now;
   const expiresAt = new Date(baseDate.getTime() + durationDays * 86400000);
-  const trafficLimitBytes =
-    (current?.expiresAt && current.expiresAt > now ? current.trafficLimitBytes ?? BigInt(0) : BigInt(0)) +
-    bytesFromGb(trafficGB);
+  const trafficLimitBytes = bytesFromGb(trafficGB);
   const remnawaveTag = slugToRemnawaveTag(plan.slug);
 
   const remnawave = await ensureRemnawaveIdentity(user, {
@@ -986,6 +988,7 @@ export async function grantSubscriptionByAdmin(input: {
     externalSquadUuid: plan.remnawaveExternalSquadUuid,
     hwidDeviceLimit: plan.remnawaveHwidDeviceLimit
   });
+  await resetRemnawaveTrafficIfReissuing(remnawave);
   const snapshot = await updateRemnawaveUser(remnawave.uuid, {
     expireAt: expiresAt.toISOString(),
     trafficLimitBytes: Number(trafficLimitBytes),
@@ -1006,6 +1009,7 @@ export async function grantSubscriptionByAdmin(input: {
           status: SubscriptionStatus.ACTIVE,
           expiresAt,
           trafficLimitBytes,
+          trafficUsedBytes: BigInt(0),
           grantedByAdminId: input.adminId,
           grantNote: input.note ?? null,
           remnawaveLastSyncAt: new Date()
@@ -1019,6 +1023,7 @@ export async function grantSubscriptionByAdmin(input: {
           startsAt: now,
           expiresAt,
           trafficLimitBytes,
+          trafficUsedBytes: BigInt(0),
           grantedByAdminId: input.adminId,
           grantNote: input.note ?? null,
           remnawaveLastSyncAt: new Date()

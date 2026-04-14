@@ -5,31 +5,25 @@ import { buildLoginHref } from "@/lib/auth/navigation";
 import { SESSION_COOKIE_NAME } from "@/lib/constants";
 
 const ADMIN_PATH = "/admin";
-const AUTH_PATHS = new Set(["/login", "/register"]);
-const PUBLIC_API_PREFIXES = ["/api/auth/", "/api/webhook/"];
-const PUBLIC_API_PATHS = new Set(["/api/health"]);
+const DASHBOARD_PATH = "/dashboard";
 
-function isPublicPath(pathname: string) {
-  if (AUTH_PATHS.has(pathname)) {
-    return true;
-  }
-
-  if (PUBLIC_API_PATHS.has(pathname)) {
-    return true;
-  }
-
-  return PUBLIC_API_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+function isProtectedPath(pathname: string) {
+  return (
+    pathname === ADMIN_PATH ||
+    pathname.startsWith(`${ADMIN_PATH}/`) ||
+    pathname === DASHBOARD_PATH ||
+    pathname.startsWith(`${DASHBOARD_PATH}/`)
+  );
 }
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  const needsAdminSession = pathname.startsWith(ADMIN_PATH);
-  const nextPath = `${pathname}${request.nextUrl.search}`;
-
-  if (isPublicPath(pathname)) {
+  if (!isProtectedPath(pathname)) {
     return NextResponse.next();
   }
 
+  const needsAdminSession = pathname === ADMIN_PATH || pathname.startsWith(`${ADMIN_PATH}/`);
+  const nextPath = `${pathname}${request.nextUrl.search}`;
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   if (!token) {
     return NextResponse.redirect(new URL(buildLoginHref(nextPath), request.url));
@@ -50,5 +44,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\..*).*)"]
+  matcher: ["/dashboard/:path*", "/admin/:path*"]
 };

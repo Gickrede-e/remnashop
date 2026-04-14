@@ -37,21 +37,16 @@ describe("verifyPlategaSignature", () => {
     expect(verifyPlategaSignature({ rawBody, signature: "deadbeef" })).toBe(false);
   });
 
-  it("falls back to secret plus merchant id checks", () => {
+  it("rejects requests that do not provide an HMAC signature", () => {
     expect(verifyPlategaSignature({
       rawBody,
       secret: mockEnv.PLATEGA_WEBHOOK_SECRET,
       merchantId: mockEnv.PLATEGA_MERCHANT_ID
-    })).toBe(true);
+    })).toBe(false);
     expect(verifyPlategaSignature({
       rawBody,
       secret: mockEnv.PLATEGA_API_KEY,
       merchantId: mockEnv.PLATEGA_MERCHANT_ID
-    })).toBe(true);
-    expect(verifyPlategaSignature({
-      rawBody,
-      secret: mockEnv.PLATEGA_WEBHOOK_SECRET,
-      merchantId: "wrong-merchant"
     })).toBe(false);
   });
 

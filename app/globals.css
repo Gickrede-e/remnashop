@@ -1624,6 +1624,12 @@ p {
     color: hsl(var(--app-muted-strong));
   }
 
+  .providerStatusDisabled {
+    border-color: color-mix(in srgb, #7c8aa8 32%, transparent);
+    background: color-mix(in srgb, #7c8aa8 12%, transparent);
+    color: #d9e0ef;
+  }
+
   .activeUsersSyncButton {
     justify-content: center;
   }

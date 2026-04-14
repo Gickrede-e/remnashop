@@ -30,7 +30,7 @@ describe("POST /api/auth/login", () => {
     mockSetSessionCookie.mockResolvedValue(undefined);
   });
 
-  it("returns x-request-id when the route runs through withLoggedRoute", async () => {
+  it("returns x-request-id when the route runs through withApiLogging", async () => {
     const { POST } = await import("@/app/api/auth/login/route");
 
     const response = await POST(

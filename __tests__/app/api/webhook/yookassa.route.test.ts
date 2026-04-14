@@ -6,6 +6,7 @@ const {
   MockWebhookDropSilentlyError,
   MockWebhookIntegrityError,
   MockWebhookIpForbiddenError,
+  mockIsPaymentProviderEnabledFromEnv,
   mockEnforceRateLimit,
   mockHandleYookassaWebhook,
   mockLogAdminAction,
@@ -21,10 +22,12 @@ const {
     MockWebhookDropSilentlyError,
     MockWebhookIntegrityError,
     MockWebhookIpForbiddenError,
+    mockIsPaymentProviderEnabledFromEnv: vi.fn(),
     mockEnforceRateLimit: vi.fn(),
     mockHandleYookassaWebhook: vi.fn(),
     mockLogAdminAction: vi.fn(),
     mockLogger: {
+      info: vi.fn(),
       warn: vi.fn(),
       error: vi.fn()
     }
@@ -52,6 +55,10 @@ vi.mock("@/lib/server/logger", () => ({
   serializeError: vi.fn((error: unknown) =>
     error instanceof Error ? { message: error.message } : { message: "Unknown error" }
   )
+}));
+
+vi.mock("@/lib/payments/provider-config", () => ({
+  isPaymentProviderEnabledFromEnv: mockIsPaymentProviderEnabledFromEnv
 }));
 
 function buildRequest(
@@ -82,6 +89,7 @@ describe("POST /api/webhook/yookassa", () => {
     vi.resetModules();
     vi.clearAllMocks();
 
+    mockIsPaymentProviderEnabledFromEnv.mockReturnValue(true);
     mockLogAdminAction.mockResolvedValue(undefined);
     mockEnforceRateLimit.mockImplementation(() => undefined);
     mockHandleYookassaWebhook.mockResolvedValue({
@@ -117,12 +125,39 @@ describe("POST /api/webhook/yookassa", () => {
       "webhook.dropped",
       expect.objectContaining({
         provider: "YOOKASSA",
-        ip: "203.0.113.10",
         paymentId: "UNKNOWN",
         reason: "invalid body"
       })
     );
     expect(mockLogger.error).not.toHaveBeenCalled();
+    expect(mockLogAdminAction).not.toHaveBeenCalled();
+  });
+
+  it("returns 404 when YooKassa is disabled", async () => {
+    mockIsPaymentProviderEnabledFromEnv.mockReturnValue(false);
+
+    const { POST } = await import("@/app/api/webhook/yookassa/route");
+    const response = await POST(buildRequest());
+
+    expect(response.status).toBe(404);
+    expect(mockHandleYookassaWebhook).not.toHaveBeenCalled();
+    expect(mockEnforceRateLimit).not.toHaveBeenCalled();
+  });
+
+  it("returns 413 before parsing when the payload exceeds the webhook size limit", async () => {
+    const { POST } = await import("@/app/api/webhook/yookassa/route");
+    const response = await POST(
+      buildRequest(undefined, {
+        "content-length": "70000"
+      })
+    );
+
+    expect(response.status).toBe(413);
+    await expect(response.json()).resolves.toMatchObject({
+      ok: false,
+      error: "Payload too large"
+    });
+    expect(mockHandleYookassaWebhook).not.toHaveBeenCalled();
     expect(mockLogAdminAction).not.toHaveBeenCalled();
   });
 
@@ -145,7 +180,6 @@ describe("POST /api/webhook/yookassa", () => {
       "webhook.dropped",
       expect.objectContaining({
         provider: "YOOKASSA",
-        ip: "203.0.113.10",
         paymentId: "remote-payment-1",
         reason: "local payment not found"
       })
@@ -173,7 +207,6 @@ describe("POST /api/webhook/yookassa", () => {
       "webhook.integrity",
       expect.objectContaining({
         provider: "YOOKASSA",
-        ip: "203.0.113.10",
         paymentId: "remote-payment-1",
         reason: "metadata paymentId mismatch"
       })
@@ -209,7 +242,6 @@ describe("POST /api/webhook/yookassa", () => {
       "webhook.ip_forbidden",
       expect.objectContaining({
         provider: "YOOKASSA",
-        ip: "203.0.113.10",
         paymentId: "remote-payment-1"
       })
     );
@@ -265,8 +297,7 @@ describe("POST /api/webhook/yookassa", () => {
       }
     });
     expect(mockLogger.warn).toHaveBeenCalledWith("webhook.rate_limited", {
-      provider: "YOOKASSA",
-      ip: "203.0.113.10"
+      provider: "YOOKASSA"
     });
     expect(mockHandleYookassaWebhook).not.toHaveBeenCalled();
     expect(mockLogger.error).not.toHaveBeenCalled();

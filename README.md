@@ -119,8 +119,8 @@ Webhook ЮKassa обрабатывается в режиме `hint + API verific
 
 ## Логирование
 
-Сервер использует structured-логгер `lib/server/logger.ts`. Все API-routes
-проходят через обёртку `withLoggedRoute`, которая кладёт в AsyncLocalStorage
+Сервер использует structured-логгер `lib/server/logger.ts`. Критичные API-routes
+проходят через обёртку `withApiLogging`, которая кладёт в AsyncLocalStorage
 контекст запроса (`requestId`, `route`, `method`, `ip`). Вложенные вызовы
 сервисов автоматически логируют с этим контекстом, ничего не передавая явно.
 

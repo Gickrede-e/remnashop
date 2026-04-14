@@ -201,6 +201,10 @@ export async function disableRemnawaveUser(uuid: string) {
   await remnawaveRequest(`/api/users/${uuid}/actions/disable`, { method: "POST" });
 }
 
+export async function resetRemnawaveUserTraffic(uuid: string) {
+  await remnawaveRequest(`/api/users/${uuid}/actions/reset-traffic`, { method: "POST" });
+}
+
 export async function getRemnawaveSubscriptionByShortUuid(shortUuid: string) {
   return remnawaveRequest<Record<string, unknown>>(
     `/api/subscriptions/by-short-uuid/${shortUuid}`

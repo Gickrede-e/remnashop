@@ -1,5 +1,3 @@
-import { inspect } from "node:util";
-
 import { AppError } from "@/lib/http/errors";
 import { getLoggerContext } from "@/lib/server/logger-context";
 
@@ -26,7 +24,7 @@ export interface SerializedLogEntry {
   [field: string]: unknown;
 }
 
-const LOG_LEVEL_ORDER: Record<LogLevel, number> = {
+const LEVEL_ORDER: Record<LogLevel, number> = {
   debug: 0,
   info: 1,
   warn: 2,
@@ -35,12 +33,11 @@ const LOG_LEVEL_ORDER: Record<LogLevel, number> = {
 
 const REDACTED = "[REDACTED]";
 const CIRCULAR = "[Circular]";
-const MAX_DEPTH = "[MaxDepth]";
-const MAX_REDACTION_DEPTH = 6;
+const MAX_DEPTH_MARKER = "[MaxDepth]";
+const MAX_DEPTH = 6;
 const MAX_ERROR_CAUSE_DEPTH = 3;
 const MAX_STRING_LENGTH = 512;
 const MAX_STACK_LINES = 15;
-const NO_COLOR = "1";
 
 const REDACTED_KEYS = new Set([
   "password",
@@ -82,7 +79,7 @@ function parseLogLevel(value: string | undefined, fallback: LogLevel): LogLevel 
 }
 
 function shouldLog(level: LogLevel) {
-  return LOG_LEVEL_ORDER[level] >= LOG_LEVEL_ORDER[minLevel];
+  return LEVEL_ORDER[level] >= LEVEL_ORDER[minLevel];
 }
 
 function createDefaultSink(): LogSink {
@@ -110,11 +107,9 @@ function orderSerializedEntry(entry: SerializedLogEntry): SerializedLogEntry {
     msg: entry.msg
   };
 
-  const rest = Object.entries(entry)
+  for (const [key, value] of Object.entries(entry)
     .filter(([key]) => key !== "ts" && key !== "level" && key !== "msg")
-    .sort(([left], [right]) => left.localeCompare(right));
-
-  for (const [key, value] of rest) {
+    .sort(([left], [right]) => left.localeCompare(right))) {
     ordered[key] = value;
   }
 
@@ -123,25 +118,19 @@ function orderSerializedEntry(entry: SerializedLogEntry): SerializedLogEntry {
 
 function formatPrettyEntry(entry: SerializedLogEntry) {
   const ordered = orderSerializedEntry(entry);
-  const level = ordered.level.toUpperCase().padEnd(5, " ");
-  const coloredLevel = applyLevelColor(level, ordered.level);
   const fields = Object.entries(ordered)
     .filter(([key]) => key !== "ts" && key !== "level" && key !== "msg")
     .map(([key, value]) => `${key}=${formatPrettyValue(value)}`)
     .join(" ");
 
-  return [ordered.ts, coloredLevel, ordered.msg, fields].filter(Boolean).join(" ");
-}
-
-function applyLevelColor(levelLabel: string, level: LogLevel) {
-  if (!process.stdout.isTTY || process.env.NO_COLOR === NO_COLOR) {
-    return levelLabel;
-  }
-
-  const colorCode =
-    level === "debug" ? "\x1b[2m" : level === "warn" ? "\x1b[33m" : level === "error" ? "\x1b[31m" : "";
-
-  return colorCode ? `${colorCode}${levelLabel}\x1b[0m` : levelLabel;
+  return [
+    ordered.ts,
+    ordered.level.toUpperCase().padStart(5, " "),
+    ordered.msg,
+    fields
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 function formatPrettyValue(value: unknown, depth = 0): string {
@@ -157,7 +146,7 @@ function formatPrettyValue(value: unknown, depth = 0): string {
     return needsQuoting(value) ? JSON.stringify(value) : value;
   }
 
-  if (typeof value === "number" || typeof value === "bigint" || typeof value === "boolean") {
+  if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") {
     return String(value);
   }
 
@@ -169,15 +158,18 @@ function formatPrettyValue(value: unknown, depth = 0): string {
     return value.toISOString();
   }
 
-  if (depth >= 3 || typeof value !== "object") {
-    return inspect(value, { breakLength: Infinity, compact: true }).replace(/[{}]/g, "");
+  if (typeof value !== "object") {
+    return String(value);
   }
 
-  const entries = Object.entries(value as Record<string, unknown>)
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([key, nestedValue]) => `${key}:${formatPrettyValue(nestedValue, depth + 1)}`);
+  if (depth >= 3) {
+    return "(...)";
+  }
 
-  return `(${entries.join(",")})`;
+  return `(${Object.entries(value as Record<string, unknown>)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, nestedValue]) => `${key}:${formatPrettyValue(nestedValue, depth + 1)}`)
+    .join(",")})`;
 }
 
 function needsQuoting(value: string) {
@@ -190,14 +182,13 @@ function createLogger(context: LogFields = {}): Logger {
       return;
     }
 
-    const loggerContext = getLoggerContext() ?? {};
-    const entry = serializeLogEntry(level, msg, {
-      ...loggerContext,
-      ...context,
-      ...fields
-    });
-
-    currentSink.write(entry);
+    currentSink.write(
+      serializeLogEntry(level, msg, {
+        ...(getLoggerContext() ?? {}),
+        ...context,
+        ...fields
+      })
+    );
   }
 
   return {
@@ -223,20 +214,16 @@ function createLogger(context: LogFields = {}): Logger {
 }
 
 function serializeLogEntry(level: LogLevel, msg: string, fields: LogFields): SerializedLogEntry {
-  const redactedFields = redactSensitive(fields);
-
   return {
     ts: new Date().toISOString(),
     level,
     msg,
-    ...redactedFields
+    ...sanitizeFields(fields)
   };
 }
 
-function redactSensitive(fields: LogFields): LogFields {
-  const seen = new WeakSet<object>();
-
-  return sanitizeObject(fields, 0, seen);
+function sanitizeFields(fields: LogFields): LogFields {
+  return sanitizeObject(fields, 0, new WeakSet<object>());
 }
 
 function sanitizeObject(
@@ -244,8 +231,8 @@ function sanitizeObject(
   depth: number,
   seen: WeakSet<object>
 ): Record<string, unknown> {
-  if (depth > MAX_REDACTION_DEPTH) {
-    return { value: MAX_DEPTH };
+  if (depth >= MAX_DEPTH) {
+    return { value: MAX_DEPTH_MARKER };
   }
 
   if (seen.has(value)) {
@@ -254,12 +241,12 @@ function sanitizeObject(
 
   seen.add(value);
 
-  const sanitizedEntries = Object.entries(value).map(([key, currentValue]) => [
-    key,
-    sanitizeValue(currentValue, key, depth + 1, seen)
-  ]);
-
-  return Object.fromEntries(sanitizedEntries);
+  return Object.fromEntries(
+    Object.entries(value).map(([key, currentValue]) => [
+      key,
+      sanitizeValue(currentValue, key, depth + 1, seen)
+    ])
+  );
 }
 
 function sanitizeValue(
@@ -276,11 +263,13 @@ function sanitizeValue(
     return truncateString(value);
   }
 
-  if (value === null || value === undefined) {
-    return value;
-  }
-
-  if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") {
+  if (
+    value === null ||
+    value === undefined ||
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    typeof value === "bigint"
+  ) {
     return value;
   }
 
@@ -296,12 +285,8 @@ function sanitizeValue(
     return serializeError(value);
   }
 
-  if (depth > MAX_REDACTION_DEPTH) {
-    return MAX_DEPTH;
-  }
-
-  if (Array.isArray(value)) {
-    return value.map((item) => sanitizeValue(item, undefined, depth + 1, seen));
+  if (depth >= MAX_DEPTH) {
+    return MAX_DEPTH_MARKER;
   }
 
   if (typeof value !== "object") {
@@ -314,12 +299,16 @@ function sanitizeValue(
 
   seen.add(value);
 
-  const sanitizedEntries = Object.entries(value as Record<string, unknown>).map(([nestedKey, nestedValue]) => [
-    nestedKey,
-    sanitizeValue(nestedValue, nestedKey, depth + 1, seen)
-  ]);
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeValue(item, undefined, depth + 1, seen));
+  }
 
-  return Object.fromEntries(sanitizedEntries);
+  return Object.fromEntries(
+    Object.entries(value).map(([nestedKey, nestedValue]) => [
+      nestedKey,
+      sanitizeValue(nestedValue, nestedKey, depth + 1, seen)
+    ])
+  );
 }
 
 function truncateString(value: string) {
@@ -327,7 +316,7 @@ function truncateString(value: string) {
     return value;
   }
 
-  return `${value.substring(0, MAX_STRING_LENGTH)}…(truncated, totalLen=${value.length})`;
+  return `${value.slice(0, MAX_STRING_LENGTH)}…(truncated, totalLen=${value.length})`;
 }
 
 export function serializeError(error: unknown): Record<string, unknown> {
@@ -340,7 +329,11 @@ function serializeErrorInternal(error: unknown, depth: number): Record<string, u
   }
 
   if (!(error instanceof Error)) {
-    return sanitizeUnknownObject(error);
+    const sanitized = sanitizeValue(error, undefined, 0, new WeakSet<object>());
+
+    return sanitized && typeof sanitized === "object" && !Array.isArray(sanitized)
+      ? (sanitized as Record<string, unknown>)
+      : { message: String(error) };
   }
 
   const serialized: Record<string, unknown> = {
@@ -359,9 +352,9 @@ function serializeErrorInternal(error: unknown, depth: number): Record<string, u
     serialized.retryable = error.retryable;
   }
 
-  const errorWithCause = error as Error & { cause?: unknown };
-  if (depth < MAX_ERROR_CAUSE_DEPTH && errorWithCause.cause !== undefined) {
-    serialized.cause = serializeErrorInternal(errorWithCause.cause, depth + 1);
+  const cause = (error as Error & { cause?: unknown }).cause;
+  if (cause !== undefined && depth < MAX_ERROR_CAUSE_DEPTH) {
+    serialized.cause = serializeErrorInternal(cause, depth + 1);
   }
 
   return serialized;
