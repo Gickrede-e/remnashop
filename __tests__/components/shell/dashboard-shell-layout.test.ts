@@ -68,8 +68,6 @@ describe("dashboard shell layout", () => {
     expect(mobile).toContain(".dashShellMain");
     expect(mobile).toContain("grid-column: 1");
     expect(mobile).toContain(".dashSidebar");
-    expect(mobile).toContain("position: static");
-    expect(mobile).toContain(".dashSidebarFooter");
-    expect(mobile).toContain("margin-top: 0");
+    expect(mobile).toContain("display: none");
   });
 });

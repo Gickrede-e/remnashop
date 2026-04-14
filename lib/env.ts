@@ -32,6 +32,7 @@ const DEV_ENV_FALLBACKS = {
   SMTP_USER: "notifications@example.com",
   SMTP_PASS: "change_me",
   EMAIL_FROM: "GickShop <notifications@example.com>",
+  EMAIL_ENABLED: "false",
   REFERRAL_REWARD_TYPE: "FREE_DAYS",
   REFERRAL_REWARD_VALUE: "3",
   CRON_SECRET: "change_me_internal_cron_secret",
@@ -143,6 +144,7 @@ const rawEnv = {
   SMTP_USER: readEnvValue("SMTP_USER"),
   SMTP_PASS: readEnvValue("SMTP_PASS"),
   EMAIL_FROM: readEnvValue("EMAIL_FROM"),
+  EMAIL_ENABLED: readEnvValue("EMAIL_ENABLED"),
   REFERRAL_REWARD_TYPE: readEnvValue("REFERRAL_REWARD_TYPE"),
   REFERRAL_REWARD_VALUE: readEnvValue("REFERRAL_REWARD_VALUE"),
   CRON_SECRET: readEnvValue("CRON_SECRET"),
@@ -187,6 +189,10 @@ const envSchema = z.object({
   SMTP_USER: z.string().min(1),
   SMTP_PASS: requiredProductionString("SMTP_PASS"),
   EMAIL_FROM: z.string().min(1),
+  EMAIL_ENABLED: z
+    .string()
+    .default("false")
+    .transform((value) => value === "true"),
   REFERRAL_REWARD_TYPE: z.enum(["FREE_DAYS", "FREE_TRAFFIC_GB", "DISCOUNT_PERCENT"]).default("FREE_DAYS"),
   REFERRAL_REWARD_VALUE: z.coerce.number().int().positive().default(3),
   CRON_SECRET: requiredProductionString("CRON_SECRET", 16),

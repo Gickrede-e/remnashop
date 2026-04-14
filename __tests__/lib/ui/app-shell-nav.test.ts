@@ -49,11 +49,11 @@ describe("app shell nav", () => {
     expect(navModule).toHaveProperty("getOtherNavItems");
 
     expect(futureNavModule.getOtherNavItems("dashboard", { canAccessAdmin: true })).toEqual([
-      { href: "#profile", label: "Профиль", slot: "other" },
+      { href: "/dashboard/profile", label: "Профиль", slot: "other" },
       { href: "/admin", label: "Админка", slot: "other" }
     ]);
     expect(futureNavModule.getOtherNavItems("dashboard", { canAccessAdmin: false })).toEqual([
-      { href: "#profile", label: "Профиль", slot: "other" }
+      { href: "/dashboard/profile", label: "Профиль", slot: "other" }
     ]);
   });
 

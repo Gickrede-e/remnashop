@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import { buildRegisterHref, sanitizeNextPath } from "@/lib/auth/navigation";
 import { loginSchema } from "@/lib/schemas/auth";
+import { publicEnv } from "@/lib/public-env";
 
 type LoginValues = z.infer<typeof loginSchema>;
 
@@ -80,6 +81,11 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
           className="authStandaloneInput"
           {...form.register("password")}
         />
+        {publicEnv.EMAIL_ENABLED ? (
+          <Link href="/forgot-password" className="authForgotLink">
+            Забыл пароль?
+          </Link>
+        ) : null}
       </div>
       {error ? <p className="authStandaloneError">{error}</p> : null}
       <button type="submit" className="authStandaloneSubmit" disabled={pending}>

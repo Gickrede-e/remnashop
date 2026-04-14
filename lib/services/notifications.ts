@@ -1,5 +1,7 @@
 import { env } from "@/lib/env";
 
+const SITE_NAME = env.NEXT_PUBLIC_SITE_NAME;
+
 let transporterPromise: Promise<Awaited<ReturnType<typeof createEmailTransporter>>> | null = null;
 
 async function createEmailTransporter() {
@@ -65,6 +67,30 @@ async function sendTelegramNotification(message: string) {
       })
     )
   );
+}
+
+export async function sendVerificationCode(email: string, code: string) {
+  await sendEmailNotification({
+    to: email,
+    subject: `${SITE_NAME}: код подтверждения`,
+    html: `
+      <p>Ваш код подтверждения для регистрации:</p>
+      <h2 style="letter-spacing:0.3em;font-size:2rem;">${code}</h2>
+      <p>Код действителен <strong>15 минут</strong>. Не сообщайте его никому.</p>
+    `
+  });
+}
+
+export async function sendPasswordResetCode(email: string, code: string) {
+  await sendEmailNotification({
+    to: email,
+    subject: `${SITE_NAME}: сброс пароля`,
+    html: `
+      <p>Ваш код для сброса пароля:</p>
+      <h2 style="letter-spacing:0.3em;font-size:2rem;">${code}</h2>
+      <p>Код действителен <strong>15 минут</strong>. Если вы не запрашивали сброс, проигнорируйте это письмо.</p>
+    `
+  });
 }
 
 export async function notifyPaymentSucceeded(input: {
