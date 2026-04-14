@@ -69,10 +69,10 @@ export function getOtherNavItems(area: AppShellNavArea, options: OtherNavOptions
   if (area === "dashboard") {
     return options.canAccessAdmin
       ? [
-          { href: "#profile", label: "Профиль", slot: "other" },
+          { href: "/dashboard/profile", label: "Профиль", slot: "other" },
           { href: "/admin", label: "Админка", slot: "other" }
         ]
-      : [{ href: "#profile", label: "Профиль", slot: "other" }];
+      : [{ href: "/dashboard/profile", label: "Профиль", slot: "other" }];
   }
 
   return adminOtherNavItems;

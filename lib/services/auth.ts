@@ -36,6 +36,36 @@ export async function registerUser(input: {
   });
 }
 
+/**
+ * Creates a user using a pre-computed bcrypt password hash.
+ * Used in the OTP registration flow where the hash was stored in the verification token.
+ */
+export async function registerUserWithHash(input: {
+  email: string;
+  passwordHash: string;
+  referralCode?: string;
+}) {
+  const email = input.email.toLowerCase();
+  const existing = await prisma.user.findUnique({ where: { email } });
+
+  if (existing) {
+    throw new Error("Пользователь с таким email уже существует");
+  }
+
+  const referredBy = input.referralCode
+    ? await prisma.user.findUnique({ where: { referralCode: input.referralCode } })
+    : null;
+
+  return prisma.user.create({
+    data: {
+      email,
+      passwordHash: input.passwordHash,
+      role: resolveRoleForEmail(email),
+      referredById: referredBy?.id ?? null
+    }
+  });
+}
+
 export async function loginUser(input: { email: string; password: string }) {
   const user = await prisma.user.findUnique({
     where: { email: input.email.toLowerCase() }
