@@ -72,3 +72,10 @@ export function assertCronSecret(request: NextRequest) {
 
   return header === env.CRON_SECRET || bearer === env.CRON_SECRET;
 }
+
+export function withLoggedRoute<T>(
+  request: NextRequest | Request,
+  handler: () => Promise<T>
+): Promise<T> {
+  return withApiLogging(request, handler);
+}
