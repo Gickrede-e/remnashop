@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "payments" ADD COLUMN "months" INTEGER NOT NULL DEFAULT 1;

@@ -2099,6 +2099,269 @@ p {
     border-bottom: none;
   }
 
+  /* ── Step wizard ─────────────────────────────────────────────────── */
+
+  @keyframes checkoutStepIn {
+    from {
+      opacity: 0;
+      transform: translateY(0.4rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .checkoutStep {
+    display: grid;
+    gap: clamp(1rem, 2vw, 1.5rem);
+    animation: checkoutStepIn 180ms ease both;
+  }
+
+  /* Step indicator (breadcrumb row) */
+  .checkoutStepIndicator {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+
+  .checkoutStepIndicatorItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    flex: 1;
+    position: relative;
+  }
+
+  .checkoutStepIndicatorItem:first-child {
+    align-items: flex-start;
+  }
+
+  .checkoutStepIndicatorItem:last-child {
+    align-items: flex-end;
+  }
+
+  .checkoutStepLine {
+    position: absolute;
+    top: 0.85rem;
+    left: calc(-50% + 1rem);
+    right: calc(50% + 1rem);
+    height: 1px;
+    background: color-mix(in srgb, hsl(var(--app-border)) 80%, transparent);
+    transition: background 200ms;
+  }
+
+  .checkoutStepLine.is-active {
+    background: var(--text-primary);
+  }
+
+  .checkoutStepDot {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border: 1.5px solid color-mix(in srgb, hsl(var(--app-border)) 80%, transparent);
+    color: hsl(var(--app-muted-strong));
+    background: transparent;
+    transition: background 200ms, border-color 200ms, color 200ms;
+    z-index: 1;
+  }
+
+  .checkoutStepDot.is-current {
+    background: var(--text-primary);
+    border-color: var(--text-primary);
+    color: var(--canvas-0);
+  }
+
+  .checkoutStepDot.is-done {
+    background: transparent;
+    border-color: var(--text-primary);
+    color: var(--text-primary);
+  }
+
+  .checkoutStepLabel {
+    font-size: 0.75rem;
+    color: hsl(var(--app-muted-strong));
+    transition: color 200ms;
+  }
+
+  .checkoutStepLabel.is-current {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .checkoutStepLabel.is-done {
+    color: var(--text-secondary);
+  }
+
+  /* Back navigation row */
+  .checkoutBackNav {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .checkoutBackBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+    color: hsl(var(--app-muted-strong));
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: color 150ms;
+  }
+
+  .checkoutBackBtn:hover:not(:disabled) {
+    color: var(--text-primary);
+  }
+
+  .checkoutBackBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .checkoutBackContext {
+    font-size: 0.875rem;
+    color: hsl(var(--app-muted-strong));
+  }
+
+  /* Plan cards (step 1) */
+  .checkoutPlanList {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .checkoutPlanCard {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+    text-align: left;
+    padding: 1rem 1.1rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 80%, transparent);
+    border-radius: calc(var(--radius) + 0.15rem);
+    background: transparent;
+    cursor: pointer;
+    transition: border-color 150ms, background 150ms;
+  }
+
+  .checkoutPlanCard:hover:not(:disabled) {
+    border-color: color-mix(in srgb, hsl(var(--app-border-strong)) 50%, hsl(var(--app-border)));
+    background: color-mix(in srgb, hsl(var(--app-accent)) 4%, transparent);
+  }
+
+  .checkoutPlanCard:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .checkoutPlanCardLeft {
+    display: grid;
+    gap: 0.2rem;
+    min-width: 0;
+  }
+
+  .checkoutPlanCardName {
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .checkoutPlanCardMeta {
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.85rem;
+  }
+
+  .checkoutPlanCardDesc {
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  .checkoutPlanCardRight {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    flex-shrink: 0;
+  }
+
+  .checkoutPlanCardPrice {
+    color: var(--text-primary);
+    font-size: 1.05rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .checkoutPlanCardUnit {
+    color: hsl(var(--app-muted-strong));
+    font-size: 0.8rem;
+  }
+
+  /* Duration grid (step 2) */
+  .checkoutDurationGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .checkoutDurationOption {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 1.1rem 0.75rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--app-border)) 80%, transparent);
+    border-radius: calc(var(--radius) + 0.15rem);
+    background: transparent;
+    cursor: pointer;
+    transition: border-color 150ms, background 150ms, color 150ms;
+    text-align: center;
+  }
+
+  .checkoutDurationOption:hover:not(:disabled) {
+    border-color: color-mix(in srgb, hsl(var(--app-border-strong)) 50%, hsl(var(--app-border)));
+    background: color-mix(in srgb, hsl(var(--app-accent)) 4%, transparent);
+  }
+
+  .checkoutDurationOption.is-active {
+    border-color: var(--text-primary);
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+  }
+
+  .checkoutDurationOption:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .checkoutDurationLabel {
+    font-size: 0.88rem;
+    color: hsl(var(--app-muted-strong));
+  }
+
+  .checkoutDurationPrice {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  @media (max-width: 400px) {
+    .checkoutDurationGrid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ── End step wizard ─────────────────────────────────────────────── */
+
   .dataPanel,
   .dataPanelFeature,
   .devicePanel,

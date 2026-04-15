@@ -634,7 +634,7 @@ export async function activateSubscriptionFromPayment(paymentId: string) {
     ? new Date(savedActivationMeta.expiresAt)
     : new Date(
         (isActive && currentExpiry ? currentExpiry : now).getTime() +
-          (payment.plan.durationDays + promoBonusDays) * 86400000
+          (payment.plan.durationDays * (payment.months ?? 1) + promoBonusDays) * 86400000
       );
   const newTrafficLimit = savedActivationMeta
     ? BigInt(savedActivationMeta.trafficLimitBytes)

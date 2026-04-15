@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       code: body.code,
       planId: body.planId,
       userId: session.userId,
-      amount: plan.price
+      amount: plan.price * (body.months ?? 1)
     });
 
     return apiOk({

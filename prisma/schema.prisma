@@ -102,6 +102,7 @@ model Payment {
   externalPaymentId String?         @unique
   amount            Int
   originalAmount    Int?
+  months            Int             @default(1)
   currency          String          @default("RUB")
   status            PaymentStatus   @default(PENDING)
   confirmationUrl   String?
