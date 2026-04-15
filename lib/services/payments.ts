@@ -16,6 +16,7 @@ export async function createPaymentForUser(input: {
   planId: string;
   provider: PaymentProvider;
   promoCode?: string;
+  months?: number;
 }) {
   if (!isPaymentProviderEnabledFromEnv(input.provider)) {
     throw new Error("Способ оплаты недоступен");
@@ -33,23 +34,27 @@ export async function createPaymentForUser(input: {
     | Awaited<ReturnType<typeof validatePromoCode>>
     | null = null;
 
+  const months = Math.max(1, Math.min(12, Math.floor(input.months ?? 1)));
+  const baseAmount = plan.price * months;
+
   if (input.promoCode) {
     promoOutcome = await validatePromoCode({
       code: input.promoCode,
       planId: plan.id,
       userId: input.userId,
-      amount: plan.price
+      amount: baseAmount
     });
   }
 
-  const amount = promoOutcome?.finalAmount ?? plan.price;
+  const amount = promoOutcome?.finalAmount ?? baseAmount;
   const payment = await prisma.payment.create({
     data: {
       userId: input.userId,
       planId: plan.id,
       provider: input.provider,
       amount,
-      originalAmount: plan.price,
+      originalAmount: baseAmount,
+      months,
       promoCodeId: promoOutcome?.promo.id ?? null,
       providerPayload: {}
     }
