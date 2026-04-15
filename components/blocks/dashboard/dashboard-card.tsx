@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 type DashboardCardProps = {
-  title: string;
+  title?: string;
   actions?: ReactNode;
   children: ReactNode;
   className?: string;
@@ -10,10 +10,12 @@ type DashboardCardProps = {
 export function DashboardCard({ title, actions, children, className }: DashboardCardProps) {
   return (
     <section className={className ? `dashCard ${className}` : "dashCard"}>
-      <header className="dashCardHead">
-        <h2 className="dashCardTitle">{title}</h2>
-        {actions ? <div className="dashCardActions">{actions}</div> : null}
-      </header>
+      {title || actions ? (
+        <header className="dashCardHead">
+          {title ? <h2 className="dashCardTitle">{title}</h2> : <span aria-hidden="true" />}
+          {actions ? <div className="dashCardActions">{actions}</div> : null}
+        </header>
+      ) : null}
       <div className="dashCardBody">{children}</div>
     </section>
   );

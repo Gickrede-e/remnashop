@@ -71,5 +71,27 @@ describe("dashboard shell layout", () => {
     expect(mobile).toContain("position: static");
     expect(mobile).toContain(".dashSidebarFooter");
     expect(mobile).toContain("margin-top: 0");
+    expect(mobile).toContain(".dashMobileNav");
+    expect(mobile).toContain("position: fixed");
+    expect(mobile).toContain("bottom:");
+  });
+
+  it("allows long mobile-nav labels to wrap cleanly without shifting icons", () => {
+    const source = readCss();
+
+    expect(source).toMatch(
+      /\.dashMobileNavLink,\s*\.dashMobileNavMoreSummary,\s*\.dashMobileNavLogoutButton\s*\{[\s\S]*?display:\s*flex;[\s\S]*?flex-direction:\s*column;[\s\S]*?min-height:\s*4(?:\.1)?rem;?[\s\S]*?\}/
+    );
+
+    const iconRule = extractRule(source, ".dashMobileNavIcon");
+
+    expect(iconRule).toContain("flex: 0 0 1rem");
+
+    const labelRule = extractRule(source, ".dashMobileNavLabel");
+
+    expect(labelRule).toContain("line-height:");
+    expect(labelRule).toContain("white-space: normal");
+    expect(labelRule).toContain("overflow-wrap:");
+    expect(labelRule).not.toContain("text-transform:");
   });
 });

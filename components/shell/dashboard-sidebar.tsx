@@ -12,7 +12,7 @@ const areaTagline: Record<AppShellNavArea, string> = {
   public: "ГОСТЕВОЙ КОНТУР"
 };
 
-type SidebarItem = {
+export type DashboardSidebarItem = {
   href: string;
   label: string;
   icon: LucideIcon;
@@ -21,8 +21,8 @@ type SidebarItem = {
 
 type DashboardSidebarProps = {
   area: AppShellNavArea;
-  primaryItems: SidebarItem[];
-  otherItems: SidebarItem[];
+  primaryItems: DashboardSidebarItem[];
+  otherItems: DashboardSidebarItem[];
   primaryCta: { label: string; href: string };
   accountSummary: { email: string } | null;
 };
@@ -37,7 +37,7 @@ export function DashboardSidebar({
   const showPrimaryCta = area === "public";
 
   return (
-    <aside className="dashSidebar" data-testid="app-nav-rail" aria-label="Навигация кабинета">
+    <aside className="dashSidebar" data-area={area} data-testid="app-nav-rail" aria-label="Навигация кабинета">
       <div className="dashSidebarBrand">
         <p className="dashSidebarBrandWordmark">
           {publicEnv.NEXT_PUBLIC_SITE_NAME?.toUpperCase() ?? "GICKSHOP"}

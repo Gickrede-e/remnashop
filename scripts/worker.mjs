@@ -1,4 +1,5 @@
 import { serializeError, workerLogger as logger } from "./worker-logger.mjs";
+import { createWorkerRuntime } from "./worker-runtime.mjs";
 
 const intervalMs = 10 * 60 * 1000;
 const baseUrl = process.env.APP_INTERNAL_URL || "http://app:3000";
@@ -30,16 +31,22 @@ async function runSync() {
   }
 }
 
-async function loop() {
-  await runSync();
+const runtime = createWorkerRuntime({
+  intervalMs,
+  logger,
+  runSync
+});
 
-  while (true) {
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
-    await runSync();
-  }
+for (const signal of ["SIGTERM", "SIGINT"]) {
+  process.on(signal, () => {
+    void runtime.stop(signal);
+  });
 }
 
-loop().catch((error) => {
+runtime.start().then(() => {
+  logger.info("worker.shutdown.complete", {});
+  process.exit(0);
+}).catch((error) => {
   logger.error("worker.fatal", { error: serializeError(error) });
   process.exit(1);
 });

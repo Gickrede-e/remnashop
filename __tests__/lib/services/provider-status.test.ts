@@ -6,8 +6,10 @@ const { mockEnv, envReads } = vi.hoisted(() => {
   const state = {
     REMNAWAVE_BASE_URL: "https://your-panel.example.com",
     REMNAWAVE_API_TOKEN: "placeholder_token",
+    YOOKASSA_ENABLED: true,
     YOOKASSA_SHOP_ID: "123456",
     YOOKASSA_SECRET_KEY: "test_secret_key",
+    PLATEGA_ENABLED: true,
     PLATEGA_API_KEY: "platega_placeholder_key",
     PLATEGA_WEBHOOK_SECRET: "platega_placeholder_secret",
     PLATEGA_MERCHANT_ID: ""
@@ -35,8 +37,10 @@ import { getProviderStatuses } from "@/lib/services/provider-status";
 function configureAllProviders() {
   mockEnv.REMNAWAVE_BASE_URL = "https://panel.example.com";
   mockEnv.REMNAWAVE_API_TOKEN = "real-token";
+  mockEnv.YOOKASSA_ENABLED = true;
   mockEnv.YOOKASSA_SHOP_ID = "shop-id";
   mockEnv.YOOKASSA_SECRET_KEY = "secret";
+  mockEnv.PLATEGA_ENABLED = true;
   mockEnv.PLATEGA_API_KEY = "platega-real-key";
   mockEnv.PLATEGA_WEBHOOK_SECRET = "platega-real-secret";
   mockEnv.PLATEGA_MERCHANT_ID = "merchant-1";
@@ -49,8 +53,10 @@ describe("getProviderStatuses", () => {
     envReads.length = 0;
     mockEnv.REMNAWAVE_BASE_URL = "https://your-panel.example.com";
     mockEnv.REMNAWAVE_API_TOKEN = "placeholder_token";
+    mockEnv.YOOKASSA_ENABLED = true;
     mockEnv.YOOKASSA_SHOP_ID = "123456";
     mockEnv.YOOKASSA_SECRET_KEY = "test_secret_key";
+    mockEnv.PLATEGA_ENABLED = true;
     mockEnv.PLATEGA_API_KEY = "platega_placeholder_key";
     mockEnv.PLATEGA_WEBHOOK_SECRET = "platega_placeholder_secret";
     mockEnv.PLATEGA_MERCHANT_ID = "";
@@ -73,8 +79,10 @@ describe("getProviderStatuses", () => {
       expect.arrayContaining([
         "REMNAWAVE_BASE_URL",
         "REMNAWAVE_API_TOKEN",
+        "YOOKASSA_ENABLED",
         "YOOKASSA_SHOP_ID",
         "YOOKASSA_SECRET_KEY",
+        "PLATEGA_ENABLED",
         "PLATEGA_API_KEY",
         "PLATEGA_WEBHOOK_SECRET",
         "PLATEGA_MERCHANT_ID"
@@ -126,6 +134,35 @@ describe("getProviderStatuses", () => {
       summary: "Не настроен",
       detail: "placeholder config"
     });
+  });
+
+  it("marks disabled payment providers as disabled without probing them", async () => {
+    mockEnv.REMNAWAVE_BASE_URL = "https://panel.example.com";
+    mockEnv.REMNAWAVE_API_TOKEN = "real-token";
+    mockEnv.YOOKASSA_ENABLED = false;
+    mockEnv.YOOKASSA_SHOP_ID = "";
+    mockEnv.YOOKASSA_SECRET_KEY = "";
+    mockEnv.PLATEGA_ENABLED = false;
+    mockEnv.PLATEGA_API_KEY = "";
+    mockEnv.PLATEGA_WEBHOOK_SECRET = "";
+    mockEnv.PLATEGA_MERCHANT_ID = "";
+
+    const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await getProviderStatuses();
+
+    expect(result.find((item) => item.label === "YooKassa")).toMatchObject({
+      status: "disabled",
+      summary: "Выключен",
+      detail: "module disabled by env flag"
+    });
+    expect(result.find((item) => item.label === "Platega")).toMatchObject({
+      status: "disabled",
+      summary: "Выключен",
+      detail: "module disabled by env flag"
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("marks providers as not_configured without probing when required values are empty", async () => {

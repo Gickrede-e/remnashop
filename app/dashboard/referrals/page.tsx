@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { DashboardPageHeader } from "@/components/blocks/dashboard/dashboard-page-header";
 import { ReferralSummaryBlocks } from "@/components/blocks/dashboard/referral-summary-blocks";
 import { getSession } from "@/lib/auth/session";
+import { env } from "@/lib/env";
 import { getUserById } from "@/lib/services/auth";
 import { getMyReferralSummary } from "@/lib/services/referrals";
 
@@ -15,8 +16,7 @@ export default async function DashboardReferralsPage() {
   }
 
   const [user, summary] = await Promise.all([getUserById(session.userId), getMyReferralSummary(session.userId)]);
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "";
-  const referralLink = user?.referralCode ? `${siteUrl}/register?ref=${user.referralCode}` : "";
+  const referralLink = user?.referralCode ? `${env.siteUrl}/register?ref=${user.referralCode}` : "";
 
   return (
     <div className="dashboardWorkspacePage dashboardSurfacePage dashboardSurfacePageReferrals dashShellPageWrapper">

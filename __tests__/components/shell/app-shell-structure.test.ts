@@ -54,8 +54,7 @@ describe("app shell structure", () => {
     expect(markup.match(/<aside class="[^"]*\bdashSidebar\b[^"]*"/g) ?? []).toHaveLength(1);
     expect(markup).toContain('data-testid="app-nav-rail"');
     expect(markup).toContain("GICKSHOP");
-    expectTextInOrder(markup, ["Обзор", "Купить", "Устройства", "История", "Рефералы"]);
-    expect(markup).not.toContain(">Ещё<");
+    expectTextInOrder(markup, ["Подписка", "Купить", "Устройства", "История", "Рефералы"]);
   });
 
   it("shows OTHER STUFF only when other nav items exist", () => {
@@ -95,5 +94,27 @@ describe("app shell structure", () => {
     expect(markup).not.toMatch(/\bappTopbar[A-Za-z-]*\b/);
     expect(markup).not.toMatch(/\bappMoreSheet[A-Za-z-]*\b/);
     expect(markup).not.toMatch(/\bappBottomNav[A-Za-z-]*\b/);
+  });
+
+  it("renders a mobile bottom nav for dashboard and admin with cross-area access", () => {
+    const dashboardMarkup = renderShell();
+    const adminMarkup = renderShell({
+      area: "admin",
+      accountSummary: { email: "admin@example.com" }
+    });
+
+    expect(dashboardMarkup).toContain('data-testid="app-mobile-nav"');
+    expectTextInOrder(dashboardMarkup, ["Подписка", "Купить", "Устройства", "История", "Ещё"]);
+    expect(dashboardMarkup).toContain('href="/admin"');
+
+    expect(adminMarkup).toContain('data-testid="app-mobile-nav"');
+    expectTextInOrder(adminMarkup, ["Обзор", "Пользователи", "Платежи", "Тарифы", "Ещё"]);
+    expect(adminMarkup).toContain('href="/dashboard"');
+  });
+
+  it("keeps public shell without the authenticated mobile bottom nav", () => {
+    const publicMarkup = renderShell({ area: "public" });
+
+    expect(publicMarkup).not.toContain('data-testid="app-mobile-nav"');
   });
 });

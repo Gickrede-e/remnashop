@@ -167,7 +167,8 @@ export function AdminProviderStatusSection({ statuses }: { statuses: ProviderSta
                   item.status === "available" && "providerStatusAvailable",
                   item.status === "unavailable" && "providerStatusUnavailable",
                   item.status === "timeout" && "providerStatusTimeout",
-                  item.status === "not_configured" && "providerStatusNotConfigured"
+                  item.status === "not_configured" && "providerStatusNotConfigured",
+                  item.status === "disabled" && "providerStatusDisabled"
                 )}
               >
                 {item.summary}

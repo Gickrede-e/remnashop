@@ -2,7 +2,7 @@ import { Buffer } from "node:buffer";
 
 import { env } from "@/lib/env";
 
-export type ProviderStatus = "available" | "timeout" | "unavailable" | "not_configured";
+export type ProviderStatus = "available" | "timeout" | "unavailable" | "not_configured" | "disabled";
 
 export type ProviderStatusRow = {
   label: string;
@@ -18,6 +18,7 @@ type GetProviderStatusesOptions = {
 
 type ProviderProbe = {
   label: ProviderStatusRow["label"];
+  isEnabled: boolean;
   isConfigured: boolean;
   run: (signal: AbortSignal) => Promise<Response>;
 };
@@ -64,6 +65,10 @@ function buildNotConfiguredRow(label: string) {
   return buildStatus(label, "not_configured", "Не настроен", "placeholder config");
 }
 
+function buildDisabledRow(label: string) {
+  return buildStatus(label, "disabled", "Выключен", "module disabled by env flag");
+}
+
 function buildUnavailableRow(label: string, detail: string, checkedAt?: string) {
   return buildStatus(label, "unavailable", "Недоступен", detail, checkedAt);
 }
@@ -103,11 +108,13 @@ function getPlaceholderFlags() {
       isMissingValue(remnawaveApiToken) ||
       hasPlaceholderValue(remnawaveBaseUrl, placeholderConfig.remnawaveBaseUrls) ||
       hasPlaceholderValue(remnawaveApiToken, placeholderConfig.remnawaveApiTokens),
+    yookassaEnabled: env.YOOKASSA_ENABLED,
     yookassa:
       isMissingValue(yookassaShopId) ||
       isMissingValue(yookassaSecretKey) ||
       hasPlaceholderValue(yookassaShopId, placeholderConfig.yookassaShopIds) ||
       hasPlaceholderValue(yookassaSecretKey, placeholderConfig.yookassaSecretKeys),
+    plategaEnabled: env.PLATEGA_ENABLED,
     platega:
       isMissingValue(plategaApiKey) ||
       isMissingValue(plategaWebhookSecret) ||
@@ -124,6 +131,7 @@ function createProviderProbes() {
   return [
     {
       label: "Remnawave",
+      isEnabled: true,
       isConfigured: !placeholderFlags.remnawave,
       run: (signal) =>
         fetch(`${stripTrailingSlash(env.REMNAWAVE_BASE_URL)}/api/users`, {
@@ -136,7 +144,8 @@ function createProviderProbes() {
     },
     {
       label: "YooKassa",
-      isConfigured: !placeholderFlags.yookassa,
+      isEnabled: placeholderFlags.yookassaEnabled,
+      isConfigured: placeholderFlags.yookassaEnabled && !placeholderFlags.yookassa,
       // YooKassa docs expose GET /v3/payments as a read-only listing endpoint with HTTP Basic auth.
       run: (signal) =>
         fetch("https://api.yookassa.ru/v3/payments?limit=1", {
@@ -149,7 +158,8 @@ function createProviderProbes() {
     },
     {
       label: "Platega",
-      isConfigured: !placeholderFlags.platega,
+      isEnabled: placeholderFlags.plategaEnabled,
+      isConfigured: placeholderFlags.plategaEnabled && !placeholderFlags.platega,
       // Platega docs expose GET /transaction/balance-unlock-operations with X-MerchantId/X-Secret.
       run: (signal) => {
         const to = new Date().toISOString();
@@ -245,7 +255,9 @@ export async function getProviderStatuses(
   const probes = createProviderProbes();
   const settled = await Promise.allSettled(
     probes.map((probe) =>
-      probe.isConfigured
+      !probe.isEnabled
+        ? Promise.resolve(buildDisabledRow(probe.label))
+        : probe.isConfigured
         ? probeWithTimeout(probe.label, probe.run, timeoutMs)
         : Promise.resolve(buildNotConfiguredRow(probe.label))
     )

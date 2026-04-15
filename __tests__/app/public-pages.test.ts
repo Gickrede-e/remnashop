@@ -34,32 +34,28 @@ describe("public pages", () => {
     redirectMock.mockReset();
   });
 
-  it("renders the home page inside the public shell for guests", async () => {
+  it("redirects guests on the home page to login", async () => {
     getSessionMock.mockResolvedValue(null);
 
-    const markup = renderToStaticMarkup(await HomePage());
+    await HomePage();
 
-    expect(markup).toContain('data-testid="app-nav-rail"');
-    expect(markup).toContain("ВОЙТИ");
-    expect(markup).not.toContain("Регистрация");
-    expect(markup).not.toContain('data-slot="topbar"');
-    expect(markup).not.toContain('data-slot="more-sheet"');
+    expect(redirectMock).toHaveBeenCalledWith("/login");
   });
 
-  it("redirects authenticated users on the home page to their workspace", async () => {
+  it("redirects authenticated users on the home page through login", async () => {
     getSessionMock.mockResolvedValue({ role: "USER" });
 
     await HomePage();
 
-    expect(redirectMock).toHaveBeenCalledWith("/dashboard");
+    expect(redirectMock).toHaveBeenCalledWith("/login");
   });
 
-  it("redirects admins on the home page to the admin workspace", async () => {
+  it("redirects admins on the home page through login", async () => {
     getSessionMock.mockResolvedValue({ role: "ADMIN" });
 
     await HomePage();
 
-    expect(redirectMock).toHaveBeenCalledWith("/admin");
+    expect(redirectMock).toHaveBeenCalledWith("/login");
   });
 
   it("renders FAQ as a compact public document page", () => {

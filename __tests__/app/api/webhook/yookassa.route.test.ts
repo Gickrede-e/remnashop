@@ -6,6 +6,7 @@ const {
   MockWebhookDropSilentlyError,
   MockWebhookIntegrityError,
   MockWebhookIpForbiddenError,
+  mockIsPaymentProviderEnabledFromEnv,
   mockEnforceRateLimit,
   mockHandleYookassaWebhook,
   mockLogAdminAction,
@@ -21,6 +22,7 @@ const {
     MockWebhookDropSilentlyError,
     MockWebhookIntegrityError,
     MockWebhookIpForbiddenError,
+    mockIsPaymentProviderEnabledFromEnv: vi.fn(),
     mockEnforceRateLimit: vi.fn(),
     mockHandleYookassaWebhook: vi.fn(),
     mockLogAdminAction: vi.fn(),
@@ -55,6 +57,10 @@ vi.mock("@/lib/server/logger", () => ({
   )
 }));
 
+vi.mock("@/lib/payments/provider-config", () => ({
+  isPaymentProviderEnabledFromEnv: mockIsPaymentProviderEnabledFromEnv
+}));
+
 function buildRequest(
   body: Record<string, unknown> = {
     object: {
@@ -83,6 +89,7 @@ describe("POST /api/webhook/yookassa", () => {
     vi.resetModules();
     vi.clearAllMocks();
 
+    mockIsPaymentProviderEnabledFromEnv.mockReturnValue(true);
     mockLogAdminAction.mockResolvedValue(undefined);
     mockEnforceRateLimit.mockImplementation(() => undefined);
     mockHandleYookassaWebhook.mockResolvedValue({
@@ -123,6 +130,34 @@ describe("POST /api/webhook/yookassa", () => {
       })
     );
     expect(mockLogger.error).not.toHaveBeenCalled();
+    expect(mockLogAdminAction).not.toHaveBeenCalled();
+  });
+
+  it("returns 404 when YooKassa is disabled", async () => {
+    mockIsPaymentProviderEnabledFromEnv.mockReturnValue(false);
+
+    const { POST } = await import("@/app/api/webhook/yookassa/route");
+    const response = await POST(buildRequest());
+
+    expect(response.status).toBe(404);
+    expect(mockHandleYookassaWebhook).not.toHaveBeenCalled();
+    expect(mockEnforceRateLimit).not.toHaveBeenCalled();
+  });
+
+  it("returns 413 before parsing when the payload exceeds the webhook size limit", async () => {
+    const { POST } = await import("@/app/api/webhook/yookassa/route");
+    const response = await POST(
+      buildRequest(undefined, {
+        "content-length": "70000"
+      })
+    );
+
+    expect(response.status).toBe(413);
+    await expect(response.json()).resolves.toMatchObject({
+      ok: false,
+      error: "Payload too large"
+    });
+    expect(mockHandleYookassaWebhook).not.toHaveBeenCalled();
     expect(mockLogAdminAction).not.toHaveBeenCalled();
   });
 

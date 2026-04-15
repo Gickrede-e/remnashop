@@ -729,6 +729,93 @@ p {
     padding-top: 0.25rem;
   }
 
+  .dashMobileNav {
+    display: none;
+  }
+
+  .dashMobileNavBar {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.35rem;
+    align-items: stretch;
+  }
+
+  .dashMobileNavLink,
+  .dashMobileNavMoreSummary,
+  .dashMobileNavLogoutButton {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.35rem;
+    min-width: 0;
+    min-height: 4.1rem;
+    padding: 0.58rem 0.22rem 0.48rem;
+    border: 1px solid transparent;
+    border-radius: 1rem;
+    background: transparent;
+    color: var(--text-tertiary);
+    text-decoration: none;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .dashMobileNavLink.is-active,
+  .dashMobileNavMoreSummary.is-active {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--surface-line);
+  }
+
+  .dashMobileNavIcon {
+    width: 1rem;
+    height: 1rem;
+    flex: 0 0 1rem;
+  }
+
+  .dashMobileNavLabel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 1.38rem;
+    max-width: 100%;
+    font-size: 0.6rem;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: 0.01em;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    overflow: hidden;
+  }
+
+  .dashMobileNavMore {
+    position: relative;
+  }
+
+  .dashMobileNavMoreSummary {
+    list-style: none;
+  }
+
+  .dashMobileNavMoreSummary::-webkit-details-marker {
+    display: none;
+  }
+
+  .dashMobileNavMorePanel {
+    display: none;
+  }
+
+  .dashMobileNavMore[open] .dashMobileNavMorePanel {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .dashMobileNavMoreList,
+  .dashMobileNavLogoutForm {
+    display: grid;
+    gap: 0.65rem;
+  }
+
   .dashSidebarFooter {
     margin-top: auto;
     display: flex;
@@ -1111,10 +1198,21 @@ p {
     border-left: 2px solid var(--text-tertiary);
   }
 
-  .dashListItem .dashListIcon {
-    width: 1rem;
-    height: 1rem;
-    color: var(--text-tertiary);
+  .dashListItem a,
+  .dashListButton {
+    display: block;
+    width: 100%;
+    color: inherit;
+    font: inherit;
+    text-decoration: none;
+  }
+
+  .dashListButton {
+    width: 100%;
+    padding: 0;
+    text-align: left;
+    border: none;
+    background: transparent;
     cursor: pointer;
   }
 
@@ -1622,6 +1720,12 @@ p {
     border-color: color-mix(in srgb, hsl(var(--app-border)) 90%, transparent);
     background: color-mix(in srgb, hsl(var(--app-surface-soft)) 86%, transparent);
     color: hsl(var(--app-muted-strong));
+  }
+
+  .providerStatusDisabled {
+    border-color: color-mix(in srgb, #7c8aa8 32%, transparent);
+    background: color-mix(in srgb, #7c8aa8 12%, transparent);
+    color: #d9e0ef;
   }
 
   .activeUsersSyncButton {
@@ -3460,7 +3564,7 @@ p {
 
     .dashShellMain {
       grid-column: 1;
-      padding: 1.25rem;
+      padding: 1.25rem 1.25rem calc(7rem + env(safe-area-inset-bottom));
     }
 
     .dashSidebar {
@@ -3472,8 +3576,46 @@ p {
       border-bottom: 1px solid var(--surface-line);
     }
 
+    .dashSidebar[data-area="dashboard"] .dashSidebarNav,
+    .dashSidebar[data-area="dashboard"] .dashSidebarOther,
+    .dashSidebar[data-area="dashboard"] .dashSidebarFooter,
+    .dashSidebar[data-area="admin"] .dashSidebarNav,
+    .dashSidebar[data-area="admin"] .dashSidebarOther,
+    .dashSidebar[data-area="admin"] .dashSidebarFooter {
+      display: none;
+    }
+
     .dashSidebarFooter {
       margin-top: 0;
+    }
+
+    .dashMobileNav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 55;
+      display: block;
+      padding: 0.65rem 0.75rem calc(0.65rem + env(safe-area-inset-bottom));
+      background: color-mix(in srgb, var(--canvas-0) 94%, black);
+      border-top: 1px solid var(--surface-line);
+      backdrop-filter: blur(18px);
+    }
+
+    .dashMobileNavMorePanel {
+      position: fixed;
+      left: 0.75rem;
+      right: 0.75rem;
+      bottom: calc(6.4rem + env(safe-area-inset-bottom));
+      padding: 1rem;
+      border: 1px solid var(--surface-line);
+      border-radius: 1.1rem;
+      background: color-mix(in srgb, var(--canvas-0) 96%, black);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
+    }
+
+    .dashMobileNavMoreList {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 }

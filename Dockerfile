@@ -2,14 +2,15 @@ FROM node:22-alpine AS base
 WORKDIR /app
 RUN apk add --no-cache libc6-compat openssl
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 
 FROM base AS deps-dev
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund
 
 FROM base AS deps-prod
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev --ignore-scripts
+RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 
 FROM deps-dev AS prisma-cli
 RUN node - <<'NODE'
@@ -99,6 +100,7 @@ COPY --chown=nextjs:nodejs --from=build /app/prisma.config.mjs ./prisma.config.m
 COPY --chown=nextjs:nodejs --from=prisma-cli /prisma-cli ./prisma-cli
 COPY --chown=nextjs:nodejs --from=build /app/scripts/worker.mjs ./scripts/worker.mjs
 COPY --chown=nextjs:nodejs --from=build /app/scripts/worker-logger.mjs ./scripts/worker-logger.mjs
+COPY --chown=nextjs:nodejs --from=build /app/scripts/worker-runtime.mjs ./scripts/worker-runtime.mjs
 COPY --chown=nextjs:nodejs --from=build /app/scripts/migrate-and-seed.sh ./scripts/migrate-and-seed.sh
 RUN chmod +x scripts/migrate-and-seed.sh
 USER nextjs

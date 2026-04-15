@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 
+import { DashboardMobileNav } from "@/components/shell/dashboard-mobile-nav";
 import { DashboardSidebar } from "@/components/shell/dashboard-sidebar";
 import {
   getOtherNavItems,
@@ -50,6 +51,12 @@ export function AppShell({ area, canAccessAdmin = false, accountSummary = null, 
       <main id="dash-shell-main" data-testid="app-shell-main" className="dashShellMain" tabIndex={-1}>
         {children}
       </main>
+      <DashboardMobileNav
+        area={area}
+        primaryItems={primaryItems}
+        otherItems={otherItems}
+        accountSummary={accountSummary}
+      />
     </div>
   );
 }

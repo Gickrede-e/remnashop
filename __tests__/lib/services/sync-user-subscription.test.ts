@@ -1,28 +1,32 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockPrisma, mockRemnawave } = vi.hoisted(() => ({
-  mockPrisma: {
-    user: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      update: vi.fn()
+const { mockPrisma, mockRemnawave, mockGetPendingReferralBonuses, mockMarkReferralBonusesApplied } =
+  vi.hoisted(() => ({
+    mockPrisma: {
+      user: {
+        findUnique: vi.fn(),
+        findMany: vi.fn(),
+        update: vi.fn()
+      },
+      subscription: {
+        update: vi.fn()
+      }
     },
-    subscription: {
-      update: vi.fn()
-    }
-  },
-  mockRemnawave: {
-    createRemnawaveUser: vi.fn(),
-    disableRemnawaveUser: vi.fn(),
-    enableRemnawaveUser: vi.fn(),
-    getRemnawaveUser: vi.fn(),
-    getRemnawaveUserByUsername: vi.fn(),
-    isRemnawaveNotFoundError: vi.fn(),
-    isRemnawaveRecoverableIdentityError: vi.fn(),
-    listRemnawaveUsersByEmail: vi.fn(),
-    updateRemnawaveUser: vi.fn()
-  }
-}));
+    mockRemnawave: {
+      createRemnawaveUser: vi.fn(),
+      disableRemnawaveUser: vi.fn(),
+      enableRemnawaveUser: vi.fn(),
+      getRemnawaveUser: vi.fn(),
+      getRemnawaveUserByUsername: vi.fn(),
+      isRemnawaveNotFoundError: vi.fn(),
+      isRemnawaveRecoverableIdentityError: vi.fn(),
+      listRemnawaveUsersByEmail: vi.fn(),
+      resetRemnawaveUserTraffic: vi.fn(),
+      updateRemnawaveUser: vi.fn()
+    },
+    mockGetPendingReferralBonuses: vi.fn(),
+    mockMarkReferralBonusesApplied: vi.fn()
+  }));
 
 vi.mock("@/lib/prisma", () => ({
   prisma: mockPrisma
@@ -43,7 +47,9 @@ vi.mock("@/lib/services/promos", () => ({
 }));
 
 vi.mock("@/lib/services/referrals", () => ({
-  createReferralRewardForFirstPayment: vi.fn()
+  createReferralRewardForFirstPayment: vi.fn(),
+  getPendingReferralBonuses: mockGetPendingReferralBonuses,
+  markReferralBonusesApplied: mockMarkReferralBonusesApplied
 }));
 
 import { syncUserSubscription } from "@/lib/services/subscriptions";
@@ -63,11 +69,20 @@ describe("syncUserSubscription", () => {
     mockRemnawave.isRemnawaveNotFoundError.mockReset();
     mockRemnawave.isRemnawaveRecoverableIdentityError.mockReset();
     mockRemnawave.listRemnawaveUsersByEmail.mockReset();
+    mockRemnawave.resetRemnawaveUserTraffic.mockReset();
     mockRemnawave.updateRemnawaveUser.mockReset();
+    mockGetPendingReferralBonuses.mockReset();
+    mockMarkReferralBonusesApplied.mockReset();
 
     mockPrisma.user.findMany.mockResolvedValue([]);
     mockPrisma.user.update.mockResolvedValue(undefined);
     mockPrisma.subscription.update.mockResolvedValue(undefined);
+    mockGetPendingReferralBonuses.mockResolvedValue({
+      bonusDays: 0,
+      bonusTrafficGb: 0,
+      rewards: []
+    });
+    mockMarkReferralBonusesApplied.mockResolvedValue({ count: 0 });
     mockRemnawave.isRemnawaveNotFoundError.mockReturnValue(false);
     mockRemnawave.isRemnawaveRecoverableIdentityError.mockImplementation(
       (error: unknown) => error instanceof Error && error.message === "not-found"
@@ -102,6 +117,7 @@ describe("syncUserSubscription", () => {
     };
 
     mockPrisma.user.findUnique
+      .mockResolvedValueOnce(initialUser)
       .mockResolvedValueOnce(initialUser)
       .mockResolvedValueOnce(finalUser);
 
@@ -141,7 +157,7 @@ describe("syncUserSubscription", () => {
       data: {
         remnawaveUuid: "5c819239-dcd1-45a1-b4ca-c9c32b3e98e7",
         remnawaveUsername: "gs_recover",
-        remnawaveShortUuid: null
+        remnawaveShortUuid: "26R6187GqDtUaLyS"
       }
     });
     expect(mockPrisma.subscription.update).toHaveBeenCalledWith({
@@ -183,6 +199,7 @@ describe("syncUserSubscription", () => {
 
     mockPrisma.user.findUnique
       .mockResolvedValueOnce(initialUser)
+      .mockResolvedValueOnce(initialUser)
       .mockResolvedValueOnce(finalUser);
 
     mockRemnawave.getRemnawaveUser.mockImplementation(async (uuid: string) => {
@@ -221,7 +238,7 @@ describe("syncUserSubscription", () => {
       data: {
         remnawaveUuid: "6c819239-dcd1-45a1-b4ca-c9c32b3e98e8",
         remnawaveUsername: "gs_no_expiry",
-        remnawaveShortUuid: null
+        remnawaveShortUuid: "short-no-expiry"
       }
     });
     expect(result).toEqual(finalUser);

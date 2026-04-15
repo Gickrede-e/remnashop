@@ -65,9 +65,10 @@ describe("dashboard overview page", () => {
 
     const markup = renderToStaticMarkup(await DashboardPage());
 
-    expect(markup).toContain("Обзор");
-    expect(markup).toContain("Последние операции");
+    expect(markup).toContain("Подписка");
+    expect(markup).not.toContain("Последние операции");
     expect(markup).not.toContain("КУПИТЬ ПОДПИСКУ");
     expect(markup).not.toContain('class="dashPageHeaderAction"');
+    expect(getUserPaymentHistoryMock).not.toHaveBeenCalled();
   });
 });

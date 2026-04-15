@@ -27,6 +27,18 @@ type PlategaTransactionStatusResponse = {
   mechantId?: string;
 };
 
+function parsePlategaJson<T>(text: string) {
+  if (!text) {
+    return {} as T;
+  }
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}
+
 function safeCompare(expected: string, actual?: string | null) {
   if (!actual) {
     return false;
@@ -53,10 +65,14 @@ async function plategaRequest<T>(path: string, init?: RequestInit) {
   });
 
   const text = await response.text();
-  const json = text ? (JSON.parse(text) as T) : ({} as T);
+  const json = parsePlategaJson<T>(text);
 
   if (!response.ok) {
     throw new Error(`Platega request failed: ${response.status} ${text}`);
+  }
+
+  if (!json) {
+    throw new Error("Platega request returned invalid JSON");
   }
 
   return json;
@@ -98,10 +114,14 @@ export async function getPlategaPaymentStatus(input: {
   });
 
   const text = await response.text();
-  const json = text ? (JSON.parse(text) as PlategaTransactionStatusResponse) : ({} as PlategaTransactionStatusResponse);
+  const json = parsePlategaJson<PlategaTransactionStatusResponse>(text);
 
   if (!response.ok) {
     throw new Error(`Platega status request failed: ${response.status} ${text}`);
+  }
+
+  if (!json) {
+    throw new Error("Platega status request returned invalid JSON");
   }
 
   return json;
@@ -119,17 +139,6 @@ export function verifyPlategaSignature(input: {
       .digest("hex");
 
     return safeCompare(digest, input.signature);
-  }
-
-  if (input.secret) {
-    const merchantMatches =
-      !env.PLATEGA_MERCHANT_ID ||
-      (input.merchantId ? safeCompare(env.PLATEGA_MERCHANT_ID, input.merchantId) : false);
-
-    return merchantMatches && (
-      safeCompare(env.PLATEGA_WEBHOOK_SECRET, input.secret) ||
-      safeCompare(env.PLATEGA_API_KEY, input.secret)
-    );
   }
 
   return false;

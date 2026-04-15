@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { type ComponentPropsWithoutRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,18 @@ import {
   DialogTitle,
   DialogTrigger
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
-export function ReissueSubscriptionButton() {
+type ReissueSubscriptionButtonProps = {
+  className?: string;
+  label?: string;
+} & Omit<ComponentPropsWithoutRef<"button">, "type" | "onClick" | "children">;
+
+export function ReissueSubscriptionButton({
+  className,
+  label = "Перевыпуск подписки",
+  ...buttonProps
+}: ReissueSubscriptionButtonProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
@@ -45,8 +55,8 @@ export function ReissueSubscriptionButton() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button type="button" className="dashSidebarCta">
-          ПЕРЕВЫПУСТИТЬ ССЫЛКУ
+        <button type="button" className={cn(className || "dashSidebarCta")} {...buttonProps}>
+          {label}
         </button>
       </DialogTrigger>
       <DialogContent>
@@ -54,11 +64,11 @@ export function ReissueSubscriptionButton() {
           <DialogTitle>Перевыпуск подписки</DialogTitle>
           <DialogDescription className="commandDialogDescription">
             <span className="commandDialogLine">
-              Будет сгенерирована <strong className="commandDialogStrong">новая ссылка для подключения</strong>.
+              После подтверждения <strong className="commandDialogStrong">ссылка на подписку изменится</strong>.
             </span>
-            <span className="commandDialogLine">Текущая ссылка перестанет работать.</span>
+            <span className="commandDialogLine">Текущая ссылка перестанет работать сразу после перевыпуска.</span>
             <span className="commandDialogLine">
-              Все устройства нужно будет подключить заново по новой ссылке.
+              Все устройства будут отключены, их нужно будет подключить заново по новой ссылке.
             </span>
           </DialogDescription>
         </DialogHeader>

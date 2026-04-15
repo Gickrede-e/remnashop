@@ -84,4 +84,16 @@ describe("prisma/seed", () => {
     expect(exitSpy).not.toHaveBeenCalled();
     expect(userUpsertMock).not.toHaveBeenCalled();
   });
+
+  it("does not create or update default plans during seed", async () => {
+    setProcessEnv({
+      ADMIN_INITIAL_PASSWORD: "seed-password"
+    });
+
+    await import(seedModuleUrl);
+
+    expect(planUpsertMock).not.toHaveBeenCalled();
+    expect(promoCodeUpsertMock).toHaveBeenCalledTimes(1);
+    expect(userUpsertMock).toHaveBeenCalledTimes(1);
+  });
 });

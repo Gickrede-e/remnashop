@@ -31,7 +31,7 @@ const publicPrimaryNavItems: AppNavItem[] = [
 ];
 
 const dashboardPrimaryNavItems: AppNavItem[] = [
-  { href: "/dashboard", label: "Обзор", slot: "primary" },
+  { href: "/dashboard", label: "Подписка", slot: "primary" },
   { href: "/dashboard/buy", label: "Купить", slot: "primary" },
   { href: "/dashboard/devices", label: "Устройства", slot: "primary" },
   { href: "/dashboard/history", label: "История", slot: "primary" },

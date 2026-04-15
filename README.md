@@ -24,6 +24,11 @@
 - Email- и Telegram-уведомления
 - Фоновый воркер для асинхронных задач
 
+## Качество
+
+- Руководство по тестированию и текущие метрики: [`docs/TESTING.md`](docs/TESTING.md)
+- Патчноуты по текущей ветке: [`CHANGELOG.md`](CHANGELOG.md)
+
 ## Быстрый старт
 
 ### 1. Клонируйте репозиторий
@@ -151,8 +156,12 @@ Webhook ЮKassa обрабатывается в режиме `hint + API verific
 |---|---|
 | `npm run dev` | Запуск dev-сервера |
 | `npm run build` | Сборка для продакшена |
-| `npm run test` | Запуск тестов |
+| `npm run test` | Запуск тестов в watch-режиме |
+| `npm run test:unit` | Юнит-слой: `lib`, `components`, `scripts`, `prisma`, proxy/config |
+| `npm run test:integration` | Интеграционные проверки routes/pages из `__tests__/app` |
 | `npm run test:coverage` | Тесты с покрытием |
+| `npm run test:load` | Нагрузочный smoke через `autocannon` |
+| `npm run test:mutation` | Mutation testing через Stryker |
 | `npm run db:generate` | Генерация Prisma-клиента |
 | `npm run db:migrate` | Создание миграции |
 | `npm run db:deploy` | Применение миграций |

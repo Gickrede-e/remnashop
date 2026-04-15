@@ -1,6 +1,7 @@
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
+import { PaymentProvider } from "@prisma/client";
 
 vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) =>
@@ -23,6 +24,7 @@ describe("dashboard secondary surfaces", () => {
   it("renders checkout with the shared dashboard checkout shell", () => {
     const markup = renderToStaticMarkup(
       React.createElement(PaymentCheckout, {
+        enabledProviders: [PaymentProvider.YOOKASSA],
         plans: [
           {
             id: "plan-1",
@@ -49,9 +51,42 @@ describe("dashboard secondary surfaces", () => {
     expect(markup).toMatch(/class="[^"]*\bdashCardGrid\b[^"]*"/);
     expect(markup.match(/class="[^"]*\bdashCard\b[^"]*"/g) ?? []).toHaveLength(2);
     expect(markup).toContain("WELCOME10");
+    expect(markup).toContain("ЮKassa");
+    expect(markup).not.toContain("Platega");
     expect(markup).not.toMatch(/\btelemetryHero\b/);
     expect(markup).not.toMatch(/\bcommandPanel\b/);
     expect(markup).not.toMatch(/\bcheckoutWorkspace\b/);
+  });
+
+  it("renders a payment unavailable state when no providers are enabled", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(PaymentCheckout, {
+        enabledProviders: [],
+        plans: [
+          {
+            id: "plan-1",
+            slug: "starter",
+            name: "Starter",
+            description: "Базовый доступ",
+            price: 99000,
+            durationDays: 30,
+            trafficGB: 100,
+            highlight: "Hot",
+            isActive: true,
+            sortOrder: 1,
+            remnawaveExternalSquadUuid: null,
+            remnawaveInternalSquadUuids: [],
+            remnawaveHwidDeviceLimit: 3,
+            createdAt: new Date("2026-04-01T00:00:00.000Z"),
+            updatedAt: new Date("2026-04-01T00:00:00.000Z")
+          }
+        ]
+      })
+    );
+
+    expect(markup).toContain("Платежи временно недоступны");
+    expect(markup).not.toContain("ЮKassa");
+    expect(markup).not.toContain("Platega");
   });
 
   it("renders payment history with dashboard stats and a table card", () => {

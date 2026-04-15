@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "testRunner": "vitest",
+  "vitest": {
+    "configFile": "vitest.config.ts",
+    "related": true
+  },
+  "mutate": [
+    "app/api/health/route.ts",
+    "lib/auth/roles.ts",
+    "lib/http/errors.ts",
+    "lib/http/response.ts",
+    "lib/server/bigint.ts",
+    "lib/services/auth.ts",
+    "lib/services/export.ts",
+    "lib/services/platega.ts"
+  ],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "reporters": ["clear-text", "progress"],
+  "tempDirName": ".stryker-tmp"
+}

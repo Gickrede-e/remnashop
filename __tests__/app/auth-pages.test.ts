@@ -83,4 +83,24 @@ describe("auth pages", () => {
     expect(markup).toContain("Регистрация");
     expect(markup).toContain("ALLY42");
   });
+
+  it("redirects authenticated users from login to the dashboard", async () => {
+    getSessionMock.mockResolvedValue({ role: "USER" });
+
+    await LoginPage({
+      searchParams: Promise.resolve({})
+    });
+
+    expect(redirectMock).toHaveBeenCalledWith("/dashboard");
+  });
+
+  it("redirects admins from login to the admin workspace", async () => {
+    getSessionMock.mockResolvedValue({ role: "ADMIN" });
+
+    await LoginPage({
+      searchParams: Promise.resolve({})
+    });
+
+    expect(redirectMock).toHaveBeenCalledWith("/admin");
+  });
 });

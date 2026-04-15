@@ -1,6 +1,27 @@
 import { prisma } from "@/lib/prisma";
 import { env } from "@/lib/env";
 
+function summarizeReferralRewards(
+  rewards: Array<{
+    id: string;
+    rewardType: string;
+    rewardValue: number;
+  }>
+) {
+  const bonusDays = rewards
+    .filter((reward) => reward.rewardType === "FREE_DAYS")
+    .reduce((sum, reward) => sum + reward.rewardValue, 0);
+  const bonusTrafficGb = rewards
+    .filter((reward) => reward.rewardType === "FREE_TRAFFIC_GB")
+    .reduce((sum, reward) => sum + reward.rewardValue, 0);
+
+  return {
+    bonusDays,
+    bonusTrafficGb,
+    rewards
+  };
+}
+
 export async function createReferralRewardForFirstPayment(input: {
   referredUserId: string;
   paymentId: string;
@@ -13,17 +34,6 @@ export async function createReferralRewardForFirstPayment(input: {
   });
 
   if (!user?.referredById || !user.referredBy) {
-    return null;
-  }
-
-  const successfulPayments = await prisma.payment.count({
-    where: {
-      userId: user.id,
-      status: "SUCCEEDED"
-    }
-  });
-
-  if (successfulPayments !== 1) {
     return null;
   }
 
@@ -46,7 +56,7 @@ export async function createReferralRewardForFirstPayment(input: {
   });
 }
 
-export async function consumeReferralBonuses(ownerId: string) {
+export async function getPendingReferralBonuses(ownerId: string) {
   const rewards = await prisma.referralReward.findMany({
     where: {
       ownerId,
@@ -57,25 +67,32 @@ export async function consumeReferralBonuses(ownerId: string) {
     }
   });
 
-  const bonusDays = rewards
-    .filter((reward) => reward.rewardType === "FREE_DAYS")
-    .reduce((sum, reward) => sum + reward.rewardValue, 0);
-  const bonusTrafficGb = rewards
-    .filter((reward) => reward.rewardType === "FREE_TRAFFIC_GB")
-    .reduce((sum, reward) => sum + reward.rewardValue, 0);
+  return summarizeReferralRewards(rewards);
+}
 
-  if (rewards.length) {
-    await prisma.referralReward.updateMany({
-      where: {
-        id: { in: rewards.map((reward) => reward.id) }
-      },
-      data: {
-        applied: true
-      }
-    });
+export async function markReferralBonusesApplied(rewardIds: string[]) {
+  if (!rewardIds.length) {
+    return { count: 0 };
   }
 
-  return { bonusDays, bonusTrafficGb, rewards };
+  return prisma.referralReward.updateMany({
+    where: {
+      id: { in: rewardIds }
+    },
+    data: {
+      applied: true
+    }
+  });
+}
+
+export async function consumeReferralBonuses(ownerId: string) {
+  const summary = await getPendingReferralBonuses(ownerId);
+
+  if (summary.rewards.length) {
+    await markReferralBonusesApplied(summary.rewards.map((reward) => reward.id));
+  }
+
+  return summary;
 }
 
 export async function getMyReferralSummary(userId: string) {
