@@ -1,6 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { verifySession } from "@/lib/auth/session";
+import {
+  SESSION_COOKIE_OPTIONS,
+  refreshSessionIfNeeded,
+  verifySession
+} from "@/lib/auth/session";
 import { buildLoginHref } from "@/lib/auth/navigation";
 import { SESSION_COOKIE_NAME } from "@/lib/constants";
 
@@ -74,10 +78,19 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
-    return withSecurityHeaders(
+    const response = withSecurityHeaders(
       NextResponse.next({ request: { headers: requestHeaders } }),
       nonce
     );
+
+    // Sliding session: re-issue the JWT past its halfway point so active users
+    // never get logged out. Idle users still expire at the original 7-day mark.
+    const refreshed = await refreshSessionIfNeeded(session);
+    if (refreshed) {
+      response.cookies.set(SESSION_COOKIE_NAME, refreshed, SESSION_COOKIE_OPTIONS);
+    }
+
+    return response;
   } catch {
     const response = NextResponse.redirect(new URL(buildLoginHref(nextPath), request.url));
     response.cookies.delete(SESSION_COOKIE_NAME);

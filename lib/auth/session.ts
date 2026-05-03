@@ -30,6 +30,36 @@ export async function verifySession(token: string) {
   };
 }
 
+// Sliding-session helper: re-sign the JWT once the user is past the halfway point
+// of its lifetime. Active users (who hit a protected page at least once every
+// ~3.5 days) effectively never get logged out, while idle sessions still expire
+// at the original 7-day mark. Called from proxy.ts on each authenticated request.
+export async function refreshSessionIfNeeded(
+  payload: SessionPayload & { iat?: number; exp?: number }
+): Promise<string | null> {
+  if (typeof payload.iat !== "number" || typeof payload.exp !== "number") {
+    return null;
+  }
+  const lifetime = payload.exp - payload.iat;
+  const elapsed = Math.floor(Date.now() / 1000) - payload.iat;
+  if (elapsed * 2 < lifetime) {
+    return null;
+  }
+  return signSession({
+    userId: payload.userId,
+    email: payload.email,
+    role: payload.role
+  });
+}
+
+export const SESSION_COOKIE_OPTIONS = {
+  httpOnly: true,
+  sameSite: "lax" as const,
+  secure: env.NODE_ENV === "production",
+  path: "/",
+  maxAge: 60 * 60 * 24 * 7
+};
+
 export async function getSession() {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
@@ -60,13 +90,7 @@ export async function requireAdminSession() {
 
 export async function setSessionCookie(token: string) {
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE_NAME, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7
-  });
+  cookieStore.set(SESSION_COOKIE_NAME, token, SESSION_COOKIE_OPTIONS);
 }
 
 export async function clearSessionCookie() {

@@ -2,9 +2,18 @@ import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const verifySessionMock = vi.hoisted(() => vi.fn());
+const refreshSessionIfNeededMock = vi.hoisted(() => vi.fn().mockResolvedValue(null));
 
 vi.mock("@/lib/auth/session", () => ({
-  verifySession: verifySessionMock
+  verifySession: verifySessionMock,
+  refreshSessionIfNeeded: refreshSessionIfNeededMock,
+  SESSION_COOKIE_OPTIONS: {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: false,
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7
+  }
 }));
 
 import { SESSION_COOKIE_NAME } from "@/lib/constants";
@@ -23,6 +32,18 @@ function createRequest(pathname: string, cookieValue?: string) {
 describe("proxy", () => {
   beforeEach(() => {
     verifySessionMock.mockReset();
+    refreshSessionIfNeededMock.mockReset();
+    refreshSessionIfNeededMock.mockResolvedValue(null);
+  });
+
+  it("re-issues the session cookie when past the halfway lifetime", async () => {
+    verifySessionMock.mockResolvedValue({ role: "USER", userId: "u1", email: "u@e.co" });
+    refreshSessionIfNeededMock.mockResolvedValue("new-rolling-token");
+
+    const response = await proxy(createRequest("/dashboard", "old-but-still-valid-token"));
+
+    expect(response.cookies.get(SESSION_COOKIE_NAME)?.value).toBe("new-rolling-token");
+    expect(response.headers.get("location")).toBeNull();
   });
 
   it("allows public pages and operational endpoints without a session", async () => {
