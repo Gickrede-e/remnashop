@@ -117,19 +117,28 @@ export function isRemnawaveNotFoundError(error: unknown) {
   return error instanceof RemnawaveRequestError && error.status === 404;
 }
 
-// Lightweight reachability probe for /api/health. Considers any HTTP response a success
-// (the panel is up); only a network error or timeout signals an outage.
+// Reachability probe for /api/health. Strategy: ask the panel about a sentinel UUID
+// that intentionally doesn't exist. A live panel responds with 404; anything else
+// (401 = bad token, 5xx = panel down, network error = unreachable) is unhealthy.
+// Status 200 is also a fail because it would mean we accidentally pointed at our
+// own app (`{ok:true,...}` from /api/health) — a real Remnawave never returns 200
+// for this path with a never-issued UUID.
+const REMNAWAVE_PROBE_UUID = "00000000-0000-0000-0000-000000000000";
+
 export async function pingRemnawave(timeoutMs = 2_000): Promise<boolean> {
   try {
-    const response = await fetch(`${env.REMNAWAVE_BASE_URL}/api/system/stats`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${env.REMNAWAVE_API_TOKEN}`
-      },
-      cache: "no-store",
-      signal: AbortSignal.timeout(timeoutMs)
-    });
-    return response.status < 500;
+    const response = await fetch(
+      `${env.REMNAWAVE_BASE_URL}/api/users/by-uuid/${REMNAWAVE_PROBE_UUID}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${env.REMNAWAVE_API_TOKEN}`
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(timeoutMs)
+      }
+    );
+    return response.status === 404;
   } catch {
     return false;
   }
