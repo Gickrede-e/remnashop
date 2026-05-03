@@ -9,6 +9,12 @@ import {
 
 const NODE_ENV = process.env.NODE_ENV ?? "development";
 const isProduction = NODE_ENV === "production";
+// During `next build`'s "Collecting page data" phase, route handlers are imported
+// while production env vars are intentionally absent (the Dockerfile strips the
+// build secret to NEXT_PUBLIC_* + NODE_ENV + DATABASE_URL to prevent server-side
+// secrets from leaking into the bundle). Skip strict prod validation during build;
+// the runtime container will validate on its first import.
+const isStrict = isProduction && process.env.NEXT_PHASE !== "phase-production-build";
 
 const DEV_ENV_FALLBACKS = {
   DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/gickvpn?schema=public",
@@ -91,7 +97,7 @@ const KNOWN_PLACEHOLDERS = new Set<string>([
 function readEnvValue<K extends keyof typeof DEV_ENV_FALLBACKS>(key: K) {
   const value = process.env[key];
 
-  if (isProduction && requiredProductionFieldSet.has(key as RequiredProductionField)) {
+  if (isStrict && requiredProductionFieldSet.has(key as RequiredProductionField)) {
     return value ?? "";
   }
 
@@ -115,7 +121,7 @@ function requiredProductionString(field: RequiredProductionField, minLength = 1)
       });
     }
 
-    if (isProduction && KNOWN_PLACEHOLDERS.has(value)) {
+    if (isStrict && KNOWN_PLACEHOLDERS.has(value)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: `${field} is set to a placeholder value — generate a real secret`
@@ -232,7 +238,7 @@ const envSchema = z.object({
         path: ["YOOKASSA_SECRET_KEY"],
         message: "YOOKASSA_SECRET_KEY is required in production"
       });
-    } else if (isProduction && KNOWN_PLACEHOLDERS.has(value.YOOKASSA_SECRET_KEY)) {
+    } else if (isStrict && KNOWN_PLACEHOLDERS.has(value.YOOKASSA_SECRET_KEY)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["YOOKASSA_SECRET_KEY"],
@@ -253,7 +259,7 @@ const envSchema = z.object({
           path: [field],
           message: `${field} is required in production`
         });
-      } else if (isProduction && KNOWN_PLACEHOLDERS.has(value[field])) {
+      } else if (isStrict && KNOWN_PLACEHOLDERS.has(value[field])) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: [field],
@@ -288,7 +294,7 @@ const envSchema = z.object({
     });
   }
 
-  if (value.SMTP_PASS && isProduction && KNOWN_PLACEHOLDERS.has(value.SMTP_PASS)) {
+  if (value.SMTP_PASS && isStrict && KNOWN_PLACEHOLDERS.has(value.SMTP_PASS)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["SMTP_PASS"],
@@ -298,7 +304,7 @@ const envSchema = z.object({
 
   if (value.SMTP_HOST === "smtp") {
     for (const field of ["MAIL_DOMAIN", "MAIL_HOSTNAME"] as const) {
-      if (isProduction && KNOWN_PLACEHOLDERS.has(value[field])) {
+      if (isStrict && KNOWN_PLACEHOLDERS.has(value[field])) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: [field],
