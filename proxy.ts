@@ -16,10 +16,49 @@ function isProtectedPath(pathname: string) {
   );
 }
 
+// Per-request CSP nonce. Replaces the static CSP previously set by Caddy.
+// 'strict-dynamic' lets Next.js/React load chunked scripts (which inherit the nonce)
+// without us enumerating every script source. Inline <script>/<style> tags will only
+// execute when they carry the matching nonce.
+function buildCsp(nonce: string) {
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    `style-src 'self' 'nonce-${nonce}' 'unsafe-inline'`,
+    "img-src 'self' data: https:",
+    "font-src 'self' data:",
+    "connect-src 'self' https://api.yookassa.ru https://*.platega.io",
+    "frame-src 'self' https://yookassa.ru https://*.yookassa.ru https://*.platega.io",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self' https://yookassa.ru https://*.platega.io",
+    "object-src 'none'",
+    "upgrade-insecure-requests"
+  ].join("; ");
+}
+
+function generateNonce() {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Buffer.from(bytes).toString("base64");
+}
+
+function withSecurityHeaders(response: NextResponse, nonce: string) {
+  response.headers.set("Content-Security-Policy", buildCsp(nonce));
+  return response;
+}
+
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  const nonce = generateNonce();
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+
   if (!isProtectedPath(pathname)) {
-    return NextResponse.next();
+    return withSecurityHeaders(
+      NextResponse.next({ request: { headers: requestHeaders } }),
+      nonce
+    );
   }
 
   const needsAdminSession = pathname === ADMIN_PATH || pathname.startsWith(`${ADMIN_PATH}/`);
@@ -35,7 +74,10 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
-    return NextResponse.next();
+    return withSecurityHeaders(
+      NextResponse.next({ request: { headers: requestHeaders } }),
+      nonce
+    );
   } catch {
     const response = NextResponse.redirect(new URL(buildLoginHref(nextPath), request.url));
     response.cookies.delete(SESSION_COOKIE_NAME);
@@ -44,5 +86,8 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*"]
+  // Run on every HTML-bearing request so the CSP header lands on the document and
+  // protected paths get auth-gated. Skips API routes (their handlers manage their
+  // own headers) and static assets (no CSP overhead per chunk).
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"]
 };
