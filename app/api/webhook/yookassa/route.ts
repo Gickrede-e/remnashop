@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { apiError, apiOk } from "@/lib/http";
 import { isPaymentProviderEnabledFromEnv } from "@/lib/payments/provider-config";
+import { getMetrics } from "@/lib/server/metrics";
 import { RateLimitExceededError, enforceRateLimit } from "@/lib/server/rate-limit";
 import { logger, serializeError } from "@/lib/server/logger";
 import { getWebhookClientIp } from "@/lib/server/request-utils";
@@ -56,6 +57,7 @@ export async function POST(request: NextRequest) {
       }
 
       if (isPayloadTooLarge(request)) {
+        getMetrics().webhookRejected.inc({ provider: "YOOKASSA", reason: "payload_too_large" });
         logger.warn("webhook.payload_too_large", {
           provider: "YOOKASSA",
           limitBytes: WEBHOOK_BODY_LIMIT_BYTES
@@ -72,12 +74,15 @@ export async function POST(request: NextRequest) {
         });
       } catch (error) {
         if (error instanceof RateLimitExceededError) {
+          getMetrics().webhookRejected.inc({ provider: "YOOKASSA", reason: "rate_limited" });
           logger.warn("webhook.rate_limited", { provider: "YOOKASSA" });
           return apiError("Too many requests", 429);
         }
 
         throw error;
       }
+
+      getMetrics().webhookReceived.inc({ provider: "YOOKASSA" });
 
       let payload: z.infer<typeof yookassaWebhookSchema>;
       try {
@@ -106,6 +111,7 @@ export async function POST(request: NextRequest) {
       const message = error instanceof Error ? error.message : "YooKassa webhook failed";
 
       if (error instanceof WebhookIpForbiddenError) {
+        getMetrics().webhookRejected.inc({ provider: "YOOKASSA", reason: "ip_forbidden" });
         logger.warn("webhook.ip_forbidden", {
           provider: "YOOKASSA",
           paymentId: remoteId
@@ -114,6 +120,7 @@ export async function POST(request: NextRequest) {
       }
 
       if (error instanceof WebhookDropSilentlyError) {
+        getMetrics().webhookRejected.inc({ provider: "YOOKASSA", reason: "dropped" });
         logger.warn("webhook.dropped", {
           provider: "YOOKASSA",
           paymentId: remoteId,
@@ -123,6 +130,7 @@ export async function POST(request: NextRequest) {
       }
 
       if (error instanceof WebhookIntegrityError) {
+        getMetrics().webhookRejected.inc({ provider: "YOOKASSA", reason: "integrity" });
         logger.error("webhook.integrity", {
           provider: "YOOKASSA",
           paymentId: remoteId,

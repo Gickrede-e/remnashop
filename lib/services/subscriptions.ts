@@ -977,10 +977,15 @@ export async function expireStaleSubscriptions() {
   `;
 
   if (acquired[0]?.acquired !== true) {
+    getMetrics().cronExecutionDurationSeconds.observe(
+      { job: "sync-expired", outcome: "skipped" },
+      0
+    );
     logger.info("cron.sync_expired.skipped", { reason: "lock_busy" });
     return 0;
   }
 
+  const cronStart = process.hrtime.bigint();
   try {
     const expired = await prisma.subscription.findMany({
       where: {
@@ -1056,7 +1061,17 @@ export async function expireStaleSubscriptions() {
       );
     }
 
+    getMetrics().cronExecutionDurationSeconds.observe(
+      { job: "sync-expired", outcome: "success" },
+      Number(process.hrtime.bigint() - cronStart) / 1_000_000_000
+    );
     return expired.length;
+  } catch (cronError) {
+    getMetrics().cronExecutionDurationSeconds.observe(
+      { job: "sync-expired", outcome: "failed" },
+      Number(process.hrtime.bigint() - cronStart) / 1_000_000_000
+    );
+    throw cronError;
   } finally {
     await prisma
       .$queryRaw`SELECT pg_advisory_unlock(hashtext(${lockKey})::bigint)`

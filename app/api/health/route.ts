@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { getMetrics } from "@/lib/server/metrics";
 import { pingSmtp } from "@/lib/services/notifications";
 import { pingRemnawave } from "@/lib/services/remnawave";
 
@@ -32,6 +33,13 @@ export async function GET() {
     smtp: smtp ? "ok" : "fail"
   };
   const ok = db && remnawave && smtp;
+
+  if (!ok) {
+    const metrics = getMetrics();
+    if (!db) metrics.healthCheckFailed.inc({ component: "db" });
+    if (!remnawave) metrics.healthCheckFailed.inc({ component: "remnawave" });
+    if (!smtp) metrics.healthCheckFailed.inc({ component: "smtp" });
+  }
 
   return NextResponse.json({ ok, checks }, { status: ok ? 200 : 503 });
 }

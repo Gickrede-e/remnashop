@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server";
 
 import { apiError, apiOk } from "@/lib/http";
 import { isPaymentProviderEnabledFromEnv } from "@/lib/payments/provider-config";
+import { getMetrics } from "@/lib/server/metrics";
 import { RateLimitExceededError, enforceRateLimit } from "@/lib/server/rate-limit";
 import { logger, serializeError } from "@/lib/server/logger";
 import { getWebhookClientIp } from "@/lib/server/request-utils";
@@ -37,6 +38,7 @@ export async function POST(request: NextRequest) {
       }
 
       if (isPayloadTooLarge(request)) {
+        getMetrics().webhookRejected.inc({ provider: "PLATEGA", reason: "payload_too_large" });
         logger.warn("webhook.payload_too_large", {
           provider: "PLATEGA",
           limitBytes: WEBHOOK_BODY_LIMIT_BYTES
@@ -52,14 +54,18 @@ export async function POST(request: NextRequest) {
         });
       } catch (error) {
         if (error instanceof RateLimitExceededError) {
+          getMetrics().webhookRejected.inc({ provider: "PLATEGA", reason: "rate_limited" });
           logger.warn("webhook.rate_limited", { provider: "PLATEGA" });
           return apiError("Too many requests", 429);
         }
         throw error;
       }
 
+      getMetrics().webhookReceived.inc({ provider: "PLATEGA" });
+
       const rawBody = await request.text();
       if (isPayloadTooLarge(request, rawBody)) {
+        getMetrics().webhookRejected.inc({ provider: "PLATEGA", reason: "payload_too_large" });
         logger.warn("webhook.payload_too_large", {
           provider: "PLATEGA",
           limitBytes: WEBHOOK_BODY_LIMIT_BYTES
@@ -95,6 +101,7 @@ export async function POST(request: NextRequest) {
       const result = await handlePlategaWebhook({ payload });
       return apiOk(result);
     } catch (error) {
+      getMetrics().webhookRejected.inc({ provider: "PLATEGA", reason: "handler_error" });
       await logAdminAction({
         action: "PAYMENT_WEBHOOK_ERROR",
         targetType: "PAYMENT",

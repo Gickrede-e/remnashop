@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
+import { getMetrics } from "@/lib/server/metrics";
 import type { VerificationTokenType } from "@prisma/client";
 
 const TOKEN_TTL_MS = 15 * 60 * 1000; // 15 minutes
@@ -76,6 +77,7 @@ export async function verifyVerificationToken(
   });
 
   if (!token) {
+    getMetrics().otpAttempts.inc({ type, outcome: "expired" });
     throw new Error("Код недействителен или истёк срок его действия");
   }
 
@@ -97,6 +99,8 @@ export async function verifyVerificationToken(
       where: { id: token.id, usedAt: null },
       data: { usedAt: new Date() }
     });
+    getMetrics().otpAttempts.inc({ type, outcome: "exhausted" });
+    getMetrics().otpExhausted.inc({ type });
     throw new VerificationTokenExhaustedError();
   }
 
@@ -109,8 +113,11 @@ export async function verifyVerificationToken(
         where: { id: token.id, usedAt: null },
         data: { usedAt: new Date() }
       });
+      getMetrics().otpAttempts.inc({ type, outcome: "exhausted" });
+      getMetrics().otpExhausted.inc({ type });
       throw new VerificationTokenExhaustedError();
     }
+    getMetrics().otpAttempts.inc({ type, outcome: "wrong_code" });
     throw new Error("Неверный код");
   }
 
@@ -119,5 +126,6 @@ export async function verifyVerificationToken(
     data: { usedAt: new Date() }
   });
 
+  getMetrics().otpAttempts.inc({ type, outcome: "success" });
   return (token.data as Record<string, unknown>) ?? null;
 }
