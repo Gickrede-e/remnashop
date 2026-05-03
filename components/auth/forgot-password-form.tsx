@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 
+import { publicEnv } from "@/lib/public-env";
 import { OtpInput } from "@/components/auth/otp-input";
+import { TurnstileWidget } from "@/components/auth/turnstile-widget";
 
 type Step = "email" | "otp";
 
@@ -19,7 +21,9 @@ export function ForgotPasswordForm() {
   const [success, setSuccess] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(0);
   const [pending, startTransition] = useTransition();
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const turnstileEnabled = Boolean(publicEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 
   function startCountdown() {
     setCountdown(60);
@@ -40,15 +44,21 @@ export function ForgotPasswordForm() {
   function handleSendCode(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (turnstileEnabled && !turnstileToken) {
+      setError("Подождите, идёт проверка капчи…");
+      return;
+    }
+    const body = JSON.stringify({ email, cfTurnstileToken: turnstileToken ?? undefined });
     startTransition(async () => {
       const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email })
+        body
       });
       const payload = (await res.json()) as { ok: boolean; error?: string };
       if (!res.ok || !payload.ok) {
         setError(payload.error ?? "Ошибка. Попробуйте снова.");
+        setTurnstileToken(null);
         return;
       }
       setStep("otp");
@@ -59,15 +69,21 @@ export function ForgotPasswordForm() {
   function handleResend() {
     if (countdown > 0) return;
     setError(null);
+    if (turnstileEnabled && !turnstileToken) {
+      setError("Подождите, идёт проверка капчи…");
+      return;
+    }
+    const body = JSON.stringify({ email, cfTurnstileToken: turnstileToken ?? undefined });
     startTransition(async () => {
       const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email })
+        body
       });
       const payload = (await res.json()) as { ok: boolean; error?: string };
       if (!res.ok || !payload.ok) {
         setError(payload.error ?? "Ошибка отправки кода.");
+        setTurnstileToken(null);
         return;
       }
       setCode("");
@@ -122,8 +138,16 @@ export function ForgotPasswordForm() {
             required
           />
         </div>
+        <TurnstileWidget
+          onToken={setTurnstileToken}
+          onExpire={() => setTurnstileToken(null)}
+        />
         {error && <p className="authStandaloneError">{error}</p>}
-        <button type="submit" className="authStandaloneSubmit" disabled={pending || !email}>
+        <button
+          type="submit"
+          className="authStandaloneSubmit"
+          disabled={pending || !email || (turnstileEnabled && !turnstileToken)}
+        >
           {pending ? "Отправляем..." : "Отправить код"}
         </button>
         <p className="authStandaloneFooter">

@@ -7,6 +7,7 @@ import { env } from "@/lib/env";
 import { registerSchema } from "@/lib/schemas/auth";
 import { RateLimitExceededError, enforceRateLimit } from "@/lib/server/rate-limit";
 import { registerUser, registerUserWithHash } from "@/lib/services/auth";
+import { TurnstileError, verifyTurnstileToken } from "@/lib/services/turnstile";
 import { verifyVerificationToken } from "@/lib/services/verification-tokens";
 
 // Schema used when EMAIL_ENABLED=true: email + OTP code (no password — it was pre-hashed)
@@ -45,8 +46,10 @@ export async function POST(request: NextRequest) {
       return apiOk({ user: { id: user.id, email: user.email, role: user.role } });
     }
 
-    // Standard flow (EMAIL_ENABLED=false): email + password
+    // Standard flow (EMAIL_ENABLED=false): email + password + Turnstile token.
+    // Bots can otherwise spam fake registrations through this path directly.
     const body = await parseRequestBody(request, registerSchema);
+    await verifyTurnstileToken(body.cfTurnstileToken, getClientIp(request));
     const user = await registerUser(body);
     const token = await signSession({ userId: user.id, email: user.email, role: user.role });
     await setSessionCookie(token);
@@ -55,6 +58,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof RateLimitExceededError) {
       return apiError("Слишком много попыток, попробуйте позже", 429);
+    }
+
+    if (error instanceof TurnstileError) {
+      return apiError(error.message, 400);
     }
 
     return apiError(error instanceof Error ? error.message : "Не удалось зарегистрироваться");

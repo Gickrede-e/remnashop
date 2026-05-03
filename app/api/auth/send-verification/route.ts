@@ -1,19 +1,14 @@
 import { type NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
-import { z } from "zod";
 
 import { apiError, apiOk, getClientIp, parseRequestBody } from "@/lib/http";
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
+import { sendVerificationSchema } from "@/lib/schemas/auth";
 import { RateLimitExceededError, enforceRateLimit } from "@/lib/server/rate-limit";
 import { createVerificationToken } from "@/lib/services/verification-tokens";
 import { sendVerificationCode } from "@/lib/services/notifications";
-
-const schema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8).max(128),
-  referralCode: z.string().optional()
-});
+import { TurnstileError, verifyTurnstileToken } from "@/lib/services/turnstile";
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,13 +16,16 @@ export async function POST(request: NextRequest) {
       return apiError("Подтверждение email недоступно", 503);
     }
 
-    const body = await parseRequestBody(request, schema);
+    const body = await parseRequestBody(request, sendVerificationSchema);
 
     enforceRateLimit({
       key: `send-verification:${getClientIp(request) || "unknown"}`,
       max: 5,
       windowMs: 10 * 60_000
     });
+
+    // Bots otherwise burn SMTP quota by triggering OTP emails on harvested addresses.
+    await verifyTurnstileToken(body.cfTurnstileToken, getClientIp(request));
 
     const email = body.email.toLowerCase();
 
@@ -50,6 +48,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof RateLimitExceededError) {
       return apiError("Слишком много попыток, попробуйте позже", 429);
+    }
+    if (error instanceof TurnstileError) {
+      return apiError(error.message, 400);
     }
     return apiError(error instanceof Error ? error.message : "Ошибка отправки кода");
   }

@@ -8,8 +8,10 @@ import { useRouter } from "next/navigation";
 import { z } from "zod";
 
 import { buildLoginHref, sanitizeNextPath } from "@/lib/auth/navigation";
+import { publicEnv } from "@/lib/public-env";
 import { registerSchema } from "@/lib/schemas/auth";
 import { OtpInput } from "@/components/auth/otp-input";
+import { TurnstileWidget } from "@/components/auth/turnstile-widget";
 
 const clientRegisterSchema = registerSchema.extend({
   referralCode: registerSchema.shape.referralCode.optional()
@@ -31,7 +33,9 @@ export function RegisterForm({ emailEnabled, referralCode, nextPath }: RegisterF
   const [otpEmail, setOtpEmail] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [countdown, setCountdown] = useState(0);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const safeNextPath = sanitizeNextPath(nextPath);
+  const turnstileEnabled = Boolean(publicEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 
   const form = useForm<RegisterValues>({
     resolver: zodResolver(clientRegisterSchema),
@@ -56,17 +60,23 @@ export function RegisterForm({ emailEnabled, referralCode, nextPath }: RegisterF
 
   const onSubmit = form.handleSubmit((values) => {
     setError(null);
+    if (turnstileEnabled && !turnstileToken) {
+      setError("Подождите, идёт проверка капчи…");
+      return;
+    }
+    const payload = { ...values, cfTurnstileToken: turnstileToken ?? undefined };
     startTransition(async () => {
       if (emailEnabled) {
         // Step 1: send verification code
         const res = await fetch("/api/auth/send-verification", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(values)
+          body: JSON.stringify(payload)
         });
-        const payload = (await res.json()) as { ok: boolean; error?: string };
-        if (!res.ok || !payload.ok) {
-          setError(payload.error ?? "Ошибка отправки кода");
+        const data = (await res.json()) as { ok: boolean; error?: string };
+        if (!res.ok || !data.ok) {
+          setError(data.error ?? "Ошибка отправки кода");
+          setTurnstileToken(null);
           return;
         }
         setOtpEmail(values.email);
@@ -77,11 +87,12 @@ export function RegisterForm({ emailEnabled, referralCode, nextPath }: RegisterF
         const res = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(values)
+          body: JSON.stringify(payload)
         });
-        const payload = (await res.json()) as { ok: boolean; error?: string };
-        if (!res.ok || !payload.ok) {
-          setError(payload.error ?? "Ошибка регистрации");
+        const data = (await res.json()) as { ok: boolean; error?: string };
+        if (!res.ok || !data.ok) {
+          setError(data.error ?? "Ошибка регистрации");
+          setTurnstileToken(null);
           return;
         }
         router.push(safeNextPath ?? "/dashboard");
@@ -93,16 +104,22 @@ export function RegisterForm({ emailEnabled, referralCode, nextPath }: RegisterF
   function handleResend() {
     if (countdown > 0) return;
     setError(null);
+    if (turnstileEnabled && !turnstileToken) {
+      setError("Подождите, идёт проверка капчи…");
+      return;
+    }
     const values = form.getValues();
+    const payload = { ...values, cfTurnstileToken: turnstileToken ?? undefined };
     startTransition(async () => {
       const res = await fetch("/api/auth/send-verification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values)
+        body: JSON.stringify(payload)
       });
-      const payload = (await res.json()) as { ok: boolean; error?: string };
-      if (!res.ok || !payload.ok) {
-        setError(payload.error ?? "Ошибка отправки кода");
+      const data = (await res.json()) as { ok: boolean; error?: string };
+      if (!res.ok || !data.ok) {
+        setError(data.error ?? "Ошибка отправки кода");
+        setTurnstileToken(null);
         return;
       }
       setOtpCode("");
@@ -208,8 +225,16 @@ export function RegisterForm({ emailEnabled, referralCode, nextPath }: RegisterF
           {...form.register("referralCode")}
         />
       </div>
+      <TurnstileWidget
+        onToken={setTurnstileToken}
+        onExpire={() => setTurnstileToken(null)}
+      />
       {error && <p className="authStandaloneError">{error}</p>}
-      <button type="submit" className="authStandaloneSubmit" disabled={pending}>
+      <button
+        type="submit"
+        className="authStandaloneSubmit"
+        disabled={pending || (turnstileEnabled && !turnstileToken)}
+      >
         {pending
           ? emailEnabled ? "Отправляем код..." : "Создаем аккаунт..."
           : "Создать аккаунт"}

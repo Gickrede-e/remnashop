@@ -1,16 +1,13 @@
 import { type NextRequest } from "next/server";
-import { z } from "zod";
 
 import { apiError, apiOk, getClientIp, parseRequestBody } from "@/lib/http";
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
+import { forgotPasswordSchema } from "@/lib/schemas/auth";
 import { RateLimitExceededError, enforceRateLimit } from "@/lib/server/rate-limit";
 import { createVerificationToken } from "@/lib/services/verification-tokens";
 import { sendPasswordResetCode } from "@/lib/services/notifications";
-
-const schema = z.object({
-  email: z.string().email()
-});
+import { TurnstileError, verifyTurnstileToken } from "@/lib/services/turnstile";
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,13 +15,16 @@ export async function POST(request: NextRequest) {
       return apiError("Функция восстановления пароля недоступна", 503);
     }
 
-    const body = await parseRequestBody(request, schema);
+    const body = await parseRequestBody(request, forgotPasswordSchema);
 
     enforceRateLimit({
       key: `forgot-password:${getClientIp(request) || "unknown"}`,
       max: 3,
       windowMs: 10 * 60_000
     });
+
+    // Bots otherwise burn SMTP quota by spamming password-reset codes for harvested emails.
+    await verifyTurnstileToken(body.cfTurnstileToken, getClientIp(request));
 
     const email = body.email.toLowerCase();
 
@@ -39,6 +39,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof RateLimitExceededError) {
       return apiError("Слишком много попыток, попробуйте позже", 429);
+    }
+    if (error instanceof TurnstileError) {
+      return apiError(error.message, 400);
     }
     return apiError(error instanceof Error ? error.message : "Ошибка отправки кода");
   }
