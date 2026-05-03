@@ -2,6 +2,8 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { publicEnv } from "@/lib/public-env";
+
 type Crumb = { label: string; href?: string };
 
 type DashboardPageHeaderProps = {
@@ -11,6 +13,20 @@ type DashboardPageHeaderProps = {
 };
 
 export function DashboardPageHeader({ title, crumbs, action }: DashboardPageHeaderProps) {
+  const supportUrl = publicEnv.NEXT_PUBLIC_SUPPORT_TELEGRAM_URL.trim();
+  const resolvedAction =
+    action ??
+    (supportUrl ? (
+      <Link
+        href={supportUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="dashSidebarCta dashSupportCta"
+      >
+        Поддержка
+      </Link>
+    ) : null);
+
   return (
     <header className="dashPageHeader">
       <div className="dashPageHeaderText">
@@ -34,7 +50,7 @@ export function DashboardPageHeader({ title, crumbs, action }: DashboardPageHead
           ))}
         </ol>
       </div>
-      {action ? <div className="dashPageHeaderAction">{action}</div> : null}
+      {resolvedAction ? <div className="dashPageHeaderAction">{resolvedAction}</div> : null}
     </header>
   );
 }

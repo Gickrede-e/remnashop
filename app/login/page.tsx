@@ -2,6 +2,7 @@ import { AuthStandaloneCard } from "@/components/blocks/auth/auth-standalone-car
 import { LoginForm } from "@/components/auth/login-form";
 import { getSession } from "@/lib/auth/session";
 import { sanitizeNextPath } from "@/lib/auth/navigation";
+import { env } from "@/lib/env";
 import { redirect } from "next/navigation";
 
 export default async function LoginPage({
@@ -21,7 +22,7 @@ export default async function LoginPage({
     <main className="authScene">
       <div className="authSceneViewport">
         <AuthStandaloneCard title="Вход">
-          <LoginForm nextPath={nextPath} />
+          <LoginForm emailEnabled={env.EMAIL_ENABLED} nextPath={nextPath} />
         </AuthStandaloneCard>
       </div>
     </main>

@@ -2,6 +2,7 @@ import { AuthStandaloneCard } from "@/components/blocks/auth/auth-standalone-car
 import { RegisterForm } from "@/components/auth/register-form";
 import { getSession } from "@/lib/auth/session";
 import { sanitizeNextPath } from "@/lib/auth/navigation";
+import { env } from "@/lib/env";
 import { redirect } from "next/navigation";
 
 export default async function RegisterPage({
@@ -22,7 +23,11 @@ export default async function RegisterPage({
     <main className="authScene">
       <div className="authSceneViewport">
         <AuthStandaloneCard title="Регистрация">
-          <RegisterForm referralCode={referralCode} nextPath={nextPath} />
+          <RegisterForm
+            emailEnabled={env.EMAIL_ENABLED}
+            referralCode={referralCode}
+            nextPath={nextPath}
+          />
         </AuthStandaloneCard>
       </div>
     </main>

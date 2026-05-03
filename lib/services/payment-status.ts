@@ -21,7 +21,14 @@ export function mapPlategaStatus(status: string) {
     return PaymentStatus.CANCELED;
   }
 
-  if (status === "failed" || status === "expired" || status === "declined" || status === "error" || status === "chargeback") {
+  if (
+    status === "failed" ||
+    status === "expired" ||
+    status === "declined" ||
+    status === "error" ||
+    status === "chargeback" ||
+    status === "chargebacked"
+  ) {
     return PaymentStatus.FAILED;
   }
 

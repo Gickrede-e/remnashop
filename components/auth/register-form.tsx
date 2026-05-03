@@ -3,13 +3,12 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 
 import { buildLoginHref, sanitizeNextPath } from "@/lib/auth/navigation";
 import { registerSchema } from "@/lib/schemas/auth";
-import { publicEnv } from "@/lib/public-env";
 import { OtpInput } from "@/components/auth/otp-input";
 
 const clientRegisterSchema = registerSchema.extend({
@@ -19,11 +18,12 @@ const clientRegisterSchema = registerSchema.extend({
 type RegisterValues = z.infer<typeof clientRegisterSchema>;
 
 type RegisterFormProps = {
+  emailEnabled: boolean;
   referralCode?: string;
   nextPath?: string;
 };
 
-export function RegisterForm({ referralCode, nextPath }: RegisterFormProps) {
+export function RegisterForm({ emailEnabled, referralCode, nextPath }: RegisterFormProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -31,7 +31,6 @@ export function RegisterForm({ referralCode, nextPath }: RegisterFormProps) {
   const [otpEmail, setOtpEmail] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [countdown, setCountdown] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const safeNextPath = sanitizeNextPath(nextPath);
 
   const form = useForm<RegisterValues>({
@@ -41,21 +40,24 @@ export function RegisterForm({ referralCode, nextPath }: RegisterFormProps) {
 
   function startCountdown() {
     setCountdown(60);
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) { clearInterval(timerRef.current!); return 0; }
-        return prev - 1;
-      });
-    }, 1000);
   }
 
-  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+  useEffect(() => {
+    if (countdown <= 0) {
+      return;
+    }
+
+    const timerId = setTimeout(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(timerId);
+  }, [countdown]);
 
   const onSubmit = form.handleSubmit((values) => {
     setError(null);
     startTransition(async () => {
-      if (publicEnv.EMAIL_ENABLED) {
+      if (emailEnabled) {
         // Step 1: send verification code
         const res = await fetch("/api/auth/send-verification", {
           method: "POST",
@@ -209,7 +211,7 @@ export function RegisterForm({ referralCode, nextPath }: RegisterFormProps) {
       {error && <p className="authStandaloneError">{error}</p>}
       <button type="submit" className="authStandaloneSubmit" disabled={pending}>
         {pending
-          ? publicEnv.EMAIL_ENABLED ? "Отправляем код..." : "Создаем аккаунт..."
+          ? emailEnabled ? "Отправляем код..." : "Создаем аккаунт..."
           : "Создать аккаунт"}
       </button>
       <p className="authStandaloneFooter">

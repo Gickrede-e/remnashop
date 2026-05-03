@@ -1,6 +1,6 @@
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) =>
@@ -25,20 +25,20 @@ const TestableDashboardOverviewBlocks = DashboardOverviewBlocks as React.Compone
     trafficLimitBytes: bigint | null;
     trafficUsedBytes: bigint | null;
   } | null;
-  recentPayments: Array<{
-    id: string;
-    userInitial: string;
-    userLabel: string;
-    createdAt: Date;
-    status: "completed" | "pending" | "process" | "failed";
-  }>;
   referralLink: string;
   externalSubscriptionUrl: string | null;
   remnawaveUuid: string | null;
 }>;
 
 describe("dashboard overview blocks", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("renders the AdminHub-style overview shell", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-04-29T00:00:00.000Z"));
+
     const subscription = {
       status: "ACTIVE" as const,
       planName: "Pro 90",
@@ -50,15 +50,6 @@ describe("dashboard overview blocks", () => {
     const markup = renderToStaticMarkup(
       React.createElement(TestableDashboardOverviewBlocks, {
         subscription,
-        recentPayments: [
-          {
-            id: "payment-1",
-            userInitial: "U",
-            userLabel: "user@example.com",
-            createdAt: new Date("2026-04-10T09:30:00.000Z"),
-            status: "completed"
-          }
-        ],
         referralLink: "https://example.com/register?ref=ALLY42",
         externalSubscriptionUrl: "https://example.com/subscription",
         remnawaveUuid: "uuid-1"
@@ -68,6 +59,8 @@ describe("dashboard overview blocks", () => {
     expect(markup).toMatch(/class="[^"]*\bdashWorkspace\b[^"]*\bdashOverview\b[^"]*"/);
     expect(markup).toContain('class="dashStatGrid"');
     expect(markup.match(/class="dashStatTile"/g) ?? []).toHaveLength(3);
+    expect(markup).toContain('class="dashOverviewCompactStats"');
+    expect(markup.match(/class="dashOverviewCompactStat"/g) ?? []).toHaveLength(3);
     expect(markup).toContain("СТАТУС");
     expect(markup).toContain("Активна");
     expect(markup).toContain("ДОСТУП ДО");
@@ -76,16 +69,57 @@ describe("dashboard overview blocks", () => {
     expect(markup).toContain(
       `${formatBytes(subscription.trafficUsedBytes)} / ${formatBytes(subscription.trafficLimitBytes)}`
     );
+    expect(markup).toContain("Осталось");
+    expect(markup).toContain("2 дня");
     expect(markup).toMatch(/class="[^"]*\bdashCardGrid\b[^"]*"/);
-    expect(markup).toMatch(/class="[^"]*\bdashCard\b[^"]*\bdashCardWide\b[^"]*"/);
     expect(markup).toMatch(/class="[^"]*\bdashCard\b[^"]*\bdashCardNarrow\b[^"]*"/);
-    expect(markup).toContain("Последние операции");
-    expect(markup).toContain("Быстрые действия");
-    expect(markup).toContain("Купить подписку");
-    expect(markup).toContain("Управлять устройствами");
+    expect(markup).not.toContain("Последние операции");
+    expect(markup).not.toContain("Быстрые действия");
+    expect(markup).toContain("Подключить");
+    expect(markup).toContain('href="https://example.com/subscription"');
+    expect(markup).toContain("Перевыпуск подписки");
+    expect(markup).not.toContain("Управлять устройствами");
     expect(markup).toContain("Пригласить друга");
+    expect(markup).not.toContain("dashListIcon");
     expect(markup).not.toMatch(/\btelemetry[A-Za-z-]*\b/);
     expect(markup).not.toMatch(/\bcommandPanel[A-Za-z-]*\b/);
     expect(markup).not.toMatch(/\breferralPanel[A-Za-z-]*\b/);
+  });
+
+  it("rounds remaining days up when less than a day is left", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-04-30T12:00:00.000Z"));
+
+    const markup = renderToStaticMarkup(
+      React.createElement(TestableDashboardOverviewBlocks, {
+        subscription: {
+          status: "ACTIVE",
+          planName: "Pro 30",
+          expiresAt: new Date("2026-05-01T00:00:00.000Z"),
+          trafficLimitBytes: 60n * 1024n * 1024n * 1024n,
+          trafficUsedBytes: 10n * 1024n * 1024n * 1024n
+        },
+        referralLink: "https://example.com/register?ref=ALLY42",
+        externalSubscriptionUrl: "https://example.com/subscription",
+        remnawaveUuid: "uuid-1"
+      })
+    );
+
+    expect(markup).toContain("1 день");
+  });
+
+  it("keeps the purchase action and hides reissue when subscription actions are unavailable", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(TestableDashboardOverviewBlocks, {
+        subscription: null,
+        referralLink: "https://example.com/register?ref=ALLY42",
+        externalSubscriptionUrl: null,
+        remnawaveUuid: null
+      })
+    );
+
+    expect(markup).toContain("Купить подписку");
+    expect(markup).not.toContain("Подключить");
+    expect(markup).not.toContain("Перевыпуск подписки");
   });
 });

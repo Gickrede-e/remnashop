@@ -1,27 +1,63 @@
-# Repository Guidelines
+Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
 
-## Project Structure & Module Organization
-This repository is a Next.js 16 + Prisma 7 application. App Router routes live in `app/` (`app/api` for handlers, `app/admin` and `app/dashboard` for product surfaces). Shared UI components live in `components/`, server logic in `lib/` (`lib/services`, `lib/auth`, `lib/server`), database schema and migrations in `prisma/`, static assets in `public/`, and operational scripts in `scripts/`. Tests mirror the codebase under `__tests__/`, with mocks in `__mocks__/`.
+**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
-## Build, Test, and Development Commands
-- `npm run dev`: start the local Next.js dev server.
-- `npm run build`: generate Prisma client and build the production app.
-- `npm run start`: run the production server locally.
-- `npm run lint`: run ESLint with Next core-web-vitals and TypeScript rules.
-- `npm test`: run the Vitest suite.
-- `npm run test:coverage`: run tests with V8 coverage.
-- `npm run db:generate`, `npm run db:migrate`, `npm run db:deploy`, `npm run db:seed`: Prisma workflows.
-- `docker compose -f docker-compose.hub.yml build`: local container build.
-- `docker compose up -d`: pull-only deployment path using `APP_IMAGE`.
+## 1. Think Before Coding
 
-## Coding Style & Naming Conventions
-Use TypeScript/ESM with 2-space indentation, semicolons, and double quotes, matching existing files such as `lib/prisma.ts`. Prefer small focused modules and keep server-only logic out of UI components. Use PascalCase for React components, camelCase for functions/variables, and descriptive route/file names (`app/api/health/route.ts`, `lib/services/payments.ts`). Lint before opening a PR.
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
 
-## Testing Guidelines
-Vitest is the test runner. Add tests under `__tests__/` with names ending in `.test.ts`, mirroring the source area they cover, for example `__tests__/prisma/seed.test.ts`. Favor fast unit/integration coverage for service logic, schema validation, and route helpers. Run `npm test` before pushing; use `npm run test:coverage` when changing critical flows.
+Before implementing:
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them - don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
 
-## Commit & Pull Request Guidelines
-Recent history uses short imperative subjects, often with a scope prefix, for example `fix(docker): pass build env to compose images` or `Refactor Docker runtime and shared migrate image`. Follow that style. PRs should summarize behavior changes, list verification steps, and call out schema, Docker, or environment-variable changes explicitly. Include screenshots for UI changes.
+## 2. Simplicity First
 
-## Security & Configuration Tips
-Do not commit `.env` values or generated `.next*` artifacts. For Docker builds, pass runtime secrets through BuildKit secrets and keep only `NEXT_PUBLIC_*` values in build args. Use `docker-compose.hub.yml` for local builds and `docker-compose.yml` for image-based deployment.
+**Minimum code that solves the problem. Nothing speculative.**
+
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
+## 3. Surgical Changes
+
+**Touch only what you must. Clean up only your own mess.**
+
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it - don't delete it.
+
+When your changes create orphans:
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+
+The test: Every changed line should trace directly to the user's request.
+
+## 4. Goal-Driven Execution
+
+**Define success criteria. Loop until verified.**
+
+Transform tasks into verifiable goals:
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+
+For multi-step tasks, state a brief plan:
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
+```
+
+Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+---
+
+**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.

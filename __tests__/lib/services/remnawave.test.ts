@@ -65,6 +65,24 @@ describe("remnawave service", () => {
     expect(isRemnawaveRecoverableIdentityError(error)).toBe(true);
   });
 
+  it("preserves a subscriptionUrl returned by Remnawave", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({
+        response: {
+          uuid: "rw-1",
+          username: "gs_alice",
+          shortUuid: "short-1",
+          subscriptionUrl: "https://client.example.com/subscription/gs_alice"
+        }
+      }), { status: 200 }))
+    );
+
+    const snapshot = await getRemnawaveUser("rw-1");
+
+    expect(snapshot.subscriptionUrl).toBe("https://client.example.com/subscription/gs_alice");
+  });
+
   it("omits a null hwidDeviceLimit from create payloads", async () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({
       response: {

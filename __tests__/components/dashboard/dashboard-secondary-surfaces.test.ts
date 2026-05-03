@@ -25,6 +25,7 @@ describe("dashboard secondary surfaces", () => {
     const markup = renderToStaticMarkup(
       React.createElement(PaymentCheckout, {
         enabledProviders: [PaymentProvider.YOOKASSA],
+        plategaPaymentMethods: [2, 10, 13],
         plans: [
           {
             id: "plan-1",
@@ -48,20 +49,29 @@ describe("dashboard secondary surfaces", () => {
     );
 
     expect(markup).toMatch(/class="[^"]*\bdashWorkspace\b[^"]*\bdashCheckout\b[^"]*"/);
-    expect(markup).toMatch(/class="[^"]*\bdashCardGrid\b[^"]*"/);
-    expect(markup.match(/class="[^"]*\bdashCard\b[^"]*"/g) ?? []).toHaveLength(2);
-    expect(markup).toContain("WELCOME10");
-    expect(markup).toContain("ЮKassa");
+    expect(markup).toContain("Тариф");
+    expect(markup).toContain("Срок");
+    expect(markup).toContain("Оплата");
+    expect(markup.match(/class="[^"]*\bdashCard\b[^"]*"/g) ?? []).toHaveLength(1);
+    expect(markup).toContain("Выберите тариф");
+    expect(markup).toContain("Starter");
+    expect(markup).toContain("/мес");
+    expect(markup).not.toContain("Платежи временно недоступны");
+    expect(markup).not.toContain("ЮKassa");
     expect(markup).not.toContain("Platega");
+    expect(markup).not.toContain("СБП");
+    expect(markup).not.toContain("Карты РФ");
+    expect(markup).not.toContain("Крипта");
     expect(markup).not.toMatch(/\btelemetryHero\b/);
     expect(markup).not.toMatch(/\bcommandPanel\b/);
     expect(markup).not.toMatch(/\bcheckoutWorkspace\b/);
   });
 
-  it("renders a payment unavailable state when no providers are enabled", () => {
+  it("keeps the initial checkout step on plan selection even when providers are disabled", () => {
     const markup = renderToStaticMarkup(
       React.createElement(PaymentCheckout, {
         enabledProviders: [],
+        plategaPaymentMethods: [2, 10, 13],
         plans: [
           {
             id: "plan-1",
@@ -84,9 +94,11 @@ describe("dashboard secondary surfaces", () => {
       })
     );
 
-    expect(markup).toContain("Платежи временно недоступны");
+    expect(markup).toContain("Выберите тариф");
+    expect(markup).toContain("Starter");
     expect(markup).not.toContain("ЮKassa");
     expect(markup).not.toContain("Platega");
+    expect(markup).not.toContain("Платежи временно недоступны");
   });
 
   it("renders payment history with dashboard stats and a table card", () => {

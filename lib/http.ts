@@ -4,6 +4,7 @@ import { z } from "zod";
 import { PAGINATION_DEFAULT_LIMIT, PAGINATION_MAX_LIMIT } from "@/lib/constants";
 import { env } from "@/lib/env";
 import { getRequestId } from "@/lib/server/logger-context";
+import { withApiLogging } from "@/lib/server/with-api-logging";
 export { getClientIp } from "@/lib/server/request-utils";
 
 export async function parseRequestBody<T extends z.ZodTypeAny>(

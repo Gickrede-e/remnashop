@@ -58,6 +58,7 @@ describe("auth surfaces", () => {
   it("renders the login form with a register footer link and no telegram block", () => {
     const markup = renderToStaticMarkup(
       React.createElement(LoginForm, {
+        emailEnabled: false,
         nextPath: "/dashboard/buy"
       })
     );
@@ -71,11 +72,23 @@ describe("auth surfaces", () => {
     expect(markup).toContain('href="/register?next=%2Fdashboard%2Fbuy"');
     expect(markup).toContain('placeholder="Email"');
     expect(markup).toContain('placeholder="Пароль"');
+    expect(markup).not.toContain('href="/forgot-password"');
+  });
+
+  it("renders the forgot-password link when email flows are enabled at runtime", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(LoginForm, {
+        emailEnabled: true
+      })
+    );
+
+    expect(markup).toContain('href="/forgot-password"');
   });
 
   it("renders the register form with a login footer link and referral code", () => {
     const markup = renderToStaticMarkup(
       React.createElement(RegisterForm, {
+        emailEnabled: false,
         referralCode: "ALLY42",
         nextPath: "/dashboard"
       })

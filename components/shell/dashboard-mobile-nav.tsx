@@ -1,43 +1,73 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { CreditCard, Gauge, History, Share2, Smartphone } from "lucide-react";
+import { MoreHorizontal, Power, type LucideIcon } from "lucide-react";
 
+import type { DashboardSidebarItem } from "@/components/shell/dashboard-sidebar";
+import type { AppShellNavArea } from "@/lib/ui/app-shell-nav";
 import { cn } from "@/lib/utils";
 
-const navItems = [
-  { href: "/dashboard", label: "Обзор", icon: Gauge, exact: true },
-  { href: "/dashboard/buy", label: "Купить", icon: CreditCard, exact: false },
-  { href: "/dashboard/devices", label: "Устройства", icon: Smartphone, exact: false },
-  { href: "/dashboard/history", label: "История", icon: History, exact: false },
-  { href: "/dashboard/referrals", label: "Рефералы", icon: Share2, exact: false }
-] as const;
+type DashboardMobileNavProps = {
+  area: AppShellNavArea;
+  primaryItems: DashboardSidebarItem[];
+  otherItems: DashboardSidebarItem[];
+  accountSummary: { email: string } | null;
+};
 
-function isActive(pathname: string, href: string, exact: boolean) {
-  if (exact) return pathname === href;
-  return pathname === href || pathname.startsWith(`${href}/`);
+function MobileNavItem({
+  href,
+  label,
+  icon: Icon,
+  active
+}: {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  active: boolean;
+}) {
+  return (
+    <Link href={href} aria-current={active ? "page" : undefined} className={cn("dashMobileNavLink", active && "is-active")}>
+      <Icon className="dashMobileNavIcon" aria-hidden="true" />
+      <span className="dashMobileNavLabel">{label}</span>
+    </Link>
+  );
 }
 
-export function DashboardMobileNav() {
-  const pathname = usePathname();
+export function DashboardMobileNav({ area, primaryItems, otherItems, accountSummary }: DashboardMobileNavProps) {
+  if (area === "public" || !accountSummary) {
+    return null;
+  }
+
+  const visibleItems = primaryItems.slice(0, 4);
+  const overflowItems = [...primaryItems.slice(4), ...otherItems].filter((item) => !item.href.startsWith("#"));
+  const hasActiveOverflow = overflowItems.some((item) => item.active);
 
   return (
-    <nav className="dashMobileNav" aria-label="Мобильная навигация">
-      {navItems.map((item) => {
-        const active = isActive(pathname, item.href, item.exact);
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            aria-current={active ? "page" : undefined}
-            className={cn("dashMobileNavItem", active && "is-active")}
-          >
-            <item.icon className="dashMobileNavItemIcon" aria-hidden="true" />
-            <span className="dashMobileNavItemLabel">{item.label}</span>
-          </Link>
-        );
-      })}
-    </nav>
+    <div className="dashMobileNav" data-testid="app-mobile-nav">
+      <nav className="dashMobileNavBar" aria-label="Мобильная навигация кабинета">
+        {visibleItems.map((item) => (
+          <MobileNavItem key={item.href} {...item} />
+        ))}
+        <details className="dashMobileNavMore">
+          <summary className={cn("dashMobileNavMoreSummary", hasActiveOverflow && "is-active")}>
+            <MoreHorizontal className="dashMobileNavIcon" aria-hidden="true" />
+            <span className="dashMobileNavLabel">Ещё</span>
+          </summary>
+          <div className="dashMobileNavMorePanel">
+            <div className="dashMobileNavMoreList">
+              {overflowItems.map((item) => (
+                <MobileNavItem key={item.href} {...item} />
+              ))}
+            </div>
+            <form action="/api/auth/logout" method="post" className="dashMobileNavLogoutForm">
+              <button type="submit" className="dashMobileNavLogoutButton">
+                <Power className="dashMobileNavIcon" aria-hidden="true" />
+                <span className="dashMobileNavLabel">LOG OUT</span>
+              </button>
+            </form>
+          </div>
+        </details>
+      </nav>
+    </div>
   );
 }

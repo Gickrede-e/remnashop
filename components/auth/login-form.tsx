@@ -9,11 +9,10 @@ import { z } from "zod";
 
 import { buildRegisterHref, sanitizeNextPath } from "@/lib/auth/navigation";
 import { loginSchema } from "@/lib/schemas/auth";
-import { publicEnv } from "@/lib/public-env";
 
 type LoginValues = z.infer<typeof loginSchema>;
 
-export function LoginForm({ nextPath }: { nextPath?: string }) {
+export function LoginForm({ emailEnabled, nextPath }: { emailEnabled: boolean; nextPath?: string }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -81,7 +80,7 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
           className="authStandaloneInput"
           {...form.register("password")}
         />
-        {publicEnv.EMAIL_ENABLED ? (
+        {emailEnabled ? (
           <Link href="/forgot-password" className="authForgotLink">
             Забыл пароль?
           </Link>

@@ -2,7 +2,6 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const getSessionMock = vi.hoisted(() => vi.fn());
 const redirectMock = vi.hoisted(() => vi.fn());
 
 vi.mock("next/link", () => ({
@@ -19,10 +18,6 @@ vi.mock("next/navigation", async () => {
   };
 });
 
-vi.mock("@/lib/auth/session", () => ({
-  getSession: getSessionMock
-}));
-
 import FaqPage from "@/app/faq/page";
 import HomePage from "@/app/page";
 import PricingPage from "@/app/pricing/page";
@@ -30,36 +25,13 @@ import TermsPage from "@/app/terms/page";
 
 describe("public pages", () => {
   beforeEach(() => {
-    getSessionMock.mockReset();
     redirectMock.mockReset();
   });
 
-  it("renders the home page inside the public shell for guests", async () => {
-    getSessionMock.mockResolvedValue(null);
-
-    const markup = renderToStaticMarkup(await HomePage());
-
-    expect(markup).toContain('data-testid="app-nav-rail"');
-    expect(markup).toContain("ВОЙТИ");
-    expect(markup).not.toContain("Регистрация");
-    expect(markup).not.toContain('data-slot="topbar"');
-    expect(markup).not.toContain('data-slot="more-sheet"');
-  });
-
-  it("redirects authenticated users on the home page to their workspace", async () => {
-    getSessionMock.mockResolvedValue({ role: "USER" });
-
+  it("redirects the home page to login", async () => {
     await HomePage();
 
-    expect(redirectMock).toHaveBeenCalledWith("/dashboard");
-  });
-
-  it("redirects admins on the home page to the admin workspace", async () => {
-    getSessionMock.mockResolvedValue({ role: "ADMIN" });
-
-    await HomePage();
-
-    expect(redirectMock).toHaveBeenCalledWith("/admin");
+    expect(redirectMock).toHaveBeenCalledWith("/login");
   });
 
   it("renders FAQ as a compact public document page", () => {

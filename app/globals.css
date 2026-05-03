@@ -894,44 +894,91 @@ p {
     gap: clamp(1.5rem, 2.5vw, 2rem);
   }
 
-  /* Mobile bottom navigation — hidden by default, shown on small screens */
   .dashMobileNav {
     display: none;
   }
 
-  .dashMobileNavItem {
-    flex: 1;
+  .dashMobileNavBar {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.35rem;
+    align-items: stretch;
+  }
+
+  .dashMobileNavLink,
+  .dashMobileNavMoreSummary,
+  .dashMobileNavLogoutButton {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 0.3rem;
-    padding: 0.5rem 0.25rem;
+    justify-content: flex-start;
+    gap: 0.35rem;
+    min-width: 0;
+    min-height: 4.1rem;
+    padding: 0.58rem 0.22rem 0.48rem;
+    border: 1px solid transparent;
+    border-radius: 1rem;
+    background: transparent;
     color: var(--text-tertiary);
     text-decoration: none;
-    transition: color 120ms ease;
-    min-width: 0;
+    font: inherit;
+    cursor: pointer;
   }
 
-  .dashMobileNavItem.is-active {
+  .dashMobileNavLink.is-active,
+  .dashMobileNavMoreSummary.is-active {
     color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--surface-line);
   }
 
-  .dashMobileNavItemIcon {
-    width: 1.35rem;
-    height: 1.35rem;
-    flex-shrink: 0;
+  .dashMobileNavIcon {
+    width: 1rem;
+    height: 1rem;
+    flex: 0 0 1rem;
   }
 
-  .dashMobileNavItemLabel {
-    font-size: 0.6rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .dashMobileNavLabel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 1.38rem;
     max-width: 100%;
+    font-size: 0.6rem;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: 0.01em;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    overflow: hidden;
+  }
+
+  .dashMobileNavMore {
+    position: relative;
+  }
+
+  .dashMobileNavMoreSummary {
+    list-style: none;
+  }
+
+  .dashMobileNavMoreSummary::-webkit-details-marker {
+    display: none;
+  }
+
+  .dashMobileNavMorePanel {
+    display: none;
+  }
+
+  .dashMobileNavMore[open] .dashMobileNavMorePanel {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .dashMobileNavMoreList,
+  .dashMobileNavLogoutForm {
+    display: grid;
+    gap: 0.65rem;
   }
 
   .dashPageHeader {
@@ -995,6 +1042,16 @@ p {
     /* The header action shares the CTA visual; prefer composing it via class. */
   }
 
+  .dashSupportCta {
+    background: #000000;
+    color: #ffffff;
+  }
+
+  .dashSupportCta:hover {
+    background: #111111;
+    color: #ffffff;
+  }
+
   .dashStatGrid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
@@ -1047,6 +1104,38 @@ p {
     font-size: 0.7rem;
     font-weight: 500;
     letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .dashOverviewCompactStats {
+    display: none;
+  }
+
+  .dashOverviewCompactStat {
+    display: grid;
+    gap: 0.2rem;
+    min-width: 0;
+    padding: 0.85rem 0.75rem;
+    background: var(--canvas-1);
+    border: 1px solid var(--surface-line);
+    border-radius: 0.95rem;
+  }
+
+  .dashOverviewCompactStatValue {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+
+  .dashOverviewCompactStatLabel {
+    margin: 0;
+    color: var(--text-tertiary);
+    font-size: 0.58rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
   }
 
@@ -1238,6 +1327,24 @@ p {
 
   .dashListItem.is-not-completed {
     border-left: 2px solid var(--text-tertiary);
+  }
+
+  .dashListItem a,
+  .dashListButton {
+    display: block;
+    width: 100%;
+    color: inherit;
+    font: inherit;
+    text-decoration: none;
+  }
+
+  .dashListButton {
+    width: 100%;
+    padding: 0;
+    text-align: left;
+    border: none;
+    background: transparent;
+    cursor: pointer;
   }
 
   .dashListItem .dashListIcon {
@@ -3930,24 +4037,68 @@ p {
 
     .dashShellMain {
       grid-column: 1;
-      padding: 1.25rem;
-      padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+      padding: 1.25rem 1.25rem calc(7rem + env(safe-area-inset-bottom));
     }
 
     .dashSidebar {
+      position: static;
+      grid-column: 1;
+      width: 100%;
+      height: auto;
+      border-right: none;
+      border-bottom: 1px solid var(--surface-line);
+    }
+
+    .dashSidebar[data-area="dashboard"] .dashSidebarNav,
+    .dashSidebar[data-area="dashboard"] .dashSidebarOther,
+    .dashSidebar[data-area="dashboard"] .dashSidebarFooter,
+    .dashSidebar[data-area="admin"] .dashSidebarNav,
+    .dashSidebar[data-area="admin"] .dashSidebarOther,
+    .dashSidebar[data-area="admin"] .dashSidebarFooter {
       display: none;
     }
 
+    .dashSidebarFooter {
+      margin-top: 0;
+    }
+
     .dashMobileNav {
-      display: flex;
       position: fixed;
-      bottom: 0;
       left: 0;
       right: 0;
-      z-index: 50;
-      background: var(--canvas-1);
+      bottom: 0;
+      z-index: 55;
+      display: block;
+      padding: 0.65rem 0.75rem calc(0.65rem + env(safe-area-inset-bottom));
+      background: color-mix(in srgb, var(--canvas-0) 94%, black);
       border-top: 1px solid var(--surface-line);
-      padding-bottom: env(safe-area-inset-bottom, 0px);
+      backdrop-filter: blur(18px);
+    }
+
+    .dashMobileNavMorePanel {
+      position: fixed;
+      left: 0.75rem;
+      right: 0.75rem;
+      bottom: calc(6.4rem + env(safe-area-inset-bottom));
+      padding: 1rem;
+      border: 1px solid var(--surface-line);
+      border-radius: 1.1rem;
+      background: color-mix(in srgb, var(--canvas-0) 96%, black);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
+    }
+
+    .dashMobileNavMoreList {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dashOverview > .dashStatGrid {
+      display: none;
+    }
+
+    .dashOverviewCompactStats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.65rem;
     }
 
     .dashStatGrid {
@@ -3968,6 +4119,14 @@ p {
 
     .dashStatTileValue {
       font-size: 1.05rem;
+    }
+
+    .dashOverviewCompactStat {
+      padding: 0.8rem 0.65rem;
+    }
+
+    .dashOverviewCompactStatValue {
+      font-size: 0.8rem;
     }
   }
 }

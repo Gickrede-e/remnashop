@@ -23,6 +23,10 @@ type YooKassaPayment = {
   id: string;
   status: string;
   paid?: boolean;
+  amount?: {
+    value?: string;
+    currency?: string;
+  };
   metadata?: Record<string, string>;
   confirmation?: {
     confirmation_url?: string;
@@ -38,24 +42,59 @@ function getAuthHeader() {
 }
 
 async function yookassaRequest<T>(path: string, init?: RequestInit) {
-  const response = await fetch(`https://api.yookassa.ru${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: getAuthHeader(),
-      ...(init?.headers ?? {})
-    },
-    cache: "no-store"
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`https://api.yookassa.ru${path}`, {
+      ...init,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: getAuthHeader(),
+        ...(init?.headers ?? {})
+      },
+      cache: "no-store",
+      signal: init?.signal
+        ? AbortSignal.any([init.signal, AbortSignal.timeout(15_000)])
+        : AbortSignal.timeout(15_000)
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "TimeoutError") {
+      throw new Error("YooKassa request timed out");
+    }
+
+    throw error;
+  }
 
   const text = await response.text();
-  const json = text ? (JSON.parse(text) as T) : ({} as T);
+  let json = {} as T;
+
+  if (text) {
+    try {
+      json = JSON.parse(text) as T;
+    } catch {
+      throw new Error(`YooKassa returned invalid JSON: ${response.status}`);
+    }
+  }
 
   if (!response.ok) {
     throw new Error(`YooKassa request failed: ${response.status} ${text}`);
   }
 
   return json;
+}
+
+export function parseYooKassaAmountToMinorUnits(value?: string | null) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim();
+  if (!/^\d+(?:\.\d{1,2})?$/.test(normalized)) {
+    return null;
+  }
+
+  const [wholePart, fractionPart = ""] = normalized.split(".");
+  return Number(wholePart) * 100 + Number(fractionPart.padEnd(2, "0"));
 }
 
 export async function createYooKassaPayment(input: YooKassaCreatePaymentInput) {

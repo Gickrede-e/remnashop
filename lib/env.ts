@@ -2,6 +2,11 @@ import "server-only";
 
 import { z } from "zod";
 
+import {
+  normalizePlategaPaymentMethods,
+  parsePlategaPaymentMethods
+} from "@/lib/payments/platega-methods";
+
 const NODE_ENV = process.env.NODE_ENV ?? "development";
 const isProduction = NODE_ENV === "production";
 
@@ -16,6 +21,7 @@ const DEV_ENV_FALLBACKS = {
   NEXT_PUBLIC_SITE_URL: "https://vpn.example.com",
   NEXT_PUBLIC_SITE_NAME: "GickShop",
   NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: "",
+  NEXT_PUBLIC_SUPPORT_TELEGRAM_URL: "",
   TELEGRAM_BOT_TOKEN: "",
   REMNAWAVE_BASE_URL: "https://your-panel.example.com",
   REMNAWAVE_API_TOKEN: "placeholder_token",
@@ -26,13 +32,17 @@ const DEV_ENV_FALLBACKS = {
   PLATEGA_API_KEY: "platega_placeholder_key",
   PLATEGA_MERCHANT_ID: "platega_dev_merchant_id",
   PLATEGA_WEBHOOK_SECRET: "platega_placeholder_secret",
-  SMTP_HOST: "smtp.example.com",
-  SMTP_PORT: "587",
+  PLATEGA_PAYMENT_METHODS: "2,10,13",
+  SMTP_HOST: "smtp",
+  SMTP_PORT: "2525",
   SMTP_SECURE: "false",
-  SMTP_USER: "notifications@example.com",
-  SMTP_PASS: "change_me",
+  SMTP_USER: "",
+  SMTP_PASS: "",
   EMAIL_FROM: "GickShop <notifications@example.com>",
   EMAIL_ENABLED: "false",
+  MAIL_DOMAIN: "example.com",
+  MAIL_HOSTNAME: "mail.example.com",
+  MAIL_DKIM_SELECTOR: "mail",
   REFERRAL_REWARD_TYPE: "FREE_DAYS",
   REFERRAL_REWARD_VALUE: "3",
   CRON_SECRET: "change_me_internal_cron_secret",
@@ -46,14 +56,12 @@ const EXAMPLE_ENV_PLACEHOLDERS = {
   PLATEGA_API_KEY: "REPLACE_WITH_PLATEGA_API_KEY",
   PLATEGA_MERCHANT_ID: "REPLACE_WITH_PLATEGA_MERCHANT_ID",
   PLATEGA_WEBHOOK_SECRET: "REPLACE_WITH_PLATEGA_WEBHOOK_SECRET",
-  SMTP_PASS: "REPLACE_WITH_SMTP_PASSWORD",
   CRON_SECRET: "REPLACE_WITH_OPENSSL_RAND_HEX_16"
 } as const;
 
 const REQUIRED_PRODUCTION_FIELDS = [
   "JWT_SECRET",
   "REMNAWAVE_API_TOKEN",
-  "SMTP_PASS",
   "CRON_SECRET"
 ] as const;
 
@@ -68,7 +76,8 @@ const KNOWN_PLACEHOLDERS = new Set<string>([
   DEV_ENV_FALLBACKS.PLATEGA_API_KEY,
   DEV_ENV_FALLBACKS.PLATEGA_MERCHANT_ID,
   DEV_ENV_FALLBACKS.PLATEGA_WEBHOOK_SECRET,
-  DEV_ENV_FALLBACKS.SMTP_PASS,
+  DEV_ENV_FALLBACKS.MAIL_DOMAIN,
+  DEV_ENV_FALLBACKS.MAIL_HOSTNAME,
   DEV_ENV_FALLBACKS.CRON_SECRET,
   EXAMPLE_ENV_PLACEHOLDERS.JWT_SECRET,
   EXAMPLE_ENV_PLACEHOLDERS.REMNAWAVE_API_TOKEN,
@@ -76,7 +85,6 @@ const KNOWN_PLACEHOLDERS = new Set<string>([
   EXAMPLE_ENV_PLACEHOLDERS.PLATEGA_API_KEY,
   EXAMPLE_ENV_PLACEHOLDERS.PLATEGA_MERCHANT_ID,
   EXAMPLE_ENV_PLACEHOLDERS.PLATEGA_WEBHOOK_SECRET,
-  EXAMPLE_ENV_PLACEHOLDERS.SMTP_PASS,
   EXAMPLE_ENV_PLACEHOLDERS.CRON_SECRET
 ]);
 
@@ -128,6 +136,7 @@ const rawEnv = {
   NEXT_PUBLIC_SITE_URL: readEnvValue("NEXT_PUBLIC_SITE_URL"),
   NEXT_PUBLIC_SITE_NAME: readEnvValue("NEXT_PUBLIC_SITE_NAME"),
   NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: readEnvValue("NEXT_PUBLIC_TELEGRAM_BOT_USERNAME"),
+  NEXT_PUBLIC_SUPPORT_TELEGRAM_URL: readEnvValue("NEXT_PUBLIC_SUPPORT_TELEGRAM_URL"),
   TELEGRAM_BOT_TOKEN: readEnvValue("TELEGRAM_BOT_TOKEN"),
   REMNAWAVE_BASE_URL: readEnvValue("REMNAWAVE_BASE_URL"),
   REMNAWAVE_API_TOKEN: readEnvValue("REMNAWAVE_API_TOKEN"),
@@ -138,6 +147,7 @@ const rawEnv = {
   PLATEGA_API_KEY: readEnvValue("PLATEGA_API_KEY"),
   PLATEGA_MERCHANT_ID: readEnvValue("PLATEGA_MERCHANT_ID"),
   PLATEGA_WEBHOOK_SECRET: readEnvValue("PLATEGA_WEBHOOK_SECRET"),
+  PLATEGA_PAYMENT_METHODS: readEnvValue("PLATEGA_PAYMENT_METHODS"),
   SMTP_HOST: readEnvValue("SMTP_HOST"),
   SMTP_PORT: readEnvValue("SMTP_PORT"),
   SMTP_SECURE: readEnvValue("SMTP_SECURE"),
@@ -145,6 +155,9 @@ const rawEnv = {
   SMTP_PASS: readEnvValue("SMTP_PASS"),
   EMAIL_FROM: readEnvValue("EMAIL_FROM"),
   EMAIL_ENABLED: readEnvValue("EMAIL_ENABLED"),
+  MAIL_DOMAIN: readEnvValue("MAIL_DOMAIN"),
+  MAIL_HOSTNAME: readEnvValue("MAIL_HOSTNAME"),
+  MAIL_DKIM_SELECTOR: readEnvValue("MAIL_DKIM_SELECTOR"),
   REFERRAL_REWARD_TYPE: readEnvValue("REFERRAL_REWARD_TYPE"),
   REFERRAL_REWARD_VALUE: readEnvValue("REFERRAL_REWARD_VALUE"),
   CRON_SECRET: readEnvValue("CRON_SECRET"),
@@ -164,6 +177,7 @@ const envSchema = z.object({
   NEXT_PUBLIC_SITE_URL: z.string().url(),
   NEXT_PUBLIC_SITE_NAME: z.string().min(1),
   NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: z.string().default(""),
+  NEXT_PUBLIC_SUPPORT_TELEGRAM_URL: z.string().default(""),
   TELEGRAM_BOT_TOKEN: z.string().default(""),
   REMNAWAVE_BASE_URL: z.string().url(),
   REMNAWAVE_API_TOKEN: requiredProductionString("REMNAWAVE_API_TOKEN"),
@@ -180,19 +194,23 @@ const envSchema = z.object({
   PLATEGA_API_KEY: z.string().default(""),
   PLATEGA_MERCHANT_ID: z.string().default(""),
   PLATEGA_WEBHOOK_SECRET: z.string().default(""),
+  PLATEGA_PAYMENT_METHODS: z.string().default("2,10,13"),
   SMTP_HOST: z.string().min(1),
   SMTP_PORT: z.coerce.number().int().positive(),
   SMTP_SECURE: z
     .string()
     .default("false")
     .transform((value) => value === "true"),
-  SMTP_USER: z.string().min(1),
-  SMTP_PASS: requiredProductionString("SMTP_PASS"),
+  SMTP_USER: z.string().default(""),
+  SMTP_PASS: z.string().default(""),
   EMAIL_FROM: z.string().min(1),
   EMAIL_ENABLED: z
     .string()
     .default("false")
     .transform((value) => value === "true"),
+  MAIL_DOMAIN: z.string().min(1),
+  MAIL_HOSTNAME: z.string().min(1),
+  MAIL_DKIM_SELECTOR: z.string().min(1).default("mail"),
   REFERRAL_REWARD_TYPE: z.enum(["FREE_DAYS", "FREE_TRAFFIC_GB", "DISCOUNT_PERCENT"]).default("FREE_DAYS"),
   REFERRAL_REWARD_VALUE: z.coerce.number().int().positive().default(3),
   CRON_SECRET: requiredProductionString("CRON_SECRET", 16),
@@ -243,6 +261,62 @@ const envSchema = z.object({
         });
       }
     }
+
+    const parsedPaymentMethods = parsePlategaPaymentMethods(value.PLATEGA_PAYMENT_METHODS);
+    if (parsedPaymentMethods.invalidValues.length > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["PLATEGA_PAYMENT_METHODS"],
+        message: `PLATEGA_PAYMENT_METHODS contains unsupported values: ${parsedPaymentMethods.invalidValues.join(", ")}`
+      });
+    }
+
+    if (parsedPaymentMethods.methods.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["PLATEGA_PAYMENT_METHODS"],
+        message: "PLATEGA_PAYMENT_METHODS must include at least one supported payment method"
+      });
+    }
+  }
+
+  if (!!value.SMTP_USER !== !!value.SMTP_PASS) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: [value.SMTP_USER ? "SMTP_PASS" : "SMTP_USER"],
+      message: "SMTP_USER and SMTP_PASS must be set together"
+    });
+  }
+
+  if (value.SMTP_PASS && isProduction && KNOWN_PLACEHOLDERS.has(value.SMTP_PASS)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["SMTP_PASS"],
+      message: "SMTP_PASS is set to a placeholder value — generate a real secret"
+    });
+  }
+
+  if (value.SMTP_HOST === "smtp") {
+    for (const field of ["MAIL_DOMAIN", "MAIL_HOSTNAME"] as const) {
+      if (isProduction && KNOWN_PLACEHOLDERS.has(value[field])) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [field],
+          message: `${field} is set to a placeholder value — replace it with your real mail domain`
+        });
+      }
+    }
+
+    const normalizedFrom = value.EMAIL_FROM.toLowerCase();
+    const mailDomain = value.MAIL_DOMAIN.toLowerCase();
+
+    if (!normalizedFrom.includes(`@${mailDomain}`)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["EMAIL_FROM"],
+        message: "EMAIL_FROM must use the MAIL_DOMAIN domain when SMTP_HOST is set to smtp"
+      });
+    }
   }
 });
 
@@ -269,6 +343,7 @@ export const env = {
   ...base,
   siteUrl: base.NEXT_PUBLIC_SITE_URL.replace(/\/+$/, ""),
   siteName: base.NEXT_PUBLIC_SITE_NAME,
+  plategaPaymentMethods: normalizePlategaPaymentMethods(base.PLATEGA_PAYMENT_METHODS),
   adminEmails: base.ADMIN_EMAILS.split(",")
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean)
@@ -277,7 +352,8 @@ export const env = {
 export const publicEnv = {
   NEXT_PUBLIC_SITE_URL: env.NEXT_PUBLIC_SITE_URL,
   NEXT_PUBLIC_SITE_NAME: env.NEXT_PUBLIC_SITE_NAME,
-  NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME
+  NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME,
+  NEXT_PUBLIC_SUPPORT_TELEGRAM_URL: env.NEXT_PUBLIC_SUPPORT_TELEGRAM_URL
 };
 
 export function getAdminEmails() {

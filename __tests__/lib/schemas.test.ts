@@ -74,16 +74,23 @@ describe("lib/schemas", () => {
   it("validates paymentCreateSchema", () => {
     expect(paymentCreateSchema.parse({
       planId: "plan_1",
-      provider: PaymentProvider.YOOKASSA
+      provider: PaymentProvider.YOOKASSA,
+      paymentMethod: "2"
     })).toMatchObject({
       planId: "plan_1",
-      provider: PaymentProvider.YOOKASSA
+      provider: PaymentProvider.YOOKASSA,
+      paymentMethod: 2
     });
 
     expectIssuePath(paymentCreateSchema.safeParse({
       planId: "plan_1",
       provider: "INVALID"
     }), ["provider"]);
+    expectIssuePath(paymentCreateSchema.safeParse({
+      planId: "plan_1",
+      provider: PaymentProvider.PLATEGA,
+      paymentMethod: "not-a-number"
+    }), ["paymentMethod"]);
   });
 
   it("validates and transforms promoValidateSchema", () => {

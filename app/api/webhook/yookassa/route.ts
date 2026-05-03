@@ -2,10 +2,11 @@ import { PaymentProvider } from "@prisma/client";
 import { type NextRequest } from "next/server";
 import { z } from "zod";
 
-import { apiError, apiOk, getClientIp } from "@/lib/http";
+import { apiError, apiOk } from "@/lib/http";
 import { isPaymentProviderEnabledFromEnv } from "@/lib/payments/provider-config";
 import { RateLimitExceededError, enforceRateLimit } from "@/lib/server/rate-limit";
 import { logger, serializeError } from "@/lib/server/logger";
+import { getWebhookClientIp } from "@/lib/server/request-utils";
 import { withApiLogging } from "@/lib/server/with-api-logging";
 import { logAdminAction } from "@/lib/services/admin-logs";
 import {
@@ -21,9 +22,10 @@ const yookassaWebhookSchema = z.object({
     status: z.string().optional(),
     metadata: z
       .object({
-        paymentId: z.string().min(1)
+        paymentId: z.string().min(1).optional()
       })
       .passthrough()
+      .optional()
   })
 });
 
@@ -45,7 +47,7 @@ function isPayloadTooLarge(request: Request, rawBody?: string) {
 
 export async function POST(request: NextRequest) {
   return withApiLogging(request, async () => {
-    const ip = getClientIp(request);
+    const ip = getWebhookClientIp(request);
     let remoteId = "UNKNOWN";
 
     try {
@@ -71,7 +73,7 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         if (error instanceof RateLimitExceededError) {
           logger.warn("webhook.rate_limited", { provider: "YOOKASSA" });
-          return apiOk({ accepted: true });
+          return apiError("Too many requests", 429);
         }
 
         throw error;
@@ -147,7 +149,7 @@ export async function POST(request: NextRequest) {
         paymentId: remoteId,
         error: serializeError(error)
       });
-      return apiOk({ accepted: true });
+      return apiError("Temporarily unavailable", 503);
     }
   });
 }

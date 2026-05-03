@@ -26,6 +26,12 @@ vi.mock("@/lib/auth/session", () => ({
   getSession: getSessionMock
 }));
 
+vi.mock("@/lib/env", () => ({
+  env: {
+    EMAIL_ENABLED: true
+  }
+}));
+
 vi.mock("@/lib/public-env", () => ({
   publicEnv: {
     NEXT_PUBLIC_SITE_NAME: "RemnaShop"
@@ -60,6 +66,7 @@ describe("auth pages", () => {
     expect(markup).not.toMatch(/class="[^"]*\bauthTelegram\b[^"]*"/);
     expect(markup).not.toMatch(/class="[^"]*\bauthHint\b[^"]*"/);
     expect(markup).toContain("Вход");
+    expect(markup).toContain('href="/forgot-password"');
   });
 
   it("renders the register page inside the semantic auth scene", async () => {

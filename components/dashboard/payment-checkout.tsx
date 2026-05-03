@@ -5,6 +5,8 @@ import { PaymentProvider, type Plan } from "@prisma/client";
 
 import { DashboardCard } from "@/components/blocks/dashboard/dashboard-card";
 import { PAYMENT_PROVIDER_LABELS } from "@/lib/constants";
+import { getPlategaPaymentMethodLabel } from "@/lib/payments/platega-methods";
+import { calculateDurationPricing, calculateEffectiveMonthlyAmount } from "@/lib/payments/pricing";
 import { cn, formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,10 +94,12 @@ const CheckoutPlanCard = memo(function CheckoutPlanCard({
 
 export function PaymentCheckout({
   enabledProviders,
-  plans
+  plans,
+  plategaPaymentMethods
 }: {
   enabledProviders: PaymentProvider[];
   plans: Plan[];
+  plategaPaymentMethods: number[];
 }) {
   const [step, setStep] = useState<Step>("plan");
   const [selectedPlanId, setSelectedPlanId] = useState(plans[0]?.id ?? "");
@@ -105,6 +109,9 @@ export function PaymentCheckout({
   const [message, setMessage] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<PaymentProvider | null>(
     enabledProviders[0] ?? null
+  );
+  const [selectedPlategaPaymentMethod, setSelectedPlategaPaymentMethod] = useState<number | null>(
+    plategaPaymentMethods[0] ?? null
   );
   const [pending, startTransition] = useTransition();
 
@@ -120,9 +127,23 @@ export function PaymentCheckout({
         : (enabledProviders[0] ?? null),
     [enabledProviders, selectedProvider]
   );
+  const resolvedPlategaPaymentMethod = useMemo(
+    () =>
+      selectedPlategaPaymentMethod &&
+      plategaPaymentMethods.includes(selectedPlategaPaymentMethod)
+        ? selectedPlategaPaymentMethod
+        : (plategaPaymentMethods[0] ?? null),
+    [plategaPaymentMethods, selectedPlategaPaymentMethod]
+  );
 
-  const baseAmount = (selectedPlan?.price ?? 0) * months;
-  const finalAmount = promoState?.finalAmount ?? baseAmount;
+  const durationPricing = calculateDurationPricing(selectedPlan?.price ?? 0, months);
+  const durationOptions = MONTH_OPTIONS.map((option) => ({
+    ...option,
+    pricing: calculateDurationPricing(selectedPlan?.price ?? 0, option.months)
+  }));
+  const baseAmount = durationPricing.baseAmount;
+  const finalAmount = promoState?.finalAmount ?? durationPricing.subtotalAmount;
+  const effectiveMonthlyAmount = calculateEffectiveMonthlyAmount(finalAmount, durationPricing.months);
 
   const currentPlanIdRef = useRef(selectedPlanId);
   const currentMonthsRef = useRef(months);
@@ -137,6 +158,10 @@ export function PaymentCheckout({
   useEffect(() => {
     setSelectedProvider(resolvedSelectedProvider);
   }, [resolvedSelectedProvider]);
+
+  useEffect(() => {
+    setSelectedPlategaPaymentMethod(resolvedPlategaPaymentMethod);
+  }, [resolvedPlategaPaymentMethod]);
 
   const goBack = useCallback(() => {
     if (step === "duration") setStep("plan");
@@ -201,14 +226,14 @@ export function PaymentCheckout({
       }
 
       setPromoState({
-        finalAmount: payload.data.finalAmount ?? baseAmount,
+        finalAmount: payload.data.finalAmount ?? durationPricing.subtotalAmount,
         discountAmount: payload.data.discountAmount ?? 0,
         bonusDays: payload.data.bonusDays ?? 0,
         bonusTrafficGb: payload.data.bonusTrafficGb ?? 0
       });
       setMessage("Промокод применён.");
     });
-  }, [baseAmount, months, promoCode, selectedPlan]);
+  }, [durationPricing.subtotalAmount, months, promoCode, selectedPlan]);
 
   const createPayment = useCallback(
     (provider: PaymentProvider | null) => {
@@ -223,7 +248,11 @@ export function PaymentCheckout({
             planId: selectedPlan.id,
             provider,
             months,
-            promoCode: promoCode.trim() || undefined
+            promoCode: promoCode.trim() || undefined,
+            paymentMethod:
+              provider === PaymentProvider.PLATEGA
+                ? resolvedPlategaPaymentMethod ?? undefined
+                : undefined
           })
         });
 
@@ -241,7 +270,7 @@ export function PaymentCheckout({
         window.location.href = payload.data.redirectUrl;
       });
     },
-    [enabledProviders, months, promoCode, selectedPlan]
+    [enabledProviders, months, promoCode, resolvedPlategaPaymentMethod, selectedPlan]
   );
 
   if (plans.length === 0) {
@@ -287,7 +316,7 @@ export function PaymentCheckout({
           </div>
           <DashboardCard title="Выберите период">
             <div className="checkoutDurationGrid">
-              {MONTH_OPTIONS.map(({ months: m, label }) => (
+              {durationOptions.map(({ months: m, label, pricing }) => (
                 <button
                   key={m}
                   type="button"
@@ -297,8 +326,12 @@ export function PaymentCheckout({
                 >
                   <span className="checkoutDurationLabel">{label}</span>
                   <strong className="checkoutDurationPrice">
-                    {formatPrice((selectedPlan?.price ?? 0) * m)}
+                    {formatPrice(pricing.subtotalAmount)}
                   </strong>
+                  <span className="checkoutDurationLabel">
+                    {formatPrice(pricing.effectiveMonthlyAmount)}/мес
+                    {pricing.durationDiscountPercent > 0 ? ` · -${pricing.durationDiscountPercent}%` : ""}
+                  </span>
                 </button>
               ))}
             </div>
@@ -330,9 +363,15 @@ export function PaymentCheckout({
                 <span>Базовая цена</span>
                 <span>{formatPrice(baseAmount)}</span>
               </div>
+              {durationPricing.durationDiscountAmount > 0 ? (
+                <div className="checkoutSummaryRow checkoutSummaryRowAccent">
+                  <span>Скидка за период ({durationPricing.durationDiscountPercent}%)</span>
+                  <span>-{formatPrice(durationPricing.durationDiscountAmount)}</span>
+                </div>
+              ) : null}
               {promoState?.discountAmount ? (
                 <div className="checkoutSummaryRow checkoutSummaryRowAccent">
-                  <span>Скидка</span>
+                  <span>Промокод</span>
                   <span>-{formatPrice(promoState.discountAmount)}</span>
                 </div>
               ) : null}
@@ -351,6 +390,10 @@ export function PaymentCheckout({
               <div className="checkoutSummaryRow checkoutSummaryRowTotal">
                 <span>Итого</span>
                 <strong>{formatPrice(finalAmount)}</strong>
+              </div>
+              <div className="checkoutSummaryRow">
+                <span>В месяц</span>
+                <span>{formatPrice(effectiveMonthlyAmount)}/мес</span>
               </div>
             </div>
 
@@ -411,6 +454,30 @@ export function PaymentCheckout({
               Платежи временно недоступны
             </p>
           )}
+
+          {resolvedSelectedProvider === PaymentProvider.PLATEGA &&
+          plategaPaymentMethods.length > 1 ? (
+            <div className="checkoutPromoGroup">
+              <Label>Способ оплаты</Label>
+              <div className="checkoutProviderStack">
+                {plategaPaymentMethods.map((method) => (
+                  <button
+                    key={method}
+                    type="button"
+                    aria-pressed={resolvedPlategaPaymentMethod === method}
+                    disabled={pending}
+                    onClick={() => setSelectedPlategaPaymentMethod(method)}
+                    className={cn(
+                      "dashStatusPill",
+                      resolvedPlategaPaymentMethod === method ? "is-completed" : "is-pending"
+                    )}
+                  >
+                    {getPlategaPaymentMethodLabel(method)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           <button
             type="button"

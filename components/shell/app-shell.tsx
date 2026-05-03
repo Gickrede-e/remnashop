@@ -51,7 +51,12 @@ export function AppShell({ area, canAccessAdmin = false, accountSummary = null, 
       <main id="dash-shell-main" data-testid="app-shell-main" className="dashShellMain" tabIndex={-1}>
         {children}
       </main>
-      {area === "dashboard" && <DashboardMobileNav />}
+      <DashboardMobileNav
+        area={area}
+        primaryItems={primaryItems}
+        otherItems={otherItems}
+        accountSummary={accountSummary}
+      />
     </div>
   );
 }

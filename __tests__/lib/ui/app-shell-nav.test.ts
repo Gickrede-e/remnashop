@@ -18,7 +18,7 @@ const futureNavModule = navModule as FutureNavModule;
 describe("app shell nav", () => {
   it("describes dashboard primary nav items", () => {
     expect(navModule.getPrimaryNavItems("dashboard")).toEqual([
-      { href: "/dashboard", label: "Обзор", slot: "primary" },
+      { href: "/dashboard", label: "Подписка", slot: "primary" },
       { href: "/dashboard/buy", label: "Купить", slot: "primary" },
       { href: "/dashboard/devices", label: "Устройства", slot: "primary" },
       { href: "/dashboard/history", label: "История", slot: "primary" },

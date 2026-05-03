@@ -22,12 +22,16 @@ const validProductionEnv = {
   PLATEGA_API_KEY: "live-platega-api-key",
   PLATEGA_MERCHANT_ID: "merchant-id",
   PLATEGA_WEBHOOK_SECRET: "live-platega-webhook-secret",
-  SMTP_HOST: "smtp.example.com",
-  SMTP_PORT: "587",
+  PLATEGA_PAYMENT_METHODS: "2,10,13",
+  SMTP_HOST: "smtp",
+  SMTP_PORT: "2525",
   SMTP_SECURE: "false",
-  SMTP_USER: "notifications@example.com",
-  SMTP_PASS: "live-smtp-password",
-  EMAIL_FROM: "GickShop <notifications@example.com>",
+  SMTP_USER: "",
+  SMTP_PASS: "",
+  EMAIL_FROM: "GickShop <notifications@mailer.example.net>",
+  MAIL_DOMAIN: "mailer.example.net",
+  MAIL_HOSTNAME: "mail.mailer.example.net",
+  MAIL_DKIM_SELECTOR: "mail",
   REFERRAL_REWARD_TYPE: "FREE_DAYS",
   REFERRAL_REWARD_VALUE: "3",
   CRON_SECRET: "live-cron-secret-12345"
@@ -80,6 +84,17 @@ describe("lib/env", () => {
     expect(envModule.env.CRON_SECRET).toBe(validProductionEnv.CRON_SECRET);
   });
 
+  it("normalizes siteUrl by trimming a trailing slash", async () => {
+    setProcessEnv({
+      NEXT_PUBLIC_SITE_URL: "https://vpn.example.com/"
+    });
+
+    const envModule = await import("@/lib/env");
+
+    expect(envModule.env.NEXT_PUBLIC_SITE_URL).toBe("https://vpn.example.com/");
+    expect(envModule.env.siteUrl).toBe("https://vpn.example.com");
+  });
+
   it("requires a non-empty Platega merchant id in production", async () => {
     setProcessEnv({
       PLATEGA_MERCHANT_ID: ""
@@ -92,6 +107,67 @@ describe("lib/env", () => {
       "Invalid environment configuration",
       expect.objectContaining({
         PLATEGA_MERCHANT_ID: [expect.stringContaining("required in production")]
+      })
+    );
+  });
+
+  it("normalizes Platega payment methods and removes duplicates", async () => {
+    setProcessEnv({
+      PLATEGA_PAYMENT_METHODS: "2, 10, 2,13"
+    });
+
+    const envModule = await import("@/lib/env");
+
+    expect(envModule.env.plategaPaymentMethods).toEqual([2, 10, 13]);
+  });
+
+  it("rejects unsupported Platega payment methods when Platega is enabled", async () => {
+    setProcessEnv({
+      PLATEGA_PAYMENT_METHODS: "2,99"
+    });
+
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(import("@/lib/env")).rejects.toThrow("Invalid environment configuration");
+    expect(errorSpy).toHaveBeenCalledWith(
+      "Invalid environment configuration",
+      expect.objectContaining({
+        PLATEGA_PAYMENT_METHODS: [expect.stringContaining("unsupported values")]
+      })
+    );
+  });
+
+  it("rejects partial SMTP auth settings", async () => {
+    setProcessEnv({
+      SMTP_USER: "notifications@example.com"
+    });
+
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(import("@/lib/env")).rejects.toThrow("Invalid environment configuration");
+    expect(errorSpy).toHaveBeenCalledWith(
+      "Invalid environment configuration",
+      expect.objectContaining({
+        SMTP_PASS: [expect.stringContaining("must be set together")]
+      })
+    );
+  });
+
+  it("rejects placeholder self-hosted mail domains in production", async () => {
+    setProcessEnv({
+      MAIL_DOMAIN: "example.com",
+      MAIL_HOSTNAME: "mail.example.com",
+      EMAIL_FROM: "GickShop <notifications@example.com>"
+    });
+
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(import("@/lib/env")).rejects.toThrow("Invalid environment configuration");
+    expect(errorSpy).toHaveBeenCalledWith(
+      "Invalid environment configuration",
+      expect.objectContaining({
+        MAIL_DOMAIN: [expect.stringContaining("replace it with your real mail domain")],
+        MAIL_HOSTNAME: [expect.stringContaining("replace it with your real mail domain")]
       })
     );
   });
