@@ -7,6 +7,7 @@ const rootDir = dirname(fileURLToPath(import.meta.url));
 const nextConfig = {
   distDir: ".next-local",
   output: "standalone",
+  poweredByHeader: false,
   serverExternalPackages: ["@prisma/client", "@prisma/adapter-pg", "bcryptjs", "jose", "nodemailer", "pg"],
   outputFileTracingIncludes: {
     "/**": ["./node_modules/.prisma/**/*", "./node_modules/@prisma/engines/**/*"]
