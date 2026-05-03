@@ -1,8 +1,8 @@
 import { SubscriptionStatus } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockPrisma, mockRemnawave } = vi.hoisted(() => ({
-  mockPrisma: {
+const { mockPrisma, mockRemnawave } = vi.hoisted(() => {
+  const prisma = {
     subscription: {
       findMany: vi.fn(),
       update: vi.fn()
@@ -10,21 +10,30 @@ const { mockPrisma, mockRemnawave } = vi.hoisted(() => ({
     user: {
       update: vi.fn(),
       findMany: vi.fn()
+    },
+    $transaction: vi.fn(async (fn: (tx: unknown) => unknown) =>
+      fn({
+        subscription: prisma.subscription,
+        user: prisma.user
+      })
+    )
+  };
+  return {
+    mockPrisma: prisma,
+    mockRemnawave: {
+      createRemnawaveUser: vi.fn(),
+      disableRemnawaveUser: vi.fn(),
+      enableRemnawaveUser: vi.fn(),
+      getRemnawaveUser: vi.fn(),
+      getRemnawaveUserByUsername: vi.fn(),
+      isRemnawaveNotFoundError: vi.fn(),
+      isRemnawaveRecoverableIdentityError: vi.fn(),
+      listRemnawaveUsersByEmail: vi.fn(),
+      resetRemnawaveUserTraffic: vi.fn(),
+      updateRemnawaveUser: vi.fn()
     }
-  },
-  mockRemnawave: {
-    createRemnawaveUser: vi.fn(),
-    disableRemnawaveUser: vi.fn(),
-    enableRemnawaveUser: vi.fn(),
-    getRemnawaveUser: vi.fn(),
-    getRemnawaveUserByUsername: vi.fn(),
-    isRemnawaveNotFoundError: vi.fn(),
-    isRemnawaveRecoverableIdentityError: vi.fn(),
-    listRemnawaveUsersByEmail: vi.fn(),
-    resetRemnawaveUserTraffic: vi.fn(),
-    updateRemnawaveUser: vi.fn()
-  }
-}));
+  };
+});
 
 vi.mock("@/lib/prisma", () => ({
   prisma: mockPrisma

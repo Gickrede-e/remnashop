@@ -6,6 +6,20 @@ import { resolveRoleForEmail } from "@/lib/auth/roles";
 import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 
+async function resolveReferrer(input: { email: string; referralCode?: string }) {
+  if (!input.referralCode) {
+    return null;
+  }
+  const referredBy = await prisma.user.findUnique({
+    where: { referralCode: input.referralCode }
+  });
+  // Self-referral guard: the referrer's email cannot match the registering user's email.
+  if (!referredBy || referredBy.email.toLowerCase() === input.email.toLowerCase()) {
+    return null;
+  }
+  return referredBy;
+}
+
 export async function registerUser(input: {
   email: string;
   password: string;
@@ -20,11 +34,7 @@ export async function registerUser(input: {
     throw new Error("Пользователь с таким email уже существует");
   }
 
-  const referredBy = input.referralCode
-    ? await prisma.user.findUnique({
-        where: { referralCode: input.referralCode }
-      })
-    : null;
+  const referredBy = await resolveReferrer({ email, referralCode: input.referralCode });
 
   return prisma.user.create({
     data: {
@@ -52,9 +62,7 @@ export async function registerUserWithHash(input: {
     throw new Error("Пользователь с таким email уже существует");
   }
 
-  const referredBy = input.referralCode
-    ? await prisma.user.findUnique({ where: { referralCode: input.referralCode } })
-    : null;
+  const referredBy = await resolveReferrer({ email, referralCode: input.referralCode });
 
   return prisma.user.create({
     data: {

@@ -44,6 +44,12 @@ enum PromoCodeType {
   FREE_TRAFFIC_GB
 }
 
+enum PromoUsageStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
 model User {
   id                  String           @id @default(cuid())
   email               String           @unique
@@ -90,6 +96,7 @@ model Subscription {
 
   @@index([status])
   @@index([expiresAt])
+  @@index([status, expiresAt])
   @@map("subscriptions")
 }
 
@@ -119,6 +126,9 @@ model Payment {
   @@index([status])
   @@index([provider])
   @@index([createdAt])
+  @@index([userId])
+  @@index([planId])
+  @@index([promoCodeId])
   @@map("payments")
 }
 
@@ -168,15 +178,18 @@ model PromoCode {
 }
 
 model PromoUsage {
-  id          String    @id @default(cuid())
+  id          String           @id @default(cuid())
   promoCodeId String
   userId      String
   paymentId   String?
-  usedAt      DateTime  @default(now())
-  promoCode   PromoCode @relation(fields: [promoCodeId], references: [id])
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status      PromoUsageStatus @default(PENDING)
+  usedAt      DateTime         @default(now())
+  promoCode   PromoCode        @relation(fields: [promoCodeId], references: [id])
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([promoCodeId, userId, paymentId])
+  @@index([promoCodeId, status])
+  @@index([userId])
   @@map("promo_usages")
 }
 
@@ -193,6 +206,7 @@ model ReferralReward {
   referredUser   User     @relation("ReferralRewardSource", fields: [referredUserId], references: [id], onDelete: Cascade)
 
   @@index([ownerId, applied])
+  @@index([referredUserId])
   @@unique([ownerId, referredUserId, paymentId])
   @@map("referral_rewards")
 }
@@ -215,15 +229,28 @@ model AdminLog {
 }
 
 model VerificationToken {
-  id        String                @id @default(cuid())
-  email     String
-  codeHash  String
-  type      VerificationTokenType
-  data      Json?
-  expiresAt DateTime
-  usedAt    DateTime?
-  createdAt DateTime              @default(now())
+  id          String                @id @default(cuid())
+  email       String
+  codeHash    String
+  type        VerificationTokenType
+  data        Json?
+  expiresAt   DateTime
+  usedAt      DateTime?
+  attempts    Int                   @default(0)
+  maxAttempts Int                   @default(5)
+  createdAt   DateTime              @default(now())
 
   @@index([email, type])
   @@map("verification_tokens")
+}
+
+model WebhookDelivery {
+  id              String          @id @default(cuid())
+  provider        PaymentProvider
+  externalEventId String
+  receivedAt      DateTime        @default(now())
+  processedAt     DateTime?
+
+  @@unique([provider, externalEventId])
+  @@map("webhook_deliveries")
 }

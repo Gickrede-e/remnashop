@@ -1,6 +1,15 @@
-import { PromoCodeType } from "@prisma/client";
+import { PromoCodeType, PromoUsageStatus } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
+
+export class PromoLimitExceededError extends Error {
+  constructor(message = "Лимит использований промокода исчерпан") {
+    super(message);
+    this.name = "PromoLimitExceededError";
+  }
+}
+
+type DbClient = typeof prisma | Parameters<Parameters<typeof prisma["$transaction"]>[0]>[0];
 
 export async function getPromoByCode(code: string) {
   return prisma.promoCode.findUnique({
@@ -42,8 +51,16 @@ export async function validatePromoCode(input: {
     throw new Error("Срок действия промокода истёк");
   }
 
-  if (promo.maxUsages && promo.currentUsages >= promo.maxUsages) {
-    throw new Error("Лимит использований промокода исчерпан");
+  if (promo.maxUsages != null) {
+    const liveUsages = await prisma.promoUsage.count({
+      where: {
+        promoCodeId: promo.id,
+        status: { not: PromoUsageStatus.FAILED }
+      }
+    });
+    if (liveUsages >= promo.maxUsages) {
+      throw new PromoLimitExceededError();
+    }
   }
 
   if (promo.minAmount && input.amount < promo.minAmount) {
@@ -55,15 +72,15 @@ export async function validatePromoCode(input: {
   }
 
   if (input.userId) {
-    const usageCount = await prisma.payment.count({
+    const liveUserUsages = await prisma.promoUsage.count({
       where: {
-        userId: input.userId,
         promoCodeId: promo.id,
-        status: "SUCCEEDED"
+        userId: input.userId,
+        status: { not: PromoUsageStatus.FAILED }
       }
     });
 
-    if (usageCount >= promo.maxUsagesPerUser) {
+    if (liveUserUsages >= promo.maxUsagesPerUser) {
       throw new Error("Промокод уже использован максимальное число раз");
     }
   }
@@ -117,24 +134,66 @@ export function calculatePromoOutcome(
   }
 }
 
+// Atomically reserves a slot in the promo counter and creates a PENDING PromoUsage row.
+// Throws PromoLimitExceededError if maxUsages is reached. Race-safe.
 export async function registerPromoUsage(input: {
   promoCodeId: string;
   userId: string;
   paymentId: string;
 }) {
-  return prisma.promoUsage.create({
-    data: input
+  return prisma.$transaction(async (tx) => {
+    const reserved = await tx.$executeRaw`
+      UPDATE "promo_codes"
+      SET "currentUsages" = "currentUsages" + 1
+      WHERE "id" = ${input.promoCodeId}
+        AND ("maxUsages" IS NULL OR "currentUsages" < "maxUsages")
+    `;
+    if (reserved === 0) {
+      throw new PromoLimitExceededError();
+    }
+    return tx.promoUsage.create({
+      data: {
+        promoCodeId: input.promoCodeId,
+        userId: input.userId,
+        paymentId: input.paymentId,
+        status: PromoUsageStatus.PENDING
+      }
+    });
   });
 }
 
-export async function markPromoUsageSucceeded(promoCodeId: string) {
-  return prisma.promoCode.update({
-    where: { id: promoCodeId },
-    data: {
-      currentUsages: {
-        increment: 1
-      }
+// Promotes the PENDING PromoUsage row for this payment to SUCCEEDED.
+// Idempotent: re-runs are no-ops. Counter NOT touched (already incremented at registration).
+export async function markPromoUsageSucceeded(paymentId: string, db: DbClient = prisma) {
+  return db.promoUsage.updateMany({
+    where: { paymentId, status: PromoUsageStatus.PENDING },
+    data: { status: PromoUsageStatus.SUCCEEDED }
+  });
+}
+
+// Rolls back a reserved promo slot when activation ultimately failed.
+// Marks PromoUsage as FAILED and decrements the counter atomically.
+export async function failPromoUsage(paymentId: string, db: DbClient = prisma) {
+  return db.$transaction(async (tx) => {
+    const usages = await tx.promoUsage.findMany({
+      where: { paymentId, status: PromoUsageStatus.PENDING },
+      select: { id: true, promoCodeId: true }
+    });
+    if (!usages.length) {
+      return { count: 0 };
     }
+    for (const usage of usages) {
+      await tx.promoUsage.update({
+        where: { id: usage.id },
+        data: { status: PromoUsageStatus.FAILED }
+      });
+      await tx.$executeRaw`
+        UPDATE "promo_codes"
+        SET "currentUsages" = GREATEST("currentUsages" - 1, 0)
+        WHERE "id" = ${usage.promoCodeId}
+      `;
+    }
+    return { count: usages.length };
   });
 }
 

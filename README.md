@@ -9,6 +9,7 @@
 - **Next.js 16** + React 19 + TypeScript
 - **PostgreSQL 16** через Prisma ORM
 - **Tailwind CSS 4** — стили и UI-компоненты
+- **SMTP через Nodemailer** — письма через Google Workspace или self-hosted Maddy
 - **Docker** + Caddy — деплой и reverse proxy
 - **Vitest** — тесты
 
@@ -50,8 +51,18 @@ cp .env.example .env
 | `NEXT_PUBLIC_SITE_URL` | Публичный URL сайта |
 | `NEXT_PUBLIC_SITE_NAME` | Название сайта |
 | `SITE_ADDRESS` | Домен для Caddy (`localhost` для локальной разработки) |
+| `EMAIL_ENABLED` | Включает email-верификацию регистрации и восстановление пароля |
 | `REMNAWAVE_BASE_URL` | URL Remnawave-панели |
 | `REMNAWAVE_API_TOKEN` | API-токен Remnawave |
+| `SMTP_HOST` | SMTP-хост: `smtp` для встроенного Maddy или `smtp.gmail.com` для Google Workspace |
+| `SMTP_PORT` | SMTP-порт |
+| `SMTP_SECURE` | `true` для SMTPS/465, `false` для STARTTLS/587 |
+| `SMTP_USER` | SMTP-логин, если провайдер требует авторизацию |
+| `SMTP_PASS` | SMTP-пароль или app password; должен быть задан вместе с `SMTP_USER` |
+| `MAIL_DOMAIN` | Домен исходящей почты; обязателен для встроенного Maddy и оставляется заполненным в compose-режиме |
+| `MAIL_HOSTNAME` | FQDN почтового хоста для встроенного Maddy, например `mail.example.com` |
+| `MAIL_DKIM_SELECTOR` | DKIM selector для встроенного Maddy, обычно `mail` |
+| `EMAIL_FROM` | Адрес отправителя; для встроенного Maddy должен быть в домене `MAIL_DOMAIN` |
 | `YOOKASSA_SHOP_ID` | ID магазина ЮKassa |
 | `YOOKASSA_SECRET_KEY` | Секретный ключ ЮKassa |
 | `CRON_SECRET` | Секрет для внутренних cron-задач (мин. 16 символов) |
@@ -68,6 +79,7 @@ docker compose -f docker-compose.hub.yml up -d --build
 - **PostgreSQL** — база данных
 - **migrate** — применит миграции и создаст администратора
 - **app** — Next.js на порту 3000
+- **smtp** — self-hosted SMTP-сервис для писем приложения
 - **worker** — фоновый воркер
 - **caddy** — reverse proxy на портах 80/443
 
@@ -97,6 +109,38 @@ docker compose up -d
 APP_IMAGE=gickrede/remnashop:stable docker compose up -d
 ```
 
+## Google Workspace SMTP
+
+Приложение умеет отправлять письма через любой SMTP-провайдер. Для быстрого production rollout без собственной SMTP-инфраструктуры можно использовать Google Workspace через `smtp.gmail.com` и `app password`.
+
+Пошаговая инструкция: [docs/SMTP-GOOGLE-WORKSPACE.md](docs/SMTP-GOOGLE-WORKSPACE.md)
+
+Если позже понадобится больше контроля и higher-volume relay, следующим шагом можно перейти на `smtp-relay.gmail.com`.
+
+## Self-hosted SMTP
+
+В compose по умолчанию поднимается внутренний SMTP-сервис `smtp` на базе Maddy. Это опциональный путь для self-hosted отправки писем.
+
+Подробная пошаговая инструкция: [docs/SMTP-SETUP.md](docs/SMTP-SETUP.md)
+
+Для реальной доставляемости в продакшене обязательно подготовить:
+
+- `A`-запись для `MAIL_HOSTNAME`, указывающую на IP сервера
+- `PTR/rDNS`, указывающий IP сервера обратно в `MAIL_HOSTNAME`
+- `SPF` для `MAIL_DOMAIN`, например `v=spf1 a:mail.example.com -all`
+- `DMARC` для `MAIL_DOMAIN`
+- открыть исходящий TCP `25` у VPS-провайдера
+
+DKIM-ключ Maddy сгенерирует сам после первого старта. Посмотреть готовую DNS-запись можно так:
+
+```bash
+docker compose exec smtp sh -lc 'cat /data/dkim_keys/${MAIL_DOMAIN}_${MAIL_DKIM_SELECTOR}.dns'
+```
+
+`MX`-запись для `MAIL_DOMAIN` не обязательна, если вы используете только исходящую почту и не принимаете письма обратно.
+
+Для image deploy на VPS отдельные SMTP-файлы рядом с compose не нужны: bootstrap Maddy встроен прямо в compose-манифест.
+
 ## Разработка без Docker
 
 ```bash
@@ -115,7 +159,11 @@ Webhook ЮKassa обрабатывается в режиме `hint + API verific
 защита строится на IP-allowlist, per-IP rate-limit, сверке
 `metadata.paymentId` и reconciliation для `PENDING` платежей.
 
-Подробности модели обработки — в [`docs/WEBHOOK_YOOKASSA.md`](docs/WEBHOOK_YOOKASSA.md).
+Webhook Platega.io защищён по той же модели re-fetch: тело используется
+только как hint для `paymentId`, а актуальный статус платежа подтверждается
+вызовом `/transaction/{id}` к Platega API с `X-Secret`. Любой статус из тела
+игнорируется — атакующий не может «активировать» подписку, отправив
+поддельный callback.
 
 ## Логирование
 

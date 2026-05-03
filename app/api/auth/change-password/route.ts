@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getSession } from "@/lib/auth/session";
 import { apiError, apiOk, parseRequestBody } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
+import { RateLimitExceededError, enforceRateLimit } from "@/lib/server/rate-limit";
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1),
@@ -16,6 +17,19 @@ export async function POST(request: NextRequest) {
     const session = await getSession();
     if (!session) {
       return apiError("Необходима авторизация", 401);
+    }
+
+    try {
+      enforceRateLimit({
+        key: `change-password:${session.userId}`,
+        max: 5,
+        windowMs: 60 * 60 * 1000
+      });
+    } catch (error) {
+      if (error instanceof RateLimitExceededError) {
+        return apiError("Слишком много попыток смены пароля. Попробуйте через час.", 429);
+      }
+      throw error;
     }
 
     const body = await parseRequestBody(request, changePasswordSchema);

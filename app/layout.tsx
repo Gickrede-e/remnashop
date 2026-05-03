@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono } from "next/font/google";
+import { headers } from "next/headers";
 
 import { Providers } from "@/components/providers";
 
@@ -22,11 +23,15 @@ export const viewport: Viewport = {
   initialScale: 1
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Read the per-request nonce middleware wrote into the request headers; Next.js
+  // automatically threads it through to every <script> it injects when present.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html lang="ru" className={`dark ${jetbrainsMono.variable}`}>
       <body className="appBody">
-        <Providers>
+        <Providers nonce={nonce}>
           <div className="appRoot">
             {children}
           </div>

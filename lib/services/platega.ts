@@ -1,5 +1,3 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
-
 import { env } from "@/lib/env";
 
 type PlategaCreatePaymentInput = {
@@ -8,11 +6,11 @@ type PlategaCreatePaymentInput = {
   paymentId: string;
   successUrl: string;
   failUrl: string;
-  webhookUrl: string;
+  paymentMethod: number;
 };
 
 type PlategaPaymentResponse = {
-  payment_url: string;
+  payment_url?: string;
   id?: string;
   transactionId?: string;
   merchantId?: string;
@@ -25,55 +23,60 @@ type PlategaTransactionStatusResponse = {
   merchantId?: string;
   merchant_id?: string;
   mechantId?: string;
+  payload?: string;
 };
 
-function safeCompare(expected: string, actual?: string | null) {
-  if (!actual) {
-    return false;
+function parsePlategaJson<T>(text: string) {
+  if (!text) {
+    return {} as T;
   }
 
-  const expectedBuffer = Buffer.from(expected);
-  const actualBuffer = Buffer.from(actual);
-  if (expectedBuffer.length !== actualBuffer.length) {
-    return false;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
   }
-
-  return timingSafeEqual(expectedBuffer, actualBuffer);
 }
 
 async function plategaRequest<T>(path: string, init?: RequestInit) {
-  const response = await fetch(`https://platega.io${path}`, {
+  const response = await fetch(`https://app.platega.io${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${env.PLATEGA_API_KEY}`,
+      "X-MerchantId": env.PLATEGA_MERCHANT_ID,
+      "X-Secret": env.PLATEGA_API_KEY,
       ...(init?.headers ?? {})
     },
     cache: "no-store"
   });
 
   const text = await response.text();
-  const json = text ? (JSON.parse(text) as T) : ({} as T);
+  const json = parsePlategaJson<T>(text);
 
   if (!response.ok) {
     throw new Error(`Platega request failed: ${response.status} ${text}`);
+  }
+
+  if (!json) {
+    throw new Error("Platega request returned invalid JSON");
   }
 
   return json;
 }
 
 export async function createPlategaPayment(input: PlategaCreatePaymentInput) {
-  return plategaRequest<PlategaPaymentResponse>("/api/v1/payments", {
+  return plategaRequest<PlategaPaymentResponse>("/transaction/process", {
     method: "POST",
     body: JSON.stringify({
-      amount: input.amount / 100,
-      currency: "RUB",
-      order_id: input.paymentId,
+      paymentMethod: input.paymentMethod,
+      paymentDetails: {
+        amount: input.amount / 100,
+        currency: "RUB"
+      },
       payload: input.paymentId,
       description: input.description,
-      success_url: input.successUrl,
-      fail_url: input.failUrl,
-      webhook_url: input.webhookUrl
+      return: input.successUrl,
+      failedUrl: input.failUrl
     })
   });
 }
@@ -87,7 +90,7 @@ export async function getPlategaPaymentStatus(input: {
     throw new Error("Для ручной проверки Platega нужен merchant id");
   }
 
-  const response = await fetch(`https://app.platega.io/api/transaction/${input.transactionId}`, {
+  const response = await fetch(`https://app.platega.io/transaction/${input.transactionId}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -98,28 +101,15 @@ export async function getPlategaPaymentStatus(input: {
   });
 
   const text = await response.text();
-  const json = text ? (JSON.parse(text) as PlategaTransactionStatusResponse) : ({} as PlategaTransactionStatusResponse);
+  const json = parsePlategaJson<PlategaTransactionStatusResponse>(text);
 
   if (!response.ok) {
     throw new Error(`Platega status request failed: ${response.status} ${text}`);
   }
 
-  return json;
-}
-
-export function verifyPlategaSignature(input: {
-  rawBody: string;
-  signature?: string | null;
-  secret?: string | null;
-  merchantId?: string | null;
-}) {
-  if (input.signature) {
-    const digest = createHmac("sha256", env.PLATEGA_WEBHOOK_SECRET)
-      .update(input.rawBody)
-      .digest("hex");
-
-    return safeCompare(digest, input.signature);
+  if (!json) {
+    throw new Error("Platega status request returned invalid JSON");
   }
 
-  return false;
+  return json;
 }

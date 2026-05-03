@@ -6,6 +6,9 @@ const { mockPrisma } = vi.hoisted(() => ({
     promoCode: {
       findUnique: vi.fn()
     },
+    promoUsage: {
+      count: vi.fn()
+    },
     payment: {
       count: vi.fn()
     }
@@ -55,7 +58,9 @@ describe("validatePromoCode", () => {
   beforeEach(() => {
     mockPrisma.promoCode.findUnique.mockReset();
     mockPrisma.payment.count.mockReset();
+    mockPrisma.promoUsage.count.mockReset();
     mockPrisma.payment.count.mockResolvedValue(0);
+    mockPrisma.promoUsage.count.mockResolvedValue(0);
   });
 
   it("throws when the promo code does not exist", async () => {
@@ -107,6 +112,7 @@ describe("validatePromoCode", () => {
       maxUsages: 5,
       currentUsages: 5
     }));
+    mockPrisma.promoUsage.count.mockResolvedValue(5);
 
     await expect(validatePromoCode({
       code: "sale10",
@@ -119,7 +125,7 @@ describe("validatePromoCode", () => {
     mockPrisma.promoCode.findUnique.mockResolvedValue(createPromo({
       maxUsagesPerUser: 1
     }));
-    mockPrisma.payment.count.mockResolvedValue(1);
+    mockPrisma.promoUsage.count.mockResolvedValue(1);
 
     await expect(validatePromoCode({
       code: "sale10",

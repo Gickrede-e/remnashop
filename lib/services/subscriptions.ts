@@ -5,8 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { logger, serializeError } from "@/lib/server/logger";
 import { bytesFromGb, slugToRemnawaveTag } from "@/lib/utils";
 import { logAdminAction } from "@/lib/services/admin-logs";
-import { notifyPaymentSucceeded } from "@/lib/services/notifications";
-import { markPromoUsageSucceeded } from "@/lib/services/promos";
+import { notifyPaymentSucceeded, notifySubscriptionExpired } from "@/lib/services/notifications";
+import { failPromoUsage, markPromoUsageSucceeded } from "@/lib/services/promos";
 import {
   createRemnawaveUser,
   disableRemnawaveUser,
@@ -118,6 +118,21 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 
 function hasValidRemnawaveUuid(value: string | null | undefined): value is string {
   return typeof value === "string" && UUID_PATTERN.test(value);
+}
+
+function buildRemnawaveSubscriptionUrl(shortUuid: string | null | undefined) {
+  if (!shortUuid) {
+    return null;
+  }
+
+  return `${env.REMNAWAVE_BASE_URL.replace(/\/+$/, "")}/api/sub/${shortUuid}`;
+}
+
+function resolveExternalSubscriptionUrl(input: {
+  subscriptionUrl?: string | null;
+  shortUuid?: string | null;
+}, fallbackShortUuid?: string | null) {
+  return input.subscriptionUrl ?? buildRemnawaveSubscriptionUrl(input.shortUuid ?? fallbackShortUuid);
 }
 
 function toPayloadRecord(payload: unknown) {
@@ -358,6 +373,19 @@ async function resetRemnawaveTrafficIfReissuing(identity: RemnawaveIdentityResol
   }
 }
 
+async function getUserWithSubscription(userId: string) {
+  return prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      subscription: {
+        include: {
+          plan: true
+        }
+      }
+    }
+  });
+}
+
 function buildSubscriptionIdentitySeed(subscription: {
   expiresAt: Date | null;
   trafficLimitBytes: bigint | null;
@@ -497,16 +525,23 @@ async function syncActiveSubscriptionCandidate(
       hwidDeviceLimit: seed.hwidDeviceLimit
     });
 
-    await Promise.all([
-      persistRemnawaveIdentity(candidate.user.id, snapshot),
-      prisma.subscription.update({
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: candidate.user.id },
+        data: {
+          remnawaveUuid: snapshot.uuid,
+          remnawaveUsername: snapshot.username,
+          remnawaveShortUuid: snapshot.shortUuid ?? null
+        }
+      });
+      await tx.subscription.update({
         where: { id: candidate.id },
         data: {
           status: SubscriptionStatus.ACTIVE,
           remnawaveLastSyncAt: new Date()
         }
-      })
-    ]);
+      });
+    });
 
     return {
       userId: candidate.user.id,
@@ -646,12 +681,12 @@ export async function activateSubscriptionFromPayment(paymentId: string) {
     trafficLimitBytes: newTrafficLimit.toString()
   };
 
-  if (!savedActivationMeta || payment.status !== PaymentStatus.SUCCEEDED || !payment.paidAt) {
+  // Phase 1: Track activation intent in payload (no status change yet — payment stays PENDING
+  // until Remnawave provisioning succeeds, so failures don't leave "paid but not provisioned" state).
+  if (!savedActivationMeta) {
     await prisma.payment.update({
       where: { id: payment.id },
       data: {
-        status: PaymentStatus.SUCCEEDED,
-        paidAt: payment.paidAt ?? new Date(),
         providerPayload: mergePaymentPayload(payment.providerPayload, {
           activationMeta,
           activationState: "PROCESSING"
@@ -661,6 +696,8 @@ export async function activateSubscriptionFromPayment(paymentId: string) {
   }
 
   try {
+    // Phase 2: Remnawave provisioning. Idempotent (ensureRemnawaveIdentity handles existing users).
+    // Runs outside the DB transaction because it's long-running and external.
     const remnawave = await ensureRemnawaveIdentity(payment.user, {
       expireAt: expiresAt,
       trafficLimitBytes: newTrafficLimit,
@@ -684,50 +721,69 @@ export async function activateSubscriptionFromPayment(paymentId: string) {
     });
     await persistRemnawaveIdentity(payment.user.id, snapshot);
 
-    const subscription = existingSubscription
-      ? await prisma.subscription.update({
-          where: { id: existingSubscription.id },
-          data: {
-            planId: payment.planId,
-            status: SubscriptionStatus.ACTIVE,
-            startsAt,
-            expiresAt,
-            trafficLimitBytes: newTrafficLimit,
-            remnawaveLastSyncAt: new Date(),
-            trafficUsedBytes: BigInt(0)
-          }
-        })
-      : await prisma.subscription.create({
-          data: {
-            userId: payment.userId,
-            planId: payment.planId,
-            status: SubscriptionStatus.ACTIVE,
-            startsAt,
-            expiresAt,
-            trafficLimitBytes: newTrafficLimit,
-            trafficUsedBytes: BigInt(0),
-            remnawaveLastSyncAt: new Date()
-          }
-        });
-
-    const updatedPayment = await prisma.payment.update({
-      where: { id: payment.id },
-      data: {
-        status: PaymentStatus.SUCCEEDED,
-        paidAt: payment.paidAt ?? new Date(),
-        subscriptionId: subscription.id,
-        providerPayload: mergePaymentPayload(payment.providerPayload, {
-          activationMeta,
-          activationState: "DONE",
-          activationSnapshot: snapshot
-        })
-      }
+    // Phase 3: Atomic DB writes. pg_advisory_xact_lock serializes concurrent activations
+    // for the same paymentId so promo counter, payment.subscriptionId, and side effects
+    // happen exactly once even under racing webhooks/admin-refresh.
+    const updatedPaymentPayload = mergePaymentPayload(payment.providerPayload, {
+      activationMeta,
+      activationState: "DONE",
+      activationSnapshot: snapshot
     });
 
-    if (payment.promoCodeId) {
-      await markPromoUsageSucceeded(payment.promoCodeId);
+    const txResult = await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`payment_activate:${payment.id}`})::bigint)`;
+
+      const fresh = await tx.payment.findUniqueOrThrow({ where: { id: payment.id } });
+      if (fresh.status === PaymentStatus.SUCCEEDED && fresh.subscriptionId) {
+        return { payment: fresh, alreadyDone: true as const, subscriptionId: fresh.subscriptionId };
+      }
+
+      const subscription = await tx.subscription.upsert({
+        where: { userId: payment.userId },
+        update: {
+          planId: payment.planId,
+          status: SubscriptionStatus.ACTIVE,
+          startsAt,
+          expiresAt,
+          trafficLimitBytes: newTrafficLimit,
+          remnawaveLastSyncAt: new Date(),
+          trafficUsedBytes: BigInt(0)
+        },
+        create: {
+          userId: payment.userId,
+          planId: payment.planId,
+          status: SubscriptionStatus.ACTIVE,
+          startsAt,
+          expiresAt,
+          trafficLimitBytes: newTrafficLimit,
+          trafficUsedBytes: BigInt(0),
+          remnawaveLastSyncAt: new Date()
+        }
+      });
+
+      await tx.payment.update({
+        where: { id: payment.id },
+        data: {
+          status: PaymentStatus.SUCCEEDED,
+          paidAt: payment.paidAt ?? new Date(),
+          subscriptionId: subscription.id,
+          providerPayload: updatedPaymentPayload
+        }
+      });
+
+      if (payment.promoCodeId) {
+        await markPromoUsageSucceeded(payment.id, tx);
+      }
+
+      const finalPayment = await tx.payment.findUniqueOrThrow({ where: { id: payment.id } });
+      return { payment: finalPayment, alreadyDone: false as const, subscriptionId: subscription.id };
+    }, { timeout: 30_000 });
+
+    if (txResult.alreadyDone) {
+      return txResult.payment;
     }
 
+    // Phase 4: Side effects. Idempotent (referral upsert dedupes; notification can be best-effort).
     await Promise.allSettled([
       createReferralRewardForFirstPayment({
         referredUserId: payment.userId,
@@ -743,13 +799,13 @@ export async function activateSubscriptionFromPayment(paymentId: string) {
         targetType: "PAYMENT",
         targetId: payment.id,
         details: {
-          subscriptionId: subscription.id,
+          subscriptionId: txResult.subscriptionId,
           provider: payment.provider
         }
       })
     ]);
 
-    return updatedPayment;
+    return txResult.payment;
   } catch (error) {
     logger.error("subscription.provision_failed", {
       paymentId: payment.id,
@@ -758,6 +814,17 @@ export async function activateSubscriptionFromPayment(paymentId: string) {
       error: serializeError(error)
     });
     await Promise.allSettled([
+      prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          providerPayload: mergePaymentPayload(payment.providerPayload, {
+            activationMeta,
+            activationState: "PROVISION_FAILED",
+            lastError: error instanceof Error ? error.message : "Unknown activation error",
+            lastErrorAt: new Date().toISOString()
+          })
+        }
+      }),
       logAdminAction({
         action: "PAYMENT_ACTIVATION_FAILED",
         targetType: "PAYMENT",
@@ -768,24 +835,22 @@ export async function activateSubscriptionFromPayment(paymentId: string) {
         }
       })
     ]);
+    if (payment.promoCodeId) {
+      await failPromoUsage(payment.id).catch(() => null);
+    }
     throw error;
   }
 }
 
-export async function syncUserSubscription(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: {
-      subscription: {
-        include: {
-          plan: true
-        }
-      }
-    }
-  });
+async function syncUserSubscriptionInternal(userId: string) {
+  const user = await getUserWithSubscription(userId);
+  let externalSubscriptionUrl = buildRemnawaveSubscriptionUrl(user?.remnawaveShortUuid);
 
   if (!user?.remnawaveUuid) {
-    return user;
+    return {
+      user,
+      externalSubscriptionUrl
+    };
   }
 
   try {
@@ -810,6 +875,8 @@ export async function syncUserSubscription(userId: string) {
       const recoveredIdentity = await ensureRemnawaveIdentity(user, recoverySeed);
       snapshot = await getRemnawaveUser(recoveredIdentity.uuid);
     }
+
+    externalSubscriptionUrl = resolveExternalSubscriptionUrl(snapshot, user.remnawaveShortUuid ?? null);
 
     await persistRemnawaveIdentity(user.id, {
       uuid: snapshot.uuid,
@@ -847,14 +914,19 @@ export async function syncUserSubscription(userId: string) {
     });
   }
 
-  return prisma.user.findUnique({
-    where: { id: userId },
-    include: {
-      subscription: {
-        include: { plan: true }
-      }
-    }
-  });
+  return {
+    user: await getUserWithSubscription(userId),
+    externalSubscriptionUrl
+  };
+}
+
+export async function syncUserSubscription(userId: string) {
+  const result = await syncUserSubscriptionInternal(userId);
+  return result.user;
+}
+
+export async function syncUserSubscriptionForDashboard(userId: string) {
+  return syncUserSubscriptionInternal(userId);
 }
 
 export const syncSubscriptionForUser = syncUserSubscription;
@@ -895,62 +967,101 @@ export function toDashboardSubscriptionDto(input: {
 }
 
 export async function expireStaleSubscriptions() {
-  const expired = await prisma.subscription.findMany({
-    where: {
-      status: {
-        in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.DISABLED]
-      },
-      expiresAt: {
-        lt: new Date()
-      }
-    },
-    select: {
-      id: true,
-      user: {
-        select: {
-          remnawaveUuid: true
-        }
-      }
-    }
-  });
+  // pg_try_advisory_lock returns false if another worker already holds it; we then
+  // skip this tick instead of double-processing. Best-effort unlock in finally — if
+  // the unlock query lands on a different pooled connection it silently no-ops, and
+  // the lock auto-releases when the original connection is closed/reused.
+  const lockKey = "cron:sync-expired";
+  const acquired = await prisma.$queryRaw<Array<{ acquired: boolean }>>`
+    SELECT pg_try_advisory_lock(hashtext(${lockKey})::bigint) AS acquired
+  `;
 
-  const batchSize = 10;
-
-  for (let index = 0; index < expired.length; index += batchSize) {
-    const batch = expired.slice(index, index + batchSize);
-    await Promise.allSettled(
-      batch.map(async (subscription) => {
-        if (!subscription.user.remnawaveUuid) {
-          return;
-        }
-
-        try {
-          await disableRemnawaveUser(subscription.user.remnawaveUuid);
-        } catch (error) {
-          logger.error("subscription.remnawave_disable_failed", {
-            subscriptionId: subscription.id,
-            remnawaveUuid: subscription.user.remnawaveUuid,
-            error: serializeError(error)
-          });
-        }
-      })
-    );
+  if (acquired[0]?.acquired !== true) {
+    logger.info("cron.sync_expired.skipped", { reason: "lock_busy" });
+    return 0;
   }
 
-  if (expired.length) {
-    await prisma.subscription.updateMany({
+  try {
+    const expired = await prisma.subscription.findMany({
       where: {
-        id: {
-          in: expired.map((subscription) => subscription.id)
+        status: {
+          in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.DISABLED]
+        },
+        expiresAt: {
+          lt: new Date()
         }
       },
-      data: {
-        status: SubscriptionStatus.EXPIRED
+      select: {
+        id: true,
+        user: {
+          select: {
+            email: true,
+            remnawaveUuid: true
+          }
+        },
+        plan: {
+          select: {
+            name: true
+          }
+        }
       }
     });
-  }
 
-  return expired.length;
+    const batchSize = 10;
+
+    for (let index = 0; index < expired.length; index += batchSize) {
+      const batch = expired.slice(index, index + batchSize);
+      await Promise.allSettled(
+        batch.map(async (subscription) => {
+          if (!subscription.user.remnawaveUuid) {
+            return;
+          }
+
+          try {
+            await disableRemnawaveUser(subscription.user.remnawaveUuid);
+          } catch (error) {
+            logger.error("subscription.remnawave_disable_failed", {
+              subscriptionId: subscription.id,
+              remnawaveUuid: subscription.user.remnawaveUuid,
+              error: serializeError(error)
+            });
+          }
+        })
+      );
+    }
+
+    if (expired.length) {
+      await prisma.subscription.updateMany({
+        where: {
+          id: {
+            in: expired.map((subscription) => subscription.id)
+          }
+        },
+        data: {
+          status: SubscriptionStatus.EXPIRED
+        }
+      });
+
+      // Best-effort user notifications. Failures are swallowed by Promise.allSettled
+      // inside notifySubscriptionExpired; we only log if a delivery batch crashes hard.
+      await Promise.allSettled(
+        expired
+          .filter((subscription) => subscription.user.email)
+          .map((subscription) =>
+            notifySubscriptionExpired({
+              email: subscription.user.email,
+              planName: subscription.plan?.name ?? null
+            })
+          )
+      );
+    }
+
+    return expired.length;
+  } finally {
+    await prisma
+      .$queryRaw`SELECT pg_advisory_unlock(hashtext(${lockKey})::bigint)`
+      .catch(() => null);
+  }
 }
 
 export async function grantSubscriptionByAdmin(input: {

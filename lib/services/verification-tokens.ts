@@ -45,10 +45,18 @@ export async function createVerificationToken(
   return code;
 }
 
+export class VerificationTokenExhaustedError extends Error {
+  constructor(message = "Слишком много неверных попыток. Запросите новый код.") {
+    super(message);
+    this.name = "VerificationTokenExhaustedError";
+  }
+}
+
 /**
  * Verifies the OTP code for the given email and type.
- * Marks the token as used on success.
- * Returns the stored `data` payload (or null if none), or throws on failure.
+ * Atomically increments the per-token attempt counter; once attempts >= maxAttempts the
+ * token is burned (usedAt set) so subsequent guesses are rejected immediately. Marks
+ * the token as used on success and returns the stored payload.
  */
 export async function verifyVerificationToken(
   email: string,
@@ -71,8 +79,38 @@ export async function verifyVerificationToken(
     throw new Error("Код недействителен или истёк срок его действия");
   }
 
+  // Atomically reserve an attempt — only succeeds when attempts < maxAttempts.
+  const reserved = await prisma.verificationToken.updateMany({
+    where: {
+      id: token.id,
+      usedAt: null,
+      attempts: { lt: token.maxAttempts }
+    },
+    data: {
+      attempts: { increment: 1 }
+    }
+  });
+
+  if (reserved.count === 0) {
+    // Already burned by a concurrent attempt; ensure it stays unusable.
+    await prisma.verificationToken.updateMany({
+      where: { id: token.id, usedAt: null },
+      data: { usedAt: new Date() }
+    });
+    throw new VerificationTokenExhaustedError();
+  }
+
   const valid = await bcrypt.compare(code, token.codeHash);
   if (!valid) {
+    if (token.attempts + 1 >= token.maxAttempts) {
+      // We just consumed the last allowed attempt — burn the token so further guesses
+      // get the exhausted error instead of a generic "wrong code".
+      await prisma.verificationToken.updateMany({
+        where: { id: token.id, usedAt: null },
+        data: { usedAt: new Date() }
+      });
+      throw new VerificationTokenExhaustedError();
+    }
     throw new Error("Неверный код");
   }
 

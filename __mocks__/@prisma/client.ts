@@ -30,6 +30,17 @@ export const PromoCodeType = {
   FREE_TRAFFIC_GB: "FREE_TRAFFIC_GB"
 } as const;
 
+export const PromoUsageStatus = {
+  PENDING: "PENDING",
+  SUCCEEDED: "SUCCEEDED",
+  FAILED: "FAILED"
+} as const;
+
+export const VerificationTokenType = {
+  REGISTRATION: "REGISTRATION",
+  PASSWORD_RESET: "PASSWORD_RESET"
+} as const;
+
 export class PrismaClient {
   constructor() {}
 }

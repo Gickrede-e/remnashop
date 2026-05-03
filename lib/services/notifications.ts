@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { logger, serializeError } from "@/lib/server/logger";
 
 const SITE_NAME = env.NEXT_PUBLIC_SITE_NAME;
 
@@ -10,10 +11,14 @@ async function createEmailTransporter() {
     host: env.SMTP_HOST,
     port: env.SMTP_PORT,
     secure: env.SMTP_SECURE,
-    auth: {
-      user: env.SMTP_USER,
-      pass: env.SMTP_PASS
-    }
+    ...(env.SMTP_USER && env.SMTP_PASS
+      ? {
+          auth: {
+            user: env.SMTP_USER,
+            pass: env.SMTP_PASS
+          }
+        }
+      : {})
   });
 }
 
@@ -25,23 +30,52 @@ async function getEmailTransporter() {
   return transporterPromise;
 }
 
+// Lightweight SMTP reachability probe for /api/health. Returns true only when the
+// transport opens cleanly. EMAIL_DISABLED short-circuits with `true` so the health
+// endpoint doesn't go red on test/staging where mail is intentionally off.
+export async function pingSmtp(timeoutMs = 2_000): Promise<boolean> {
+  if (!env.EMAIL_ENABLED) {
+    return true;
+  }
+  try {
+    const transporter = await getEmailTransporter();
+    return await Promise.race([
+      transporter.verify().then(() => true).catch(() => false),
+      new Promise<boolean>((resolve) => setTimeout(() => resolve(false), timeoutMs))
+    ]);
+  } catch {
+    return false;
+  }
+}
+
 async function sendEmailNotification(input: {
   to: string;
   subject: string;
   html: string;
 }) {
-  if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS || !env.EMAIL_FROM) {
+  if (!env.SMTP_HOST || !env.EMAIL_FROM) {
     return;
   }
 
-  const transporter = await getEmailTransporter();
+  try {
+    const transporter = await getEmailTransporter();
 
-  await transporter.sendMail({
-    from: env.EMAIL_FROM,
-    to: input.to,
-    subject: input.subject,
-    html: input.html
-  });
+    await transporter.sendMail({
+      from: env.EMAIL_FROM,
+      to: input.to,
+      subject: input.subject,
+      html: input.html
+    });
+  } catch (error) {
+    logger.error("notification.email_send_failed", {
+      error: serializeError(error),
+      smtpHost: env.SMTP_HOST,
+      smtpPort: env.SMTP_PORT,
+      subject: input.subject,
+      to: input.to
+    });
+    throw error;
+  }
 }
 
 async function sendTelegramNotification(message: string) {
@@ -109,5 +143,25 @@ export async function notifyPaymentSucceeded(input: {
       html: `<p>Подписка <strong>${input.planName}</strong> активирована.</p><p>Действует до: ${expiryText}</p>`
     }),
     sendTelegramNotification(`GickShop: подписка ${input.planName} активирована для ${input.email}`)
+  ]);
+}
+
+export async function notifySubscriptionExpired(input: {
+  email: string;
+  planName?: string | null;
+}) {
+  const planText = input.planName ? ` "${input.planName}"` : "";
+  await Promise.allSettled([
+    sendEmailNotification({
+      to: input.email,
+      subject: "GickShop: подписка истекла",
+      html: `
+        <p>Срок действия вашей подписки${planText} истёк.</p>
+        <p>Чтобы продолжить пользоваться сервисом, продлите её в личном кабинете:
+          <a href="${env.NEXT_PUBLIC_SITE_URL}/dashboard/buy">${env.NEXT_PUBLIC_SITE_URL}/dashboard/buy</a>.
+        </p>
+      `
+    }),
+    sendTelegramNotification(`GickShop: подписка${planText} истекла для ${input.email}`)
   ]);
 }

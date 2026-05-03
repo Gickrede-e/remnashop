@@ -1,3 +1,4 @@
+import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -37,7 +38,7 @@ describe("POST /api/webhook/platega", () => {
 
     const { POST } = await import("@/app/api/webhook/platega/route");
     const response = await POST(
-      new Request("http://localhost/api/webhook/platega", {
+      new NextRequest("http://localhost/api/webhook/platega", {
         method: "POST",
         headers: {
           "content-type": "application/json"
@@ -58,7 +59,7 @@ describe("POST /api/webhook/platega", () => {
     const { POST } = await import("@/app/api/webhook/platega/route");
 
     const response = await POST(
-      new Request("http://localhost/api/webhook/platega", {
+      new NextRequest("http://localhost/api/webhook/platega", {
         method: "POST",
         headers: {
           "content-type": "application/json"
@@ -90,7 +91,7 @@ describe("POST /api/webhook/platega", () => {
     const { POST } = await import("@/app/api/webhook/platega/route");
 
     const response = await POST(
-      new Request("http://localhost/api/webhook/platega", {
+      new NextRequest("http://localhost/api/webhook/platega", {
         method: "POST",
         headers: {
           "content-type": "application/json",

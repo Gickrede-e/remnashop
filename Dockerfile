@@ -1,4 +1,4 @@
-FROM node:22-alpine AS base
+FROM node:22.11.0-alpine AS base
 WORKDIR /app
 RUN apk add --no-cache libc6-compat openssl
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -84,8 +84,11 @@ ENV NEXT_PUBLIC_SITE_NAME=${NEXT_PUBLIC_SITE_NAME}
 ENV NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=${NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}
 COPY . .
 RUN mkdir -p public
+# Build env hardening: only NEXT_PUBLIC_*, NODE_ENV, and DATABASE_URL (needed by
+# `prisma generate`) are forwarded to `npm run build`. Server-side secrets stay out
+# of the build environment so they cannot accidentally leak into the JS bundle.
 RUN --mount=type=secret,id=build_env \
-    node -e "const fs=require('node:fs'); const {spawnSync}=require('node:child_process'); const env={...process.env}; for (const rawLine of fs.readFileSync('/run/secrets/build_env','utf8').split(/\r?\n/)) { const line=rawLine.trim(); if (!line || line.startsWith('#')) continue; const eq=line.indexOf('='); if (eq < 0) continue; const key=line.slice(0, eq).trim(); let value=rawLine.slice(eq + 1); if ((value.startsWith('\"') && value.endsWith('\"')) || (value.startsWith(\"'\") && value.endsWith(\"'\"))) value=value.slice(1, -1); env[key]=value; } const result=spawnSync('npm',['run','build'],{stdio:'inherit',env}); process.exit(result.status ?? 1)"
+    node -e "const fs=require('node:fs'); const {spawnSync}=require('node:child_process'); const ALLOWED=new Set(['NODE_ENV','DATABASE_URL']); const env={...process.env}; for (const rawLine of fs.readFileSync('/run/secrets/build_env','utf8').split(/\r?\n/)) { const line=rawLine.trim(); if (!line || line.startsWith('#')) continue; const eq=line.indexOf('='); if (eq < 0) continue; const key=line.slice(0, eq).trim(); if (!key.startsWith('NEXT_PUBLIC_') && !ALLOWED.has(key)) continue; let value=rawLine.slice(eq + 1); if ((value.startsWith('\"') && value.endsWith('\"')) || (value.startsWith(\"'\") && value.endsWith(\"'\"))) value=value.slice(1, -1); env[key]=value; } const result=spawnSync('npm',['run','build'],{stdio:'inherit',env}); process.exit(result.status ?? 1)"
 
 FROM base AS runner
 ENV NODE_ENV=production

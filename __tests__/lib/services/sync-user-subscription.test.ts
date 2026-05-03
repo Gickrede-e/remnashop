@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockPrisma, mockRemnawave } = vi.hoisted(() => ({
+const { mockEnv, mockPrisma, mockRemnawave } = vi.hoisted(() => ({
+  mockEnv: {
+    REMNAWAVE_BASE_URL: "https://panel.example.com"
+  },
   mockPrisma: {
     user: {
       findUnique: vi.fn(),
@@ -29,6 +32,10 @@ vi.mock("@/lib/prisma", () => ({
   prisma: mockPrisma
 }));
 
+vi.mock("@/lib/env", () => ({
+  env: mockEnv
+}));
+
 vi.mock("@/lib/services/remnawave", () => mockRemnawave);
 
 vi.mock("@/lib/services/admin-logs", () => ({
@@ -47,7 +54,7 @@ vi.mock("@/lib/services/referrals", () => ({
   createReferralRewardForFirstPayment: vi.fn()
 }));
 
-import { syncUserSubscription } from "@/lib/services/subscriptions";
+import { syncUserSubscription, syncUserSubscriptionForDashboard } from "@/lib/services/subscriptions";
 
 describe("syncUserSubscription", () => {
   beforeEach(() => {
@@ -149,7 +156,6 @@ describe("syncUserSubscription", () => {
     expect(mockPrisma.subscription.update).toHaveBeenCalledWith({
       where: { id: "sub-1" },
       data: expect.objectContaining({
-        status: "ACTIVE",
         remnawaveLastSyncAt: expect.any(Date)
       })
     });
@@ -227,5 +233,100 @@ describe("syncUserSubscription", () => {
       }
     });
     expect(result).toEqual(finalUser);
+  });
+
+  it("returns the live Remnawave subscriptionUrl for dashboard consumers", async () => {
+    const initialUser = {
+      id: "user-3",
+      email: "dashboard@example.com",
+      remnawaveUuid: "5c819239-dcd1-45a1-b4ca-c9c32b3e98e7",
+      remnawaveUsername: "gs_dashboard",
+      remnawaveShortUuid: "short-3",
+      subscription: {
+        id: "sub-3",
+        expiresAt: new Date("2026-04-25T12:00:00.000Z"),
+        trafficLimitBytes: 161061273600n,
+        trafficUsedBytes: 0n,
+        plan: {
+          name: "Про",
+          slug: "pro",
+          remnawaveInternalSquadUuids: [],
+          remnawaveExternalSquadUuid: null,
+          remnawaveHwidDeviceLimit: null
+        }
+      }
+    };
+    const finalUser = {
+      ...initialUser
+    };
+
+    mockPrisma.user.findUnique
+      .mockResolvedValueOnce(initialUser)
+      .mockResolvedValueOnce(finalUser);
+
+    mockRemnawave.getRemnawaveUser.mockResolvedValue({
+      uuid: "5c819239-dcd1-45a1-b4ca-c9c32b3e98e7",
+      username: "gs_dashboard",
+      shortUuid: "short-3",
+      subscriptionUrl: "https://sub.example.com/client-access",
+      status: "ACTIVE",
+      expireAt: "2026-04-25T12:00:00.000Z",
+      trafficLimitBytes: 161061273600,
+      trafficUsedBytes: 0
+    });
+
+    const result = await syncUserSubscriptionForDashboard("user-3");
+
+    expect(result).toEqual({
+      user: finalUser,
+      externalSubscriptionUrl: "https://sub.example.com/client-access"
+    });
+  });
+
+  it("falls back to the shortUuid subscription URL when Remnawave omits subscriptionUrl", async () => {
+    const initialUser = {
+      id: "user-4",
+      email: "fallback@example.com",
+      remnawaveUuid: "6c819239-dcd1-45a1-b4ca-c9c32b3e98e8",
+      remnawaveUsername: "gs_fallback",
+      remnawaveShortUuid: "short-4",
+      subscription: {
+        id: "sub-4",
+        expiresAt: new Date("2026-04-25T12:00:00.000Z"),
+        trafficLimitBytes: 161061273600n,
+        trafficUsedBytes: 0n,
+        plan: {
+          name: "Про",
+          slug: "pro",
+          remnawaveInternalSquadUuids: [],
+          remnawaveExternalSquadUuid: null,
+          remnawaveHwidDeviceLimit: null
+        }
+      }
+    };
+    const finalUser = {
+      ...initialUser
+    };
+
+    mockPrisma.user.findUnique
+      .mockResolvedValueOnce(initialUser)
+      .mockResolvedValueOnce(finalUser);
+
+    mockRemnawave.getRemnawaveUser.mockResolvedValue({
+      uuid: "6c819239-dcd1-45a1-b4ca-c9c32b3e98e8",
+      username: "gs_fallback",
+      shortUuid: "short-4",
+      status: "ACTIVE",
+      expireAt: "2026-04-25T12:00:00.000Z",
+      trafficLimitBytes: 161061273600,
+      trafficUsedBytes: 0
+    });
+
+    const result = await syncUserSubscriptionForDashboard("user-4");
+
+    expect(result).toEqual({
+      user: finalUser,
+      externalSubscriptionUrl: "https://panel.example.com/api/sub/short-4"
+    });
   });
 });

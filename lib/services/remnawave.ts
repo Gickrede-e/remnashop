@@ -117,6 +117,24 @@ export function isRemnawaveNotFoundError(error: unknown) {
   return error instanceof RemnawaveRequestError && error.status === 404;
 }
 
+// Lightweight reachability probe for /api/health. Considers any HTTP response a success
+// (the panel is up); only a network error or timeout signals an outage.
+export async function pingRemnawave(timeoutMs = 2_000): Promise<boolean> {
+  try {
+    const response = await fetch(`${env.REMNAWAVE_BASE_URL}/api/system/stats`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${env.REMNAWAVE_API_TOKEN}`
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(timeoutMs)
+    });
+    return response.status < 500;
+  } catch {
+    return false;
+  }
+}
+
 export function isRemnawaveRecoverableIdentityError(error: unknown) {
   return isRemnawaveNotFoundError(error) || (
     error instanceof RemnawaveRequestError &&

@@ -76,7 +76,7 @@ describe("lib/server/with-api-logging", () => {
       new NextRequest("http://localhost/api/test", {
         method: "GET",
         headers: {
-          "x-forwarded-for": "198.51.100.1, 10.0.0.1"
+          "x-real-ip": "198.51.100.1"
         }
       }),
       async () => {

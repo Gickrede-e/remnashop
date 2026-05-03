@@ -11,19 +11,20 @@ vi.mock("next/font/google", () => ({
   })
 }));
 
+vi.mock("next/headers", () => ({
+  headers: async () => new Headers({ "x-nonce": "test-nonce" })
+}));
+
 import RootLayout from "@/app/layout";
 
 const globalsCssPath = path.resolve(process.cwd(), "app/globals.css");
 
 describe("root layout foundation", () => {
-  it("renders the application root hooks for the plain CSS foundation", () => {
-    const markup = renderToStaticMarkup(
-      React.createElement(
-        RootLayout,
-        null,
-        React.createElement("div", null, "Screen body")
-      )
-    );
+  it("renders the application root hooks for the plain CSS foundation", async () => {
+    const tree = await RootLayout({
+      children: React.createElement("div", null, "Screen body")
+    } as Parameters<typeof RootLayout>[0]);
+    const markup = renderToStaticMarkup(tree);
 
     expect(markup).toContain("Screen body");
     expect(markup).toMatch(/<html[^>]*class="[^"]*\bdark\b[^"]*"/);

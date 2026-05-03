@@ -53,7 +53,8 @@ const REDACTED_KEYS = new Set([
   "refreshtoken",
   "accesstoken",
   "jwt",
-  "bearer"
+  "bearer",
+  "email"
 ]);
 
 const minLevel = resolveMinLogLevel();
@@ -358,15 +359,6 @@ function serializeErrorInternal(error: unknown, depth: number): Record<string, u
   }
 
   return serialized;
-}
-
-function sanitizeUnknownObject(value: unknown): Record<string, unknown> {
-  const seen = new WeakSet<object>();
-  const sanitized = sanitizeValue(value, undefined, 0, seen);
-
-  return sanitized && typeof sanitized === "object" && !Array.isArray(sanitized)
-    ? (sanitized as Record<string, unknown>)
-    : { message: String(value) };
 }
 
 function trimStack(stack: string) {

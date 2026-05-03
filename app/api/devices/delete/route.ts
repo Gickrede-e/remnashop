@@ -1,12 +1,27 @@
 import { requireApiSession } from "@/lib/api-session";
 import { apiError, apiOk, parseRequestBody } from "@/lib/http";
 import { deviceDeleteSchema } from "@/lib/schemas/devices";
+import { RateLimitExceededError, enforceRateLimit } from "@/lib/server/rate-limit";
 import { getUserById } from "@/lib/services/auth";
 import { deleteUserDevice } from "@/lib/services/remnawave";
 
 export async function POST(request: Request) {
   try {
     const session = await requireApiSession();
+
+    try {
+      enforceRateLimit({
+        key: `device-delete:${session.userId}`,
+        max: 30,
+        windowMs: 60_000
+      });
+    } catch (error) {
+      if (error instanceof RateLimitExceededError) {
+        return apiError("Слишком много операций с устройствами.", 429);
+      }
+      throw error;
+    }
+
     const { hwid } = await parseRequestBody(request, deviceDeleteSchema);
     const user = await getUserById(session.userId);
 

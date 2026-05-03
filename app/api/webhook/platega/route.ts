@@ -1,7 +1,11 @@
 import { PaymentProvider } from "@prisma/client";
+import { type NextRequest } from "next/server";
+
 import { apiError, apiOk } from "@/lib/http";
 import { isPaymentProviderEnabledFromEnv } from "@/lib/payments/provider-config";
+import { RateLimitExceededError, enforceRateLimit } from "@/lib/server/rate-limit";
 import { logger, serializeError } from "@/lib/server/logger";
+import { getWebhookClientIp } from "@/lib/server/request-utils";
 import { withApiLogging } from "@/lib/server/with-api-logging";
 import { logAdminAction } from "@/lib/services/admin-logs";
 import { handlePlategaWebhook } from "@/lib/services/payments";
@@ -22,9 +26,10 @@ function isPayloadTooLarge(request: Request, rawBody?: string) {
   return false;
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   return withApiLogging(request, async () => {
     let targetId = "UNKNOWN";
+    const ip = getWebhookClientIp(request);
 
     try {
       if (!isPaymentProviderEnabledFromEnv(PaymentProvider.PLATEGA)) {
@@ -39,6 +44,20 @@ export async function POST(request: Request) {
         return apiError("Payload too large", 413);
       }
 
+      try {
+        enforceRateLimit({
+          key: `webhook:platega:${ip || "unknown"}`,
+          max: 30,
+          windowMs: 60_000
+        });
+      } catch (error) {
+        if (error instanceof RateLimitExceededError) {
+          logger.warn("webhook.rate_limited", { provider: "PLATEGA" });
+          return apiError("Too many requests", 429);
+        }
+        throw error;
+      }
+
       const rawBody = await request.text();
       if (isPayloadTooLarge(request, rawBody)) {
         logger.warn("webhook.payload_too_large", {
@@ -51,8 +70,10 @@ export async function POST(request: Request) {
       const payload = JSON.parse(rawBody) as {
         id?: string;
         order_id?: string;
+        payload?: string;
         status?: string;
         payment_id?: string;
+        paymentMethod?: number;
         merchantId?: string;
         transaction?: {
           id?: string;
@@ -65,19 +86,13 @@ export async function POST(request: Request) {
       };
       targetId =
         payload.order_id ??
+        payload.payload ??
         payload.transaction?.payload ??
         payload.transaction?.orderId ??
         payload.id ??
         payload.payment_id ??
         "UNKNOWN";
-      const result = await handlePlategaWebhook({
-        rawBody,
-        signature:
-          request.headers.get("x-signature") ?? request.headers.get("x-platega-signature"),
-        secret: request.headers.get("x-secret"),
-        merchantId: request.headers.get("x-merchantid") ?? request.headers.get("x-merchant-id"),
-        payload
-      });
+      const result = await handlePlategaWebhook({ payload });
       return apiOk(result);
     } catch (error) {
       await logAdminAction({

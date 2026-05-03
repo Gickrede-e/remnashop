@@ -77,7 +77,7 @@ function buildRequest(
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-forwarded-for": "203.0.113.10",
+      "x-real-ip": "203.0.113.10",
       ...headers
     },
     body: JSON.stringify(body)
@@ -101,10 +101,7 @@ describe("POST /api/webhook/yookassa", () => {
   it.each([
     { body: {}, label: "empty body" },
     { body: { object: {} }, label: "missing object.id" },
-    {
-      body: { object: { id: "remote-payment-1", metadata: {} } },
-      label: "missing metadata.paymentId"
-    }
+    { body: { object: { id: "" } }, label: "empty object.id" }
   ])("returns 200 and drops silently when body is structurally invalid: $label", async ({ body }) => {
     const { POST } = await import("@/app/api/webhook/yookassa/route");
     mockLogger.warn.mockClear();
@@ -281,7 +278,37 @@ describe("POST /api/webhook/yookassa", () => {
     expect(mockLogger.warn).not.toHaveBeenCalled();
   });
 
-  it("returns 200 and drops when rate limit exceeded", async () => {
+  it("allows webhook without metadata.paymentId so the service can reconcile by external payment id", async () => {
+    const { POST } = await import("@/app/api/webhook/yookassa/route");
+    const response = await POST(
+      buildRequest({
+        object: {
+          id: "remote-payment-1",
+          status: "succeeded"
+        }
+      })
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      ok: true,
+      data: {
+        id: "payment-1",
+        status: "SUCCEEDED"
+      }
+    });
+    expect(mockHandleYookassaWebhook).toHaveBeenCalledWith({
+      ip: "203.0.113.10",
+      event: {
+        object: {
+          id: "remote-payment-1",
+          status: "succeeded"
+        }
+      }
+    });
+  });
+
+  it("returns 429 when rate limit exceeded", async () => {
     mockEnforceRateLimit.mockImplementation(() => {
       throw new MockRateLimitExceededError("Rate limit exceeded");
     });
@@ -289,12 +316,10 @@ describe("POST /api/webhook/yookassa", () => {
     const { POST } = await import("@/app/api/webhook/yookassa/route");
     const response = await POST(buildRequest());
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(429);
     await expect(response.json()).resolves.toMatchObject({
-      ok: true,
-      data: {
-        accepted: true
-      }
+      ok: false,
+      error: "Too many requests"
     });
     expect(mockLogger.warn).toHaveBeenCalledWith("webhook.rate_limited", {
       provider: "YOOKASSA"
@@ -302,5 +327,34 @@ describe("POST /api/webhook/yookassa", () => {
     expect(mockHandleYookassaWebhook).not.toHaveBeenCalled();
     expect(mockLogger.error).not.toHaveBeenCalled();
     expect(mockLogAdminAction).not.toHaveBeenCalled();
+  });
+
+  it("returns 503 when webhook processing fails unexpectedly", async () => {
+    mockHandleYookassaWebhook.mockRejectedValue(new Error("YooKassa API timeout"));
+
+    const { POST } = await import("@/app/api/webhook/yookassa/route");
+    const response = await POST(buildRequest());
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({
+      ok: false,
+      error: "Temporarily unavailable"
+    });
+    expect(mockLogAdminAction).toHaveBeenCalledWith({
+      action: "PAYMENT_WEBHOOK_ERROR",
+      targetType: "PAYMENT",
+      targetId: "remote-payment-1",
+      details: {
+        provider: "YOOKASSA",
+        message: "YooKassa API timeout"
+      }
+    });
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      "webhook.failed",
+      expect.objectContaining({
+        provider: "YOOKASSA",
+        paymentId: "remote-payment-1"
+      })
+    );
   });
 });

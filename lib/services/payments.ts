@@ -1,6 +1,8 @@
 import { PaymentProvider, PaymentStatus } from "@prisma/client";
 
 import { env } from "@/lib/env";
+import { isSupportedPlategaPaymentMethod } from "@/lib/payments/platega-methods";
+import { calculateDurationPricing, normalizePaymentMonths } from "@/lib/payments/pricing";
 import { isPaymentProviderEnabledFromEnv } from "@/lib/payments/provider-config";
 import { prisma } from "@/lib/prisma";
 import { logger, serializeError } from "@/lib/server/logger";
@@ -8,8 +10,13 @@ import { logAdminAction } from "@/lib/services/admin-logs";
 import { mapPlategaStatus, mapYooKassaStatus } from "@/lib/services/payment-status";
 import { registerPromoUsage, validatePromoCode } from "@/lib/services/promos";
 import { activateSubscriptionFromPayment } from "@/lib/services/subscriptions";
-import { createPlategaPayment, getPlategaPaymentStatus, verifyPlategaSignature } from "@/lib/services/platega";
-import { createYooKassaPayment, getYooKassaPayment, verifyYooKassaIp } from "@/lib/services/yookassa";
+import { createPlategaPayment, getPlategaPaymentStatus } from "@/lib/services/platega";
+import {
+  createYooKassaPayment,
+  getYooKassaPayment,
+  parseYooKassaAmountToMinorUnits,
+  verifyYooKassaIp
+} from "@/lib/services/yookassa";
 
 export async function createPaymentForUser(input: {
   userId: string;
@@ -17,6 +24,7 @@ export async function createPaymentForUser(input: {
   provider: PaymentProvider;
   promoCode?: string;
   months?: number;
+  paymentMethod?: number;
 }) {
   if (!isPaymentProviderEnabledFromEnv(input.provider)) {
     throw new Error("Способ оплаты недоступен");
@@ -34,26 +42,46 @@ export async function createPaymentForUser(input: {
     | Awaited<ReturnType<typeof validatePromoCode>>
     | null = null;
 
-  const months = Math.max(1, Math.min(12, Math.floor(input.months ?? 1)));
-  const baseAmount = plan.price * months;
+  const months = normalizePaymentMonths(input.months);
+  const durationPricing = calculateDurationPricing(plan.price, months);
 
   if (input.promoCode) {
     promoOutcome = await validatePromoCode({
       code: input.promoCode,
       planId: plan.id,
       userId: input.userId,
-      amount: baseAmount
+      amount: durationPricing.subtotalAmount
     });
   }
 
-  const amount = promoOutcome?.finalAmount ?? baseAmount;
+  const amount = promoOutcome?.finalAmount ?? durationPricing.subtotalAmount;
+  let selectedPlategaPaymentMethod: number | null = null;
+
+  if (input.provider === PaymentProvider.PLATEGA) {
+    selectedPlategaPaymentMethod = input.paymentMethod ?? env.plategaPaymentMethods[0] ?? null;
+    if (!selectedPlategaPaymentMethod) {
+      throw Object.assign(new Error("Методы оплаты Platega не настроены"), {
+        status: 400
+      });
+    }
+
+    if (
+      !isSupportedPlategaPaymentMethod(selectedPlategaPaymentMethod) ||
+      !env.plategaPaymentMethods.includes(selectedPlategaPaymentMethod)
+    ) {
+      throw Object.assign(new Error("Недоступный метод оплаты Platega"), {
+        status: 400
+      });
+    }
+  }
+
   const payment = await prisma.payment.create({
     data: {
       userId: input.userId,
       planId: plan.id,
       provider: input.provider,
       amount,
-      originalAmount: baseAmount,
+      originalAmount: durationPricing.baseAmount,
       months,
       promoCodeId: promoOutcome?.promo.id ?? null,
       providerPayload: {}
@@ -96,7 +124,7 @@ export async function createPaymentForUser(input: {
       paymentId: payment.id,
       successUrl: returnUrl,
       failUrl,
-      webhookUrl: `${env.NEXT_PUBLIC_SITE_URL}/api/webhook/platega`
+      paymentMethod: selectedPlategaPaymentMethod!
     });
 
     return prisma.payment.update({
@@ -179,6 +207,53 @@ function toErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Unknown payment processing error";
 }
 
+function assertYooKassaRemotePaymentMatchesLocal(input: {
+  localPayment: {
+    id: string;
+    amount: number;
+    currency: string;
+    externalPaymentId?: string | null;
+  };
+  remotePayment: Awaited<ReturnType<typeof getYooKassaPayment>>;
+}) {
+  const { localPayment, remotePayment } = input;
+
+  if (remotePayment.metadata?.paymentId !== localPayment.id) {
+    throw new WebhookIntegrityError("metadata paymentId mismatch");
+  }
+
+  if (
+    localPayment.externalPaymentId &&
+    remotePayment.id !== localPayment.externalPaymentId
+  ) {
+    throw new WebhookIntegrityError("remote payment id mismatch");
+  }
+
+  const remoteCurrency = String(remotePayment.amount?.currency ?? "")
+    .trim()
+    .toUpperCase();
+  if (!remoteCurrency || remoteCurrency !== localPayment.currency.trim().toUpperCase()) {
+    throw new WebhookIntegrityError("currency mismatch");
+  }
+
+  const remoteAmount = parseYooKassaAmountToMinorUnits(remotePayment.amount?.value);
+  if (remoteAmount === null) {
+    throw new WebhookIntegrityError("amount value missing");
+  }
+
+  if (remoteAmount !== localPayment.amount) {
+    throw new WebhookIntegrityError("amount mismatch");
+  }
+
+  if (
+    mapYooKassaStatus(normalizeProviderStatus(remotePayment.status)) ===
+      PaymentStatus.SUCCEEDED &&
+    remotePayment.paid !== true
+  ) {
+    throw new WebhookIntegrityError("paid flag mismatch");
+  }
+}
+
 async function writePaymentProcessingFailure(input: {
   paymentId: string;
   provider: PaymentProvider;
@@ -236,11 +311,12 @@ async function syncPaymentStatusAndActivate(input: {
   providerPayload?: unknown;
   successDetails?: Record<string, unknown>;
 }) {
+  // Merge provider sync metadata into payload but DO NOT mark SUCCEEDED here —
+  // activateSubscriptionFromPayment owns the status transition (only after Remnawave
+  // provisioning succeeds, atomically with subscription link).
   await prisma.payment.update({
     where: { id: input.paymentId },
     data: {
-      status: PaymentStatus.SUCCEEDED,
-      paidAt: new Date(),
       externalPaymentId: input.externalPaymentId ?? undefined,
       providerPayload:
         input.providerPayload === undefined
@@ -289,6 +365,16 @@ async function processYooKassaRemotePayment(input: {
     return localPayment;
   }
 
+  assertYooKassaRemotePaymentMatchesLocal({
+    localPayment: {
+      id: localPayment.id,
+      amount: localPayment.amount,
+      currency: localPayment.currency,
+      externalPaymentId: localPayment.externalPaymentId
+    },
+    remotePayment: input.remotePayment
+  });
+
   const remoteStatus = normalizeProviderStatus(input.remotePayment.status);
   const providerPayload = mergeProviderPayload(input.remotePayment, {
     lastProviderSync: {
@@ -326,8 +412,10 @@ async function processPlategaPaymentStatus(input: {
   payload: {
     id?: string;
     order_id?: string;
+    payload?: string;
     status?: string;
     payment_id?: string;
+    paymentMethod?: number;
     merchantId?: string;
     transaction?: {
       id?: string;
@@ -435,10 +523,6 @@ export async function handleYookassaWebhook(input: {
   }
 
   const remotePayment = await getYooKassaPayment(remoteId);
-  if (remotePayment.metadata?.paymentId !== localPayment.id) {
-    throw new WebhookIntegrityError("metadata paymentId mismatch");
-  }
-
   return processYooKassaRemotePayment({
     localPaymentId: localPayment.id,
     remotePayment,
@@ -446,16 +530,35 @@ export async function handleYookassaWebhook(input: {
   });
 }
 
+function readPayloadStringField(payload: unknown, field: string) {
+  if (
+    payload &&
+    typeof payload === "object" &&
+    field in payload &&
+    typeof (payload as Record<string, unknown>)[field] === "string"
+  ) {
+    return (payload as Record<string, string>)[field];
+  }
+  return null;
+}
+
+function resolvePlategaMerchantId(localPayloadFromDb: unknown) {
+  return (
+    readPayloadStringField(localPayloadFromDb, "merchantId") ||
+    readPayloadStringField(localPayloadFromDb, "merchant_id") ||
+    readPayloadStringField(localPayloadFromDb, "mechantId") ||
+    env.PLATEGA_MERCHANT_ID
+  );
+}
+
 export async function handlePlategaWebhook(input: {
-  rawBody: string;
-  signature?: string | null;
-  secret?: string | null;
-  merchantId?: string | null;
   payload: {
     id?: string;
     order_id?: string;
+    payload?: string;
     status?: string;
     payment_id?: string;
+    paymentMethod?: number;
     merchantId?: string;
     transaction?: {
       id?: string;
@@ -467,26 +570,26 @@ export async function handlePlategaWebhook(input: {
     };
   };
 }) {
-  if (!verifyPlategaSignature({
-    rawBody: input.rawBody,
-    signature: input.signature,
-    secret: input.secret,
-    merchantId: input.merchantId
-  })) {
-    throw new Error("Invalid Platega signature");
-  }
-
   const localPaymentId =
     input.payload.order_id ??
+    input.payload.payload ??
     input.payload.transaction?.payload ??
     input.payload.transaction?.orderId;
-  if (!localPaymentId) {
-    throw new Error("order_id is required");
-  }
+  const remotePaymentId =
+    input.payload.id ??
+    input.payload.payment_id ??
+    input.payload.transaction?.id;
+  let localPayment = localPaymentId
+    ? await prisma.payment.findUnique({
+        where: { id: localPaymentId }
+      })
+    : null;
 
-  const localPayment = await prisma.payment.findUnique({
-    where: { id: localPaymentId }
-  });
+  if (!localPayment && remotePaymentId) {
+    localPayment = await prisma.payment.findUnique({
+      where: { externalPaymentId: remotePaymentId }
+    });
+  }
 
   if (!localPayment) {
     throw new Error("Local payment not found");
@@ -496,9 +599,24 @@ export async function handlePlategaWebhook(input: {
     return localPayment;
   }
 
+  const transactionId = localPayment.externalPaymentId ?? remotePaymentId;
+  if (!transactionId) {
+    throw new Error("Cannot verify Platega webhook: missing transaction id");
+  }
+
+  const merchantId = resolvePlategaMerchantId(localPayment.providerPayload);
+  const remotePayment = await getPlategaPaymentStatus({ transactionId, merchantId });
+
   return processPlategaPaymentStatus({
     localPaymentId: localPayment.id,
-    payload: input.payload,
+    payload: {
+      id: remotePayment.id,
+      payment_id: remotePayment.id,
+      status: remotePayment.status,
+      payload: remotePayment.payload,
+      merchantId:
+        remotePayment.merchantId ?? remotePayment.merchant_id ?? remotePayment.mechantId
+    },
     source: "WEBHOOK"
   });
 }
@@ -547,27 +665,7 @@ export async function refreshPaymentStatus(paymentId: string) {
       throw new Error("У платежа Platega отсутствует внешний идентификатор");
     }
 
-    const merchantId =
-      (payment.providerPayload &&
-      typeof payment.providerPayload === "object" &&
-      "merchantId" in payment.providerPayload &&
-      typeof payment.providerPayload.merchantId === "string"
-        ? payment.providerPayload.merchantId
-        : null) ||
-      (payment.providerPayload &&
-      typeof payment.providerPayload === "object" &&
-      "merchant_id" in payment.providerPayload &&
-      typeof payment.providerPayload.merchant_id === "string"
-        ? payment.providerPayload.merchant_id
-        : null) ||
-      (payment.providerPayload &&
-      typeof payment.providerPayload === "object" &&
-      "mechantId" in payment.providerPayload &&
-      typeof payment.providerPayload.mechantId === "string"
-        ? payment.providerPayload.mechantId
-        : null) ||
-      env.PLATEGA_MERCHANT_ID;
-
+    const merchantId = resolvePlategaMerchantId(payment.providerPayload);
     const remotePayment = await getPlategaPaymentStatus({
       transactionId: payment.externalPaymentId,
       merchantId
