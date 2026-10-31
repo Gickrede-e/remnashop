@@ -1,5 +1,5 @@
 import { requireApiSession } from "@/lib/api-session";
-import { apiError, apiOk, parseRequestBody } from "@/lib/http";
+import { apiError, apiErrorFrom, apiOk, parseRequestBody } from "@/lib/http";
 import { calculateDurationPricing, normalizePaymentMonths } from "@/lib/payments/pricing";
 import { promoValidateSchema } from "@/lib/schemas/payments";
 import { prisma } from "@/lib/prisma";
@@ -51,6 +51,6 @@ export async function POST(request: Request) {
       bonusTrafficGb: result.bonusTrafficGb
     });
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Промокод невалиден", 400);
+    return apiErrorFrom(error, "Промокод невалиден");
   }
 }

@@ -2,14 +2,15 @@ import Link from "next/link";
 import { Power, type LucideIcon } from "lucide-react";
 
 import { DashboardSidebarOtherGroup } from "@/components/shell/dashboard-sidebar-other-group";
-import { publicEnv } from "@/lib/public-env";
-import type { AppShellNavArea } from "@/lib/ui/app-shell-nav";
+import { AsciiCat } from "@/components/effects/ascii-cat";
+import { CubeField } from "@/components/effects/cube-field";
+import { Logo } from "@/components/shared/logo";
+import type { AppShellArea } from "@/lib/ui/app-shell-nav";
 import { cn } from "@/lib/utils";
 
-const areaTagline: Record<AppShellNavArea, string> = {
-  dashboard: "VPN КАБИНЕТ",
-  admin: "ПАНЕЛЬ АДМИНА",
-  public: "ГОСТЕВОЙ КОНТУР"
+const areaTagline: Record<AppShellArea, string> = {
+  dashboard: "ЛИЧНЫЙ КАБИНЕТ",
+  admin: "ПАНЕЛЬ АДМИНА"
 };
 
 export type DashboardSidebarItem = {
@@ -17,32 +18,33 @@ export type DashboardSidebarItem = {
   label: string;
   icon: LucideIcon;
   active: boolean;
+  tourId?: string;
 };
 
 type DashboardSidebarProps = {
-  area: AppShellNavArea;
+  area: AppShellArea;
   primaryItems: DashboardSidebarItem[];
   otherItems: DashboardSidebarItem[];
-  primaryCta: { label: string; href: string };
   accountSummary: { email: string } | null;
 };
 
-export function DashboardSidebar({
-  area,
-  primaryItems,
-  otherItems,
-  primaryCta,
-  accountSummary
-}: DashboardSidebarProps) {
-  const showPrimaryCta = area === "public";
-
+export function DashboardSidebar({ area, primaryItems, otherItems, accountSummary }: DashboardSidebarProps) {
   return (
     <aside className="dashSidebar" data-area={area} data-testid="app-nav-rail" aria-label="Навигация кабинета">
-      <div className="dashSidebarBrand">
-        <p className="dashSidebarBrandWordmark">
-          {publicEnv.NEXT_PUBLIC_SITE_NAME?.toUpperCase() ?? "GICKSHOP"}
-        </p>
+      {/* position задаём инлайном: <cube-field> при подключении сам ставит
+          inline position:relative, если позиция не пришла инлайном, — и
+          перебивает класс (канвас тогда встаёт в поток и сталкивает бренд). */}
+      <CubeField
+        className="dashSidebarCubes"
+        count={6}
+        scale={0.34}
+        dust={12}
+        style={{ position: "absolute", inset: 0 }}
+      />
+      <div className="dashSidebarBrand" data-logo="true">
+        <Logo href="/" variant="rail" />
         <p className="dashSidebarBrandTagline">{areaTagline[area]}</p>
+        <AsciiCat placement="sidebar" />
       </div>
 
       <nav className="dashSidebarNav" aria-label="Основная навигация">
@@ -51,6 +53,7 @@ export function DashboardSidebar({
             key={item.href}
             href={item.href}
             aria-current={item.active ? "page" : undefined}
+            data-tour={item.tourId}
             className={cn("dashSidebarLink", item.active && "is-active")}
           >
             <item.icon className="dashSidebarLinkIcon" aria-hidden="true" />
@@ -76,16 +79,11 @@ export function DashboardSidebar({
       ) : null}
 
       <div className="dashSidebarFooter">
-        {showPrimaryCta ? (
-          <Link href={primaryCta.href} className="dashSidebarCta">
-            {primaryCta.label}
-          </Link>
-        ) : null}
         {accountSummary ? (
           <form action="/api/auth/logout" method="post" className="dashSidebarLogoutRow">
             <button type="submit" className="dashSidebarLogoutBtn">
               <Power className="dashSidebarLogoutIcon" aria-hidden="true" />
-              <span>LOG OUT</span>
+              <span>Выйти</span>
             </button>
             <p className="dashSidebarLogoutEmail">{accountSummary.email}</p>
           </form>

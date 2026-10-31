@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const originalEnv = { ...process.env };
 const validProductionEnv = {
   NODE_ENV: "production",
+  NEXT_PHASE: "",
   DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/gickvpn?schema=public",
   POSTGRES_DB: "gickvpn",
   POSTGRES_USER: "postgres",
@@ -11,18 +12,14 @@ const validProductionEnv = {
   ADMIN_EMAILS: "admin@example.com",
   NEXT_PUBLIC_SITE_URL: "https://vpn.example.com",
   NEXT_PUBLIC_SITE_NAME: "GickShop",
-  NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: "",
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: "",
+  TURNSTILE_SECRET_KEY: "",
   TELEGRAM_BOT_TOKEN: "",
   REMNAWAVE_BASE_URL: "https://panel.example.com",
   REMNAWAVE_API_TOKEN: "live-remnawave-token",
   YOOKASSA_ENABLED: "true",
   YOOKASSA_SHOP_ID: "shop-id",
   YOOKASSA_SECRET_KEY: "live-yookassa-secret",
-  PLATEGA_ENABLED: "true",
-  PLATEGA_API_KEY: "live-platega-api-key",
-  PLATEGA_MERCHANT_ID: "merchant-id",
-  PLATEGA_WEBHOOK_SECRET: "live-platega-webhook-secret",
-  PLATEGA_PAYMENT_METHODS: "2,10,13",
   SMTP_HOST: "smtp",
   SMTP_PORT: "2525",
   SMTP_SECURE: "false",
@@ -95,46 +92,47 @@ describe("lib/env", () => {
     expect(envModule.env.siteUrl).toBe("https://vpn.example.com");
   });
 
-  it("requires a non-empty Platega merchant id in production", async () => {
-    setProcessEnv({
-      PLATEGA_MERCHANT_ID: ""
-    });
+  it.each(["production", "development"])("rejects either missing Turnstile key in %s", async (nodeEnv) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
 
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    for (const overrides of [
+      { NEXT_PUBLIC_TURNSTILE_SITE_KEY: "site-key", TURNSTILE_SECRET_KEY: " " },
+      { NEXT_PUBLIC_TURNSTILE_SITE_KEY: " ", TURNSTILE_SECRET_KEY: "secret-key" }
+    ]) {
+      vi.resetModules();
+      setProcessEnv({ NODE_ENV: nodeEnv, ...overrides });
 
-    await expect(import("@/lib/env")).rejects.toThrow("Invalid environment configuration");
-    expect(errorSpy).toHaveBeenCalledWith(
-      "Invalid environment configuration",
-      expect.objectContaining({
-        PLATEGA_MERCHANT_ID: [expect.stringContaining("required in production")]
-      })
-    );
+      await expect(import("@/lib/env")).rejects.toThrow(
+        "NEXT_PUBLIC_TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY must be set together"
+      );
+    }
   });
 
-  it("normalizes Platega payment methods and removes duplicates", async () => {
-    setProcessEnv({
-      PLATEGA_PAYMENT_METHODS: "2, 10, 2,13"
-    });
+  it("allows both Turnstile keys to be empty", async () => {
+    setProcessEnv({ NEXT_PUBLIC_TURNSTILE_SITE_KEY: " ", TURNSTILE_SECRET_KEY: " " });
 
-    const envModule = await import("@/lib/env");
+    const { env } = await import("@/lib/env");
 
-    expect(envModule.env.plategaPaymentMethods).toEqual([2, 10, 13]);
+    expect(env.NEXT_PUBLIC_TURNSTILE_SITE_KEY).toBe("");
+    expect(env.TURNSTILE_SECRET_KEY).toBe("");
   });
 
-  it("rejects unsupported Platega payment methods when Platega is enabled", async () => {
-    setProcessEnv({
-      PLATEGA_PAYMENT_METHODS: "2,99"
-    });
+  it("normalizes the Turnstile key pair", async () => {
+    setProcessEnv({ NEXT_PUBLIC_TURNSTILE_SITE_KEY: " site-key ", TURNSTILE_SECRET_KEY: " secret-key " });
 
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { env } = await import("@/lib/env");
 
-    await expect(import("@/lib/env")).rejects.toThrow("Invalid environment configuration");
-    expect(errorSpy).toHaveBeenCalledWith(
-      "Invalid environment configuration",
-      expect.objectContaining({
-        PLATEGA_PAYMENT_METHODS: [expect.stringContaining("unsupported values")]
-      })
-    );
+    expect(env.NEXT_PUBLIC_TURNSTILE_SITE_KEY).toBe("site-key");
+    expect(env.TURNSTILE_SECRET_KEY).toBe("secret-key");
+  });
+
+  it("allows a public Turnstile key without the stripped secret during next build", async () => {
+    setProcessEnv({ NEXT_PHASE: "phase-production-build", NEXT_PUBLIC_TURNSTILE_SITE_KEY: "site-key" });
+
+    const { env } = await import("@/lib/env");
+
+    expect(env.NEXT_PUBLIC_TURNSTILE_SITE_KEY).toBe("site-key");
+    expect(env.TURNSTILE_SECRET_KEY).toBe("");
   });
 
   it("rejects partial SMTP auth settings", async () => {
@@ -176,17 +174,12 @@ describe("lib/env", () => {
     setProcessEnv({
       YOOKASSA_ENABLED: "false",
       YOOKASSA_SHOP_ID: "",
-      YOOKASSA_SECRET_KEY: "",
-      PLATEGA_ENABLED: "false",
-      PLATEGA_API_KEY: "",
-      PLATEGA_MERCHANT_ID: "",
-      PLATEGA_WEBHOOK_SECRET: ""
+      YOOKASSA_SECRET_KEY: ""
     });
 
     const envModule = await import("@/lib/env");
 
     expect(envModule.env.YOOKASSA_ENABLED).toBe(false);
-    expect(envModule.env.PLATEGA_ENABLED).toBe(false);
   });
 
   it("still requires YooKassa secrets when YooKassa is enabled", async () => {

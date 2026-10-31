@@ -5,18 +5,16 @@ const { mockPrisma, mockRemnawave } = vi.hoisted(() => {
   const prisma = {
     subscription: {
       findMany: vi.fn(),
+      findUnique: vi.fn(),
       update: vi.fn()
     },
     user: {
       update: vi.fn(),
       findMany: vi.fn()
     },
-    $transaction: vi.fn(async (fn: (tx: unknown) => unknown) =>
-      fn({
-        subscription: prisma.subscription,
-        user: prisma.user
-      })
-    )
+    payment: { findFirst: vi.fn() },
+    $executeRaw: vi.fn(),
+    $transaction: vi.fn(async (fn: (tx: unknown) => unknown) => fn(prisma))
   };
   return {
     mockPrisma: prisma,
@@ -36,7 +34,7 @@ const { mockPrisma, mockRemnawave } = vi.hoisted(() => {
 });
 
 vi.mock("@/lib/prisma", () => ({
-  prisma: mockPrisma
+  prisma: mockPrisma, toJsonValue: (value: unknown) => JSON.parse(JSON.stringify(value))
 }));
 
 vi.mock("@/lib/services/remnawave", () => mockRemnawave);
@@ -57,7 +55,7 @@ vi.mock("@/lib/services/referrals", () => ({
   createReferralRewardForFirstPayment: vi.fn()
 }));
 
-import { syncActiveSubscriptionsToRemnawave } from "@/lib/services/subscriptions";
+import { syncActiveSubscriptionsToRemnawave } from "@/lib/services/remnawave-active-sync";
 
 function buildCandidate(input: {
   userId: string;
@@ -74,6 +72,7 @@ function buildCandidate(input: {
   return {
     id: `sub-${input.userId}`,
     status: SubscriptionStatus.ACTIVE,
+    userId: input.userId,
     expiresAt: input.expiresAt,
     trafficLimitBytes: input.trafficLimitBytes ?? BigInt(0),
     user: {
@@ -104,6 +103,12 @@ describe("syncActiveSubscriptionsToRemnawave", () => {
     vi.useFakeTimers();
     vi.setSystemTime(now);
 
+    mockPrisma.$executeRaw.mockReset().mockResolvedValue(1);
+    mockPrisma.payment.findFirst.mockReset().mockResolvedValue(null);
+    mockPrisma.subscription.findUnique.mockReset().mockImplementation(async ({ where }: { where: { id: string } }) => {
+      const candidates = await mockPrisma.subscription.findMany.mock.results.at(-1)?.value as ReturnType<typeof buildCandidate>[];
+      return candidates.find((candidate) => candidate.id === where.id) ?? null;
+    });
     mockPrisma.subscription.findMany.mockReset();
     mockPrisma.subscription.update.mockReset();
     mockPrisma.user.findMany.mockReset();
@@ -266,6 +271,31 @@ describe("syncActiveSubscriptionsToRemnawave", () => {
       skipped: 1,
       failed: 1
     });
+    expect(mockRemnawave.resetRemnawaveUserTraffic).not.toHaveBeenCalled();
+    expect(mockPrisma.user.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: "user-linked" },
+      data: {
+        remnawaveUuid: linkedUuid,
+        remnawaveUsername: `gs_${linkedUuid}`,
+        remnawaveShortUuid: `short-${linkedUuid}`
+      }
+    }));
+    expect(mockPrisma.user.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: "user-recover" },
+      data: {
+        remnawaveUuid: attachedUuid,
+        remnawaveUsername: `gs_${attachedUuid}`,
+        remnawaveShortUuid: `short-${attachedUuid}`
+      }
+    }));
+    expect(mockPrisma.user.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: "user-created" },
+      data: {
+        remnawaveUuid: "created-created@example.com",
+        remnawaveUsername: "gs_created-created@example.com",
+        remnawaveShortUuid: "short-created-created@example.com"
+      }
+    }));
     expect(summary.items).toEqual(expect.arrayContaining([
       expect.objectContaining({
         userId: "user-recover",
@@ -398,5 +428,58 @@ describe("syncActiveSubscriptionsToRemnawave", () => {
       userId: "user-created",
       outcome: "created"
     }));
+  });
+
+  it("pushes a fresh expiry read after locking instead of the old batch snapshot", async () => {
+    const candidate = buildCandidate({
+      userId: "user-extended", email: "extended@example.com", remnawaveUuid: linkedUuid,
+      expiresAt: new Date("2026-04-25T12:00:00.000Z")
+    });
+    const extendedExpiry = new Date("2026-05-25T12:00:00.000Z");
+    mockPrisma.subscription.findMany.mockResolvedValue([candidate]);
+    mockPrisma.$executeRaw.mockImplementationOnce(async () => {
+      expect(mockPrisma.subscription.findUnique).not.toHaveBeenCalled();
+      mockPrisma.subscription.findUnique.mockResolvedValue({ ...candidate, expiresAt: extendedExpiry });
+      return 1;
+    });
+    mockRemnawave.getRemnawaveUser.mockResolvedValue({ uuid: linkedUuid, username: "gs_extended" });
+
+    const summary = await syncActiveSubscriptionsToRemnawave();
+
+    expect(summary.alreadyLinked).toBe(1);
+    expect(mockRemnawave.updateRemnawaveUser).toHaveBeenCalledWith(linkedUuid,
+      expect.objectContaining({ expireAt: extendedExpiry.toISOString() }));
+  });
+
+  it("skips pending activations before any remote lookup or update", async () => {
+    mockPrisma.subscription.findMany.mockResolvedValue([buildCandidate({
+      userId: "user-pending", email: "pending@example.com", remnawaveUuid: linkedUuid,
+      expiresAt: new Date("2026-04-25T12:00:00.000Z")
+    })]);
+    mockPrisma.payment.findFirst.mockResolvedValue({ id: "failed-payment" });
+
+    const summary = await syncActiveSubscriptionsToRemnawave();
+
+    expect(summary.skipped).toBe(1);
+    expect(summary.items[0]?.message).toBe("Paid subscription activation is pending");
+    expect(mockRemnawave.getRemnawaveUser).not.toHaveBeenCalled();
+    expect(mockRemnawave.createRemnawaveUser).not.toHaveBeenCalled();
+    expect(mockRemnawave.updateRemnawaveUser).not.toHaveBeenCalled();
+    expect(mockPrisma.subscription.update).not.toHaveBeenCalled();
+  });
+
+  it("skips subscriptions that stopped being active after the batch was selected", async () => {
+    const candidate = buildCandidate({
+      userId: "user-expired", email: "expired@example.com", remnawaveUuid: linkedUuid,
+      expiresAt: new Date("2026-04-25T12:00:00.000Z")
+    });
+    mockPrisma.subscription.findMany.mockResolvedValue([candidate]);
+    mockPrisma.subscription.findUnique.mockResolvedValue({ ...candidate, status: SubscriptionStatus.EXPIRED });
+
+    const summary = await syncActiveSubscriptionsToRemnawave();
+
+    expect(summary.skipped).toBe(1);
+    expect(mockRemnawave.getRemnawaveUser).not.toHaveBeenCalled();
+    expect(mockRemnawave.updateRemnawaveUser).not.toHaveBeenCalled();
   });
 });

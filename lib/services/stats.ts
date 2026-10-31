@@ -151,6 +151,9 @@ export async function getAdminUsers(input: {
   const [items, total] = await Promise.all([
     prisma.user.findMany({
       where,
+      // Never expose password hashes: the admin API spreads this row verbatim
+      // into its response payload.
+      omit: { passwordHash: true },
       include: {
         subscription: {
           include: { plan: true }
@@ -216,12 +219,4 @@ export async function getAdminPayments(input: {
   ]);
 
   return { items, total };
-}
-
-export async function getRevenueChart() {
-  const data = await getRevenueChartData();
-  return data.map((item) => ({
-    date: item.date,
-    amount: item.amount
-  }));
 }

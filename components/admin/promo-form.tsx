@@ -8,6 +8,7 @@ import { FormSection } from "@/components/blocks/forms/form-section";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { readApiEnvelope } from "@/lib/api-envelope";
 
 type PromoFormValues = {
   code: string;
@@ -74,9 +75,9 @@ export function PromoForm({
         })
       });
 
-      const payload = (await response.json()) as { ok: boolean; error?: string };
-      if (!response.ok || !payload.ok) {
-        setMessage(payload.error ?? "Не удалось сохранить промокод");
+      const payload = await readApiEnvelope(response);
+      if (!response.ok || !payload?.ok) {
+        setMessage(payload?.error ?? "Не удалось сохранить промокод");
         return;
       }
 
@@ -123,7 +124,7 @@ export function PromoForm({
       >
         <div className="controlFieldGrid">
           <div className="controlField">
-            <Label htmlFor="promo-value">Значение</Label>
+            <Label htmlFor="promo-value">Значение (фиксированная скидка — в копейках)</Label>
             <Input
               id="promo-value"
               type="number"

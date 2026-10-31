@@ -1,6 +1,6 @@
 "use client";
 
-import { type ComponentPropsWithoutRef, useState, useTransition } from "react";
+import { type ComponentPropsWithoutRef, type ReactNode, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -13,10 +13,11 @@ import {
   DialogTrigger
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { readApiEnvelope } from "@/lib/api-envelope";
 
 type ReissueSubscriptionButtonProps = {
   className?: string;
-  label?: string;
+  label?: ReactNode;
 } & Omit<ComponentPropsWithoutRef<"button">, "type" | "onClick" | "children">;
 
 export function ReissueSubscriptionButton({
@@ -34,10 +35,7 @@ export function ReissueSubscriptionButton({
     startTransition(async () => {
       try {
         const response = await fetch("/api/subscription/reissue", { method: "POST" });
-        const payload = (await response.json().catch(() => null)) as {
-          ok: boolean;
-          error?: string;
-        } | null;
+        const payload = await readApiEnvelope(response);
 
         if (!response.ok || !payload?.ok) {
           setError(payload?.error ?? "Не удалось перевыпустить подписку");

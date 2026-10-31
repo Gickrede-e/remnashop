@@ -101,6 +101,6 @@ describe("auth surfaces", () => {
     expect(markup).toContain('href="/login?next=%2Fdashboard"');
     expect(markup).toContain('value="ALLY42"');
     expect(markup).not.toMatch(/class="[^"]*\bauthHint\b[^"]*"/);
-    expect(markup).toContain('placeholder="Реферальный код"');
+    expect(markup).toContain('placeholder="Реферальный код (необязательно)"');
   });
 });

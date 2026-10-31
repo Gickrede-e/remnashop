@@ -1,65 +1,49 @@
-import { createHash, createHmac } from "node:crypto";
-
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 const { mockPrisma } = vi.hoisted(() => ({
-  mockPrisma: {}
+  mockPrisma: {
+    user: {
+      findUnique: vi.fn(),
+      create: vi.fn()
+    }
+  }
 }));
 
 vi.mock("@/lib/prisma", () => ({
   prisma: mockPrisma
 }));
 
-import { verifyTelegramAuth } from "@/lib/services/auth";
+vi.mock("@/lib/auth/session", () => ({
+  getSession: vi.fn()
+}));
 
-function buildTelegramHash(payload: Record<string, string>) {
-  const secretKey = createHash("sha256")
-    .update(process.env.TELEGRAM_BOT_TOKEN ?? "")
-    .digest();
-  const checkString = Object.entries(payload)
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([key, value]) => `${key}=${value}`)
-    .join("\n");
-
-  return createHmac("sha256", secretKey)
-    .update(checkString)
-    .digest("hex");
+async function loadRegisterUser(adminEmails: string) {
+  vi.resetModules();
+  vi.stubEnv("ADMIN_EMAILS", adminEmails);
+  return (await import("@/lib/services/auth")).registerUser;
 }
 
-describe("verifyTelegramAuth", () => {
-  const originalToken = process.env.TELEGRAM_BOT_TOKEN;
-
-  beforeEach(() => {
-    process.env.TELEGRAM_BOT_TOKEN = "telegram-bot-token";
+describe("registerUser", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
-  afterAll(() => {
-    process.env.TELEGRAM_BOT_TOKEN = originalToken;
+  it("refuses an ADMIN_EMAILS address because nothing proves the caller owns it", async () => {
+    const registerUser = await loadRegisterUser("owner@shop.test,support@shop.test");
+
+    const attempt = registerUser({ email: "Support@Shop.test", password: "attacker-password" });
+
+    await expect(attempt).rejects.toThrow();
+    expect(mockPrisma.user.create).not.toHaveBeenCalled();
   });
 
-  it("accepts a valid Telegram payload", () => {
-    const payload = {
-      auth_date: "1710000000",
-      first_name: "Test",
-      id: "123456",
-      username: "tester"
-    };
+  it("registers an address that is not on the admin list as a regular user", async () => {
+    const registerUser = await loadRegisterUser("owner@shop.test");
 
-    expect(verifyTelegramAuth({
-      ...payload,
-      hash: buildTelegramHash(payload)
-    })).toBe(true);
-  });
+    await registerUser({ email: "customer@shop.test", password: "customer-password" });
 
-  it("rejects invalid hashes without throwing on mismatched length", () => {
-    const payload = {
-      auth_date: "1710000000",
-      id: "123456"
-    };
-
-    expect(verifyTelegramAuth({
-      ...payload,
-      hash: "short"
-    })).toBe(false);
+    expect(mockPrisma.user.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ email: "customer@shop.test", role: "USER" })
+    });
   });
 });

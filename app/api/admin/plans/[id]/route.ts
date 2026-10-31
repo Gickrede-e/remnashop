@@ -1,5 +1,5 @@
 import { requireApiAdminSession } from "@/lib/api-session";
-import { apiError, apiOk, parseRequestBody } from "@/lib/http";
+import { apiErrorFrom, apiOk, parseRequestBody } from "@/lib/http";
 import { planSchema } from "@/lib/schemas/plans";
 import { logAdminAction } from "@/lib/services/admin-logs";
 import { deactivatePlan, restorePlan, updatePlan } from "@/lib/services/plans";
@@ -26,7 +26,7 @@ export async function PATCH(request: Request, { params }: Params) {
     });
     return apiOk(plan);
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Не удалось обновить тариф", 400);
+    return apiErrorFrom(error, "Не удалось обновить тариф");
   }
 }
 
@@ -46,7 +46,7 @@ export async function POST(_: Request, { params }: Params) {
     });
     return apiOk(plan);
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Не удалось восстановить тариф", 400);
+    return apiErrorFrom(error, "Не удалось восстановить тариф");
   }
 }
 
@@ -66,6 +66,6 @@ export async function DELETE(_: Request, { params }: Params) {
     });
     return apiOk(plan);
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Не удалось деактивировать тариф", 400);
+    return apiErrorFrom(error, "Не удалось деактивировать тариф");
   }
 }

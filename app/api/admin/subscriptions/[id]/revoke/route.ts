@@ -1,5 +1,5 @@
 import { requireApiAdminSession } from "@/lib/api-session";
-import { apiError, apiOk } from "@/lib/http";
+import { apiErrorFrom, apiOk } from "@/lib/http";
 import { revokeSubscriptionByAdmin } from "@/lib/services/subscriptions";
 
 type Params = {
@@ -17,6 +17,6 @@ export async function POST(_: Request, { params }: Params) {
       })
     );
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Не удалось отозвать подписку", 400);
+    return apiErrorFrom(error, "Не удалось отозвать подписку");
   }
 }

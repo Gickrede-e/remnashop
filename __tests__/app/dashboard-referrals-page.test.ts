@@ -26,7 +26,9 @@ vi.mock("@/lib/auth/session", () => ({
 
 vi.mock("@/lib/env", () => ({
   env: {
-    siteUrl: "https://vpn.example.com"
+    siteUrl: "https://vpn.example.com",
+    REFERRAL_REWARD_TYPE: "FREE_DAYS",
+    REFERRAL_REWARD_VALUE: 3
   }
 }));
 
@@ -67,6 +69,7 @@ describe("dashboard referrals page", () => {
     expect(markup).toContain("Рефералы");
     expect(markup).toContain("https://vpn.example.com/register?ref=ALLY42");
     expect(markup).not.toContain("https://vpn.example.com//register");
+    expect(markup).toContain("+3 дня за друга");
     expect(getMyReferralSummaryMock).toHaveBeenCalledWith("user-1");
     expect(redirectMock).not.toHaveBeenCalled();
   });

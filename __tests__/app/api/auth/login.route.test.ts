@@ -1,10 +1,9 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockLoginUser, mockSetSessionCookie, mockSignSession } = vi.hoisted(() => ({
+const { mockLoginUser, mockIssueSessionCookie } = vi.hoisted(() => ({
   mockLoginUser: vi.fn(),
-  mockSignSession: vi.fn(),
-  mockSetSessionCookie: vi.fn()
+  mockIssueSessionCookie: vi.fn()
 }));
 
 vi.mock("@/lib/services/auth", () => ({
@@ -12,8 +11,7 @@ vi.mock("@/lib/services/auth", () => ({
 }));
 
 vi.mock("@/lib/auth/session", () => ({
-  signSession: mockSignSession,
-  setSessionCookie: mockSetSessionCookie
+  issueSessionCookie: mockIssueSessionCookie
 }));
 
 describe("POST /api/auth/login", () => {
@@ -26,8 +24,7 @@ describe("POST /api/auth/login", () => {
       email: "user@example.com",
       role: "USER"
     });
-    mockSignSession.mockResolvedValue("session-token");
-    mockSetSessionCookie.mockResolvedValue(undefined);
+    mockIssueSessionCookie.mockResolvedValue(undefined);
   });
 
   it("returns x-request-id when the route runs through withApiLogging", async () => {

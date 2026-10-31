@@ -30,6 +30,12 @@ export default defineConfig([
     "coverage/**",
     ".worktrees/**",
     "next-env.d.ts",
-    "artifacts/**"
+    "artifacts/**",
+    // design-sync: staged converter, build output, and sync inputs (committed
+    // separately; previews import the virtual "gickvpn" module).
+    ".ds-sync/**",
+    "ds-bundle/**",
+    ".design-sync/**",
+    "backups/**"
   ])
 ]);

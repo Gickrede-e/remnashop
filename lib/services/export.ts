@@ -125,34 +125,3 @@ export async function exportEntityToCsv(entity: "users" | "payments" | "subscrip
     })
   );
 }
-
-export const exportEntity = exportEntityToCsv;
-
-export async function listPaymentsForAdmin(input: {
-  page: number;
-  limit: number;
-  status?: string;
-  provider?: string;
-}) {
-  const where = {
-    ...(input.status ? { status: input.status as never } : {}),
-    ...(input.provider ? { provider: input.provider as never } : {})
-  };
-
-  const [items, total] = await Promise.all([
-    prisma.payment.findMany({
-      where,
-      include: {
-        user: true,
-        plan: true,
-        promoCode: true
-      },
-      orderBy: { createdAt: "desc" },
-      skip: (input.page - 1) * input.limit,
-      take: input.limit
-    }),
-    prisma.payment.count({ where })
-  ]);
-
-  return { items, total };
-}

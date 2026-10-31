@@ -3,7 +3,6 @@ x-app-image: &app-image ${APP_IMAGE:-gickrede/remnashop:local}
 x-build-args: &build-args
   NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
   NEXT_PUBLIC_SITE_NAME: ${NEXT_PUBLIC_SITE_NAME}
-  NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: ${NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}
 
 x-app-build: &app-build
   context: .

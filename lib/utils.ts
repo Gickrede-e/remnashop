@@ -71,8 +71,6 @@ export function bytesToGb(value: bigint | number | null | undefined) {
   return bytes / 1024 / 1024 / 1024;
 }
 
-export const gbFromBytes = bytesToGb;
-
 export function formatBytes(value: bigint | number | null | undefined) {
   const amount = bytesToGb(value);
   if (amount >= 1024) {
@@ -80,6 +78,33 @@ export function formatBytes(value: bigint | number | null | undefined) {
   }
 
   return `${amount.toFixed(1)} ГБ`;
+}
+
+export function pluralize(count: number, forms: readonly [one: string, few: string, many: string]) {
+  const absCount = Math.abs(count) % 100;
+  const lastDigit = absCount % 10;
+
+  if (absCount >= 11 && absCount <= 19) {
+    return forms[2];
+  }
+
+  if (lastDigit === 1) {
+    return forms[0];
+  }
+
+  if (lastDigit >= 2 && lastDigit <= 4) {
+    return forms[1];
+  }
+
+  return forms[2];
+}
+
+export function pluralizeDays(days: number) {
+  return pluralize(days, ["день", "дня", "дней"]);
+}
+
+export function formatDayCount(days: number) {
+  return `${days} ${pluralizeDays(days)}`;
 }
 
 export function slugify(input: string) {
@@ -153,12 +178,4 @@ export function maskEmail(email: string) {
   }
 
   return `${name[0]}${"*".repeat(Math.max(1, name.length - 2))}${name[name.length - 1]}@${domain}`;
-}
-
-export function serializeBigInt<T>(value: T): T {
-  return JSON.parse(
-    JSON.stringify(value, (_, nestedValue) =>
-      typeof nestedValue === "bigint" ? nestedValue.toString() : nestedValue
-    )
-  ) as T;
 }

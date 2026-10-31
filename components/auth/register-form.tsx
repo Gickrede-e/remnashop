@@ -8,10 +8,10 @@ import { useRouter } from "next/navigation";
 import { z } from "zod";
 
 import { buildLoginHref, sanitizeNextPath } from "@/lib/auth/navigation";
-import { publicEnv } from "@/lib/public-env";
 import { registerSchema } from "@/lib/schemas/auth";
 import { OtpInput } from "@/components/auth/otp-input";
-import { TurnstileWidget } from "@/components/auth/turnstile-widget";
+import { useTurnstile } from "@/components/auth/turnstile-widget";
+import { readApiEnvelope } from "@/lib/api-envelope";
 
 const clientRegisterSchema = registerSchema.extend({
   referralCode: registerSchema.shape.referralCode.optional()
@@ -21,11 +21,12 @@ type RegisterValues = z.infer<typeof clientRegisterSchema>;
 
 type RegisterFormProps = {
   emailEnabled: boolean;
+  turnstileSiteKey?: string;
   referralCode?: string;
   nextPath?: string;
 };
 
-export function RegisterForm({ emailEnabled, referralCode, nextPath }: RegisterFormProps) {
+export function RegisterForm({ emailEnabled, turnstileSiteKey = "", referralCode, nextPath }: RegisterFormProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -33,98 +34,66 @@ export function RegisterForm({ emailEnabled, referralCode, nextPath }: RegisterF
   const [otpEmail, setOtpEmail] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [countdown, setCountdown] = useState(0);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [resendAt, setResendAt] = useState(0);
+  const turnstile = useTurnstile(turnstileSiteKey);
   const safeNextPath = sanitizeNextPath(nextPath);
-  const turnstileEnabled = Boolean(publicEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 
   const form = useForm<RegisterValues>({
     resolver: zodResolver(clientRegisterSchema),
     defaultValues: { email: "", password: "", referralCode: referralCode ?? "" }
   });
 
-  function startCountdown() {
-    setCountdown(60);
-  }
-
   useEffect(() => {
-    if (countdown <= 0) {
+    if (!resendAt) {
       return;
     }
 
-    const timerId = setTimeout(() => {
-      setCountdown((prev) => prev - 1);
+    const timerId = setInterval(() => {
+      const seconds = Math.max(0, Math.ceil((resendAt - Date.now()) / 1000));
+      setCountdown(seconds);
+      if (!seconds) clearInterval(timerId);
     }, 1000);
 
-    return () => clearTimeout(timerId);
-  }, [countdown]);
+    return () => clearInterval(timerId);
+  }, [resendAt]);
 
-  const onSubmit = form.handleSubmit((values) => {
+  async function sendRegistration(values: RegisterValues) {
     setError(null);
-    if (turnstileEnabled && !turnstileToken) {
-      setError("Подождите, идёт проверка капчи…");
-      return;
+    try {
+      await turnstile.run(async (cfTurnstileToken) => {
+        const res = await fetch(emailEnabled ? "/api/auth/send-verification" : "/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...values, cfTurnstileToken })
+        });
+        const payload = await readApiEnvelope(res);
+        if (!res.ok || !payload?.ok) throw new Error(payload?.error ?? "Ошибка регистрации");
+        if (emailEnabled) {
+          setOtpEmail(values.email);
+          setShowOtp(true);
+          setOtpCode("");
+          setResendAt(Date.now() + 60_000);
+          setCountdown(60);
+        } else {
+          router.push(safeNextPath ?? "/dashboard");
+          router.refresh();
+        }
+      });
+    } catch (error) {
+      setError(error instanceof Error && !(error instanceof TypeError)
+        ? error.message : "Не удалось отправить запрос. Попробуйте ещё раз.");
     }
-    const payload = { ...values, cfTurnstileToken: turnstileToken ?? undefined };
-    startTransition(async () => {
-      if (emailEnabled) {
-        // Step 1: send verification code
-        const res = await fetch("/api/auth/send-verification", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        const data = (await res.json()) as { ok: boolean; error?: string };
-        if (!res.ok || !data.ok) {
-          setError(data.error ?? "Ошибка отправки кода");
-          setTurnstileToken(null);
-          return;
-        }
-        setOtpEmail(values.email);
-        setShowOtp(true);
-        startCountdown();
-      } else {
-        // Direct registration (no email verification)
-        const res = await fetch("/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        const data = (await res.json()) as { ok: boolean; error?: string };
-        if (!res.ok || !data.ok) {
-          setError(data.error ?? "Ошибка регистрации");
-          setTurnstileToken(null);
-          return;
-        }
-        router.push(safeNextPath ?? "/dashboard");
-        router.refresh();
-      }
-    });
-  });
+  }
+
+  function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    void form.handleSubmit((values) => {
+      startTransition(() => sendRegistration(values));
+    })(event);
+  }
 
   function handleResend() {
-    if (countdown > 0) return;
-    setError(null);
-    if (turnstileEnabled && !turnstileToken) {
-      setError("Подождите, идёт проверка капчи…");
-      return;
-    }
-    const values = form.getValues();
-    const payload = { ...values, cfTurnstileToken: turnstileToken ?? undefined };
-    startTransition(async () => {
-      const res = await fetch("/api/auth/send-verification", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      const data = (await res.json()) as { ok: boolean; error?: string };
-      if (!res.ok || !data.ok) {
-        setError(data.error ?? "Ошибка отправки кода");
-        setTurnstileToken(null);
-        return;
-      }
-      setOtpCode("");
-      startCountdown();
-    });
+    if (countdown > 0 || pending) return;
+    startTransition(() => sendRegistration(form.getValues()));
   }
 
   function handleVerify(e: React.FormEvent) {
@@ -140,9 +109,9 @@ export function RegisterForm({ emailEnabled, referralCode, nextPath }: RegisterF
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: otpEmail, code: otpCode })
       });
-      const payload = (await res.json()) as { ok: boolean; error?: string };
-      if (!res.ok || !payload.ok) {
-        setError(payload.error ?? "Неверный или истёкший код");
+      const payload = await readApiEnvelope(res);
+      if (!res.ok || !payload?.ok) {
+        setError(payload?.error ?? "Неверный или истёкший код");
         return;
       }
       router.push(safeNextPath ?? "/dashboard");
@@ -160,7 +129,8 @@ export function RegisterForm({ emailEnabled, referralCode, nextPath }: RegisterF
         <div className="authStandaloneField">
           <OtpInput value={otpCode} onChange={setOtpCode} disabled={pending} />
         </div>
-        {error && <p className="authStandaloneError">{error}</p>}
+        {turnstile.widget}
+        {error && <p className="authStandaloneError" role="alert">{error}</p>}
         <button
           type="submit"
           className="authStandaloneSubmit"
@@ -173,7 +143,7 @@ export function RegisterForm({ emailEnabled, referralCode, nextPath }: RegisterF
             type="button"
             className="authStandaloneFooterLink"
             onClick={handleResend}
-            disabled={countdown > 0 || pending}
+            disabled={countdown > 0 || pending || !turnstile.ready}
           >
             {countdown > 0 ? `Отправить повторно (${countdown}с)` : "Отправить повторно"}
           </button>
@@ -215,25 +185,22 @@ export function RegisterForm({ emailEnabled, referralCode, nextPath }: RegisterF
         />
       </div>
       <div className="authStandaloneField">
-        <label htmlFor="referralCode" className="srOnly">Реферальный код</label>
+        <label htmlFor="referralCode" className="srOnly">Реферальный код (необязательно)</label>
         <input
           id="referralCode"
           type="text"
           defaultValue={referralCode ?? ""}
-          placeholder="Реферальный код"
+          placeholder="Реферальный код (необязательно)"
           className="authStandaloneInput"
           {...form.register("referralCode")}
         />
       </div>
-      <TurnstileWidget
-        onToken={setTurnstileToken}
-        onExpire={() => setTurnstileToken(null)}
-      />
-      {error && <p className="authStandaloneError">{error}</p>}
+      {turnstile.widget}
+      {error && <p className="authStandaloneError" role="alert">{error}</p>}
       <button
         type="submit"
         className="authStandaloneSubmit"
-        disabled={pending || (turnstileEnabled && !turnstileToken)}
+        disabled={pending || !turnstile.ready}
       >
         {pending
           ? emailEnabled ? "Отправляем код..." : "Создаем аккаунт..."

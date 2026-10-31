@@ -1,5 +1,5 @@
 import { requireApiSession } from "@/lib/api-session";
-import { apiError, apiOk, parseRequestBody } from "@/lib/http";
+import { apiError, apiErrorFrom, apiOk, parseRequestBody } from "@/lib/http";
 import { paymentCreateSchema } from "@/lib/schemas/payments";
 import { RateLimitExceededError, enforceRateLimit } from "@/lib/server/rate-limit";
 import { createPaymentForUser } from "@/lib/services/payments";
@@ -32,7 +32,6 @@ export async function POST(request: Request) {
       redirectUrl: payment.confirmationUrl
     });
   } catch (error) {
-    const status = error instanceof Error && "status" in error ? Number(error.status) : 400;
-    return apiError(error instanceof Error ? error.message : "Не удалось создать платёж", status);
+    return apiErrorFrom(error, "Не удалось создать платёж");
   }
 }

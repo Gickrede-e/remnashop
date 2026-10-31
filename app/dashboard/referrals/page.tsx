@@ -22,12 +22,13 @@ export default async function DashboardReferralsPage() {
     <div className="dashboardWorkspacePage dashboardSurfacePage dashboardSurfacePageReferrals dashShellPageWrapper">
       <DashboardPageHeader
         title="Рефералы"
-        crumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Рефералы" }]}
+        crumbs={[{ label: "Кабинет", href: "/dashboard" }, { label: "Рефералы" }]}
       />
       <ReferralSummaryBlocks
         referralLink={referralLink}
         referredUsers={summary.referredUsers}
         rewards={summary.rewards}
+        friendReward={{ type: env.REFERRAL_REWARD_TYPE, value: env.REFERRAL_REWARD_VALUE }}
       />
     </div>
   );

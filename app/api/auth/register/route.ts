@@ -1,8 +1,8 @@
 import { type NextRequest } from "next/server";
 import { z } from "zod";
 
-import { signSession, setSessionCookie } from "@/lib/auth/session";
-import { apiError, apiOk, getClientIp, parseRequestBody } from "@/lib/http";
+import { issueSessionCookie } from "@/lib/auth/session";
+import { apiError, apiErrorFrom, apiOk, getClientIp, parseRequestBody } from "@/lib/http";
 import { env } from "@/lib/env";
 import { registerSchema } from "@/lib/schemas/auth";
 import { RateLimitExceededError, enforceRateLimit } from "@/lib/server/rate-limit";
@@ -40,8 +40,7 @@ export async function POST(request: NextRequest) {
         referralCode: typeof data.referralCode === "string" ? data.referralCode : undefined
       });
 
-      const token = await signSession({ userId: user.id, email: user.email, role: user.role });
-      await setSessionCookie(token);
+      await issueSessionCookie(user);
 
       return apiOk({ user: { id: user.id, email: user.email, role: user.role } });
     }
@@ -51,8 +50,7 @@ export async function POST(request: NextRequest) {
     const body = await parseRequestBody(request, registerSchema);
     await verifyTurnstileToken(body.cfTurnstileToken, getClientIp(request));
     const user = await registerUser(body);
-    const token = await signSession({ userId: user.id, email: user.email, role: user.role });
-    await setSessionCookie(token);
+    await issueSessionCookie(user);
 
     return apiOk({ user: { id: user.id, email: user.email, role: user.role } });
   } catch (error) {
@@ -64,6 +62,6 @@ export async function POST(request: NextRequest) {
       return apiError(error.message, 400);
     }
 
-    return apiError(error instanceof Error ? error.message : "Не удалось зарегистрироваться");
+    return apiErrorFrom(error, "Не удалось зарегистрироваться");
   }
 }

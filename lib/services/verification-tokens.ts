@@ -3,7 +3,7 @@ import { randomInt } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
 
-import { prisma } from "@/lib/prisma";
+import { prisma, toJsonValue } from "@/lib/prisma";
 import { getMetrics } from "@/lib/server/metrics";
 import type { VerificationTokenType } from "@prisma/client";
 
@@ -38,7 +38,7 @@ export async function createVerificationToken(
       email: normalised,
       codeHash,
       type,
-      data: data ? (data as Prisma.InputJsonValue) : Prisma.JsonNull,
+      data: data ? toJsonValue(data) : Prisma.JsonNull,
       expiresAt: new Date(Date.now() + TOKEN_TTL_MS)
     }
   });

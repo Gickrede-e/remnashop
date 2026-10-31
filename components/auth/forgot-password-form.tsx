@@ -4,13 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 
-import { publicEnv } from "@/lib/public-env";
 import { OtpInput } from "@/components/auth/otp-input";
-import { TurnstileWidget } from "@/components/auth/turnstile-widget";
+import { useTurnstile } from "@/components/auth/turnstile-widget";
+import { readApiEnvelope } from "@/lib/api-envelope";
 
 type Step = "email" | "otp";
 
-export function ForgotPasswordForm() {
+export function ForgotPasswordForm({ turnstileSiteKey = "" }: { turnstileSiteKey?: string }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
@@ -21,74 +21,51 @@ export function ForgotPasswordForm() {
   const [success, setSuccess] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(0);
   const [pending, startTransition] = useTransition();
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstile = useTurnstile(turnstileSiteKey);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const turnstileEnabled = Boolean(publicEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 
   function startCountdown() {
     setCountdown(60);
     if (timerRef.current) clearInterval(timerRef.current);
+    const resendAt = Date.now() + 60_000;
     timerRef.current = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current!);
-          return 0;
-        }
-        return prev - 1;
-      });
+      const seconds = Math.max(0, Math.ceil((resendAt - Date.now()) / 1000));
+      setCountdown(seconds);
+      if (!seconds) clearInterval(timerRef.current!);
     }, 1000);
   }
 
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
 
+  async function sendCode() {
+    setError(null);
+    try {
+      await turnstile.run(async (cfTurnstileToken) => {
+        const res = await fetch("/api/auth/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, cfTurnstileToken })
+        });
+        const payload = await readApiEnvelope(res);
+        if (!res.ok || !payload?.ok) throw new Error(payload?.error ?? "Ошибка отправки кода");
+        setStep("otp");
+        setCode("");
+        startCountdown();
+      });
+    } catch (error) {
+      setError(error instanceof Error && !(error instanceof TypeError)
+        ? error.message : "Не удалось отправить запрос. Попробуйте ещё раз.");
+    }
+  }
+
   function handleSendCode(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    if (turnstileEnabled && !turnstileToken) {
-      setError("Подождите, идёт проверка капчи…");
-      return;
-    }
-    const body = JSON.stringify({ email, cfTurnstileToken: turnstileToken ?? undefined });
-    startTransition(async () => {
-      const res = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body
-      });
-      const payload = (await res.json()) as { ok: boolean; error?: string };
-      if (!res.ok || !payload.ok) {
-        setError(payload.error ?? "Ошибка. Попробуйте снова.");
-        setTurnstileToken(null);
-        return;
-      }
-      setStep("otp");
-      startCountdown();
-    });
+    startTransition(sendCode);
   }
 
   function handleResend() {
-    if (countdown > 0) return;
-    setError(null);
-    if (turnstileEnabled && !turnstileToken) {
-      setError("Подождите, идёт проверка капчи…");
-      return;
-    }
-    const body = JSON.stringify({ email, cfTurnstileToken: turnstileToken ?? undefined });
-    startTransition(async () => {
-      const res = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body
-      });
-      const payload = (await res.json()) as { ok: boolean; error?: string };
-      if (!res.ok || !payload.ok) {
-        setError(payload.error ?? "Ошибка отправки кода.");
-        setTurnstileToken(null);
-        return;
-      }
-      setCode("");
-      startCountdown();
-    });
+    if (countdown > 0 || pending) return;
+    startTransition(sendCode);
   }
 
   function handleReset(e: React.FormEvent) {
@@ -112,9 +89,9 @@ export function ForgotPasswordForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, code, newPassword })
       });
-      const payload = (await res.json()) as { ok: boolean; error?: string };
-      if (!res.ok || !payload.ok) {
-        setError(payload.error ?? "Не удалось сбросить пароль.");
+      const payload = await readApiEnvelope(res);
+      if (!res.ok || !payload?.ok) {
+        setError(payload?.error ?? "Не удалось сбросить пароль.");
         return;
       }
       setSuccess("Пароль успешно изменён. Войдите с новым паролем.");
@@ -138,15 +115,12 @@ export function ForgotPasswordForm() {
             required
           />
         </div>
-        <TurnstileWidget
-          onToken={setTurnstileToken}
-          onExpire={() => setTurnstileToken(null)}
-        />
-        {error && <p className="authStandaloneError">{error}</p>}
+        {turnstile.widget}
+        {error && <p className="authStandaloneError" role="alert">{error}</p>}
         <button
           type="submit"
           className="authStandaloneSubmit"
-          disabled={pending || !email || (turnstileEnabled && !turnstileToken)}
+          disabled={pending || !email || !turnstile.ready}
         >
           {pending ? "Отправляем..." : "Отправить код"}
         </button>
@@ -195,7 +169,8 @@ export function ForgotPasswordForm() {
         />
       </div>
 
-      {error && <p className="authStandaloneError">{error}</p>}
+      {turnstile.widget}
+      {error && <p className="authStandaloneError" role="alert">{error}</p>}
       {success && <p className="authStandaloneSuccess">{success}</p>}
 
       <button
@@ -211,7 +186,7 @@ export function ForgotPasswordForm() {
           type="button"
           className="authStandaloneFooterLink"
           onClick={handleResend}
-          disabled={countdown > 0 || pending}
+          disabled={countdown > 0 || pending || !turnstile.ready}
         >
           {countdown > 0 ? `Отправить повторно (${countdown}с)` : "Отправить повторно"}
         </button>

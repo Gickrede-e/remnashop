@@ -22,7 +22,7 @@ vi.mock("@/lib/services/remnawave", () => ({
 }));
 
 vi.mock("@/lib/prisma", () => ({
-  prisma: mockPrisma
+  prisma: mockPrisma, toJsonValue: (value: unknown) => JSON.parse(JSON.stringify(value))
 }));
 
 import { POST } from "@/app/api/subscription/reissue/route";

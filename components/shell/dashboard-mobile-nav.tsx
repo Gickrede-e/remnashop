@@ -4,11 +4,9 @@ import Link from "next/link";
 import { MoreHorizontal, Power, type LucideIcon } from "lucide-react";
 
 import type { DashboardSidebarItem } from "@/components/shell/dashboard-sidebar";
-import type { AppShellNavArea } from "@/lib/ui/app-shell-nav";
 import { cn } from "@/lib/utils";
 
 type DashboardMobileNavProps = {
-  area: AppShellNavArea;
   primaryItems: DashboardSidebarItem[];
   otherItems: DashboardSidebarItem[];
   accountSummary: { email: string } | null;
@@ -18,23 +16,30 @@ function MobileNavItem({
   href,
   label,
   icon: Icon,
-  active
+  active,
+  tourId
 }: {
   href: string;
   label: string;
   icon: LucideIcon;
   active: boolean;
+  tourId?: string;
 }) {
   return (
-    <Link href={href} aria-current={active ? "page" : undefined} className={cn("dashMobileNavLink", active && "is-active")}>
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      data-tour={tourId}
+      className={cn("dashMobileNavLink", active && "is-active")}
+    >
       <Icon className="dashMobileNavIcon" aria-hidden="true" />
       <span className="dashMobileNavLabel">{label}</span>
     </Link>
   );
 }
 
-export function DashboardMobileNav({ area, primaryItems, otherItems, accountSummary }: DashboardMobileNavProps) {
-  if (area === "public" || !accountSummary) {
+export function DashboardMobileNav({ primaryItems, otherItems, accountSummary }: DashboardMobileNavProps) {
+  if (!accountSummary) {
     return null;
   }
 
@@ -62,7 +67,7 @@ export function DashboardMobileNav({ area, primaryItems, otherItems, accountSumm
             <form action="/api/auth/logout" method="post" className="dashMobileNavLogoutForm">
               <button type="submit" className="dashMobileNavLogoutButton">
                 <Power className="dashMobileNavIcon" aria-hidden="true" />
-                <span className="dashMobileNavLabel">LOG OUT</span>
+                <span className="dashMobileNavLabel">Выйти</span>
               </button>
             </form>
           </div>

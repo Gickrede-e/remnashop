@@ -4,7 +4,6 @@ import { DashboardPageHeader } from "@/components/blocks/dashboard/dashboard-pag
 import { PaymentCheckout } from "@/components/dashboard/payment-checkout";
 import { buildLoginHref } from "@/lib/auth/navigation";
 import { getSession } from "@/lib/auth/session";
-import { env } from "@/lib/env";
 import { getEnabledPaymentProvidersFromEnv } from "@/lib/payments/provider-config";
 import { getActivePlans } from "@/lib/services/plans";
 
@@ -23,13 +22,9 @@ export default async function DashboardBuyPage() {
     <div className="dashboardWorkspacePage dashboardSurfacePage dashboardSurfacePageBuy dashShellPageWrapper">
       <DashboardPageHeader
         title="Купить"
-        crumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Купить" }]}
+        crumbs={[{ label: "Кабинет", href: "/dashboard" }, { label: "Купить" }]}
       />
-      <PaymentCheckout
-        enabledProviders={enabledProviders}
-        plans={plans}
-        plategaPaymentMethods={env.plategaPaymentMethods}
-      />
+      <PaymentCheckout enabledProviders={enabledProviders} plans={plans} />
     </div>
   );
 }

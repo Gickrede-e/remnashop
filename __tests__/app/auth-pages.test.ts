@@ -1,6 +1,8 @@
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as registerForm from "@/components/auth/register-form";
+import * as forgotPasswordForm from "@/components/auth/forgot-password-form";
 
 const getSessionMock = vi.hoisted(() => vi.fn());
 const redirectMock = vi.hoisted(() => vi.fn());
@@ -28,7 +30,8 @@ vi.mock("@/lib/auth/session", () => ({
 
 vi.mock("@/lib/env", () => ({
   env: {
-    EMAIL_ENABLED: true
+    EMAIL_ENABLED: true,
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: "runtime-site-key"
   }
 }));
 
@@ -40,6 +43,7 @@ vi.mock("@/lib/public-env", () => ({
 
 import LoginPage from "@/app/login/page";
 import RegisterPage from "@/app/register/page";
+import ForgotPasswordPage from "@/app/forgot-password/page";
 
 describe("auth pages", () => {
   beforeEach(() => {
@@ -71,6 +75,7 @@ describe("auth pages", () => {
 
   it("renders the register page inside the semantic auth scene", async () => {
     getSessionMock.mockResolvedValue(null);
+    const formSpy = vi.spyOn(registerForm, "RegisterForm");
 
     const markup = renderToStaticMarkup(
       await RegisterPage({
@@ -89,5 +94,22 @@ describe("auth pages", () => {
     expect(markup).not.toMatch(/class="[^"]*\bauthHint\b[^"]*"/);
     expect(markup).toContain("Регистрация");
     expect(markup).toContain("ALLY42");
+    expect(formSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ turnstileSiteKey: "runtime-site-key" }),
+      undefined
+    );
+  });
+
+  it("passes the runtime Turnstile site key to password recovery", async () => {
+    getSessionMock.mockResolvedValue(null);
+    const formSpy = vi.spyOn(forgotPasswordForm, "ForgotPasswordForm");
+
+    const markup = renderToStaticMarkup(await ForgotPasswordPage());
+
+    expect(markup).toContain("Восстановление пароля");
+    expect(formSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ turnstileSiteKey: "runtime-site-key" }),
+      undefined
+    );
   });
 });

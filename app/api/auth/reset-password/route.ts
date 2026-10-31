@@ -2,7 +2,7 @@ import { type NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
-import { apiError, apiOk, getClientIp, parseRequestBody } from "@/lib/http";
+import { apiError, apiErrorFrom, apiOk, getClientIp, parseRequestBody } from "@/lib/http";
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 import { RateLimitExceededError, enforceRateLimit } from "@/lib/server/rate-limit";
@@ -38,9 +38,11 @@ export async function POST(request: NextRequest) {
     }
 
     const newHash = await bcrypt.hash(body.newPassword, 12);
+    // Bump sessionVersion so any session opened before the reset (including an
+    // attacker's, which is often why a reset happens) is invalidated server-side.
     await prisma.user.update({
       where: { id: user.id },
-      data: { passwordHash: newHash }
+      data: { passwordHash: newHash, sessionVersion: { increment: 1 } }
     });
 
     return apiOk({ message: "Пароль успешно изменён" });
@@ -48,6 +50,6 @@ export async function POST(request: NextRequest) {
     if (error instanceof RateLimitExceededError) {
       return apiError("Слишком много попыток, попробуйте позже", 429);
     }
-    return apiError(error instanceof Error ? error.message : "Не удалось сбросить пароль");
+    return apiErrorFrom(error, "Не удалось сбросить пароль");
   }
 }

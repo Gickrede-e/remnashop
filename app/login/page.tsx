@@ -1,3 +1,4 @@
+import { AuthScene } from "@/components/blocks/auth/auth-scene";
 import { AuthStandaloneCard } from "@/components/blocks/auth/auth-standalone-card";
 import { LoginForm } from "@/components/auth/login-form";
 import { getSession } from "@/lib/auth/session";
@@ -19,12 +20,10 @@ export default async function LoginPage({
   const nextPath = sanitizeNextPath(resolvedSearchParams?.next);
 
   return (
-    <main className="authScene">
-      <div className="authSceneViewport">
-        <AuthStandaloneCard title="Вход">
-          <LoginForm emailEnabled={env.EMAIL_ENABLED} nextPath={nextPath} />
-        </AuthStandaloneCard>
-      </div>
-    </main>
+    <AuthScene>
+      <AuthStandaloneCard title="Вход">
+        <LoginForm emailEnabled={env.EMAIL_ENABLED} nextPath={nextPath} />
+      </AuthStandaloneCard>
+    </AuthScene>
   );
 }

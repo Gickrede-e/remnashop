@@ -10,9 +10,11 @@ type DashboardPageHeaderProps = {
   title: string;
   crumbs: Crumb[];
   action?: ReactNode;
+  /** Доп. элемент перед основным action (напр. алерт «Истекает через N дней»). */
+  alert?: ReactNode;
 };
 
-export function DashboardPageHeader({ title, crumbs, action }: DashboardPageHeaderProps) {
+export function DashboardPageHeader({ title, crumbs, action, alert }: DashboardPageHeaderProps) {
   const supportUrl = publicEnv.NEXT_PUBLIC_SUPPORT_TELEGRAM_URL.trim();
   const resolvedAction =
     action ??
@@ -26,6 +28,7 @@ export function DashboardPageHeader({ title, crumbs, action }: DashboardPageHead
         Поддержка
       </Link>
     ) : null);
+  const hasHeaderAction = Boolean(alert || resolvedAction);
 
   return (
     <header className="dashPageHeader">
@@ -50,7 +53,12 @@ export function DashboardPageHeader({ title, crumbs, action }: DashboardPageHead
           ))}
         </ol>
       </div>
-      {resolvedAction ? <div className="dashPageHeaderAction">{resolvedAction}</div> : null}
+      {hasHeaderAction ? (
+        <div className="dashPageHeaderAction">
+          {alert}
+          {resolvedAction}
+        </div>
+      ) : null}
     </header>
   );
 }

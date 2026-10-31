@@ -17,7 +17,7 @@ export default async function ProfilePage() {
       <DashboardPageHeader
         title="Профиль"
         crumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: "Кабинет", href: "/dashboard" },
           { label: "Профиль" }
         ]}
       />

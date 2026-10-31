@@ -1,5 +1,11 @@
+// components/shared/logo.tsx
+//
+// Новый словознак для GickShop в духе терминала:
+//   gickshop_
+// где «_» — мигающий зелёный курсор. Без Shield-иконки, без подложки.
+// Полностью текстовый знак, читаемый в любом масштабе.
+
 import Link from "next/link";
-import { Shield } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -17,16 +23,13 @@ export function Logo({
   const rail = variant === "rail";
 
   return (
-    <Link href={href} className={cn("appLogo", compact && "appLogoCompact", rail && "appLogoRail", className)}>
-      <span className="appLogoMark" aria-hidden="true">
-        <span className="appLogoMarkCore">
-          <Shield className="iconSm" />
-        </span>
-      </span>
-      <span className="appLogoBody">
-        {!compact ? <span className="appLogoEyebrow">{rail ? "Единый контур" : "Защищённый доступ"}</span> : null}
-        <span className="appLogoWordmark">GickShop</span>
-      </span>
+    <Link
+      href={href}
+      className={cn("appLogo", compact && "appLogoCompact", rail && "appLogoRail", className)}
+      aria-label="GickShop"
+    >
+      <span className="appLogoWordmark">gickshop</span>
+      <span className="appLogoCursor" aria-hidden="true" />
     </Link>
   );
 }

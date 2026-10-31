@@ -2,8 +2,8 @@ import { type NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
-import { getSession } from "@/lib/auth/session";
-import { apiError, apiOk, parseRequestBody } from "@/lib/http";
+import { getSession, issueSessionCookie } from "@/lib/auth/session";
+import { apiError, apiErrorFrom, apiOk, parseRequestBody } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { RateLimitExceededError, enforceRateLimit } from "@/lib/server/rate-limit";
 
@@ -45,13 +45,19 @@ export async function POST(request: NextRequest) {
     }
 
     const newHash = await bcrypt.hash(body.newPassword, 12);
-    await prisma.user.update({
+    // Bump sessionVersion so every previously-issued session token is revoked
+    // (a stolen cookie stops working the moment the password changes), then
+    // re-issue THIS caller's cookie at the new version so they stay logged in.
+    const updated = await prisma.user.update({
       where: { id: user.id },
-      data: { passwordHash: newHash }
+      data: { passwordHash: newHash, sessionVersion: { increment: 1 } },
+      select: { id: true, email: true, role: true, sessionVersion: true }
     });
+
+    await issueSessionCookie(updated);
 
     return apiOk({ message: "Пароль изменён" });
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Не удалось изменить пароль");
+    return apiErrorFrom(error, "Не удалось изменить пароль");
   }
 }

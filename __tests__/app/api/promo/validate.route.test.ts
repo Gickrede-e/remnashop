@@ -15,7 +15,7 @@ vi.mock("@/lib/api-session", () => ({
 }));
 
 vi.mock("@/lib/prisma", () => ({
-  prisma: mockPrisma
+  prisma: mockPrisma, toJsonValue: (value: unknown) => JSON.parse(JSON.stringify(value))
 }));
 
 vi.mock("@/lib/services/promos", () => ({

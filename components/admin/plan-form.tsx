@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { slugToRemnawaveTag, slugify } from "@/lib/utils";
+import { readApiEnvelope } from "@/lib/api-envelope";
 
 type PlanFormValues = {
   slug: string;
@@ -69,9 +70,9 @@ export function PlanForm({
         })
       });
 
-      const payload = (await response.json()) as { ok: boolean; error?: string };
-      if (!response.ok || !payload.ok) {
-        setMessage(payload.error ?? "Не удалось сохранить тариф");
+      const payload = await readApiEnvelope(response);
+      if (!response.ok || !payload?.ok) {
+        setMessage(payload?.error ?? "Не удалось сохранить тариф");
         return;
       }
 

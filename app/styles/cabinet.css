@@ -1,0 +1,1433 @@
+/* ============================================================================
+ * Кабинет и лендинг — слой редизайна 2026 (шаблоны Claude Design):
+ * статус-точка и пасхалка-кот, кубы в сайдбаре и плитках, главная «Подписка»,
+ * экран «Помощь» (методичка и ссылка на поддержку), обучение (тур).
+ * Подключается в app/layout.tsx после globals.css — порядок импорта = порядок
+ * каскада, токены берутся из globals.css.
+ * ========================================================================== */
+
+/* ступенчатое появление контента страниц кабинета */
+@keyframes gsScreenIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dashShellMain .dashShellPageWrapper > * { animation: gsScreenIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .dashShellMain .dashShellPageWrapper > *:nth-child(2) { animation-delay: 70ms; }
+  .dashShellMain .dashShellPageWrapper > *:nth-child(3) { animation-delay: 140ms; }
+  .dashShellMain .dashShellPageWrapper > *:nth-child(4) { animation-delay: 210ms; }
+  .dashShellMain .dashShellPageWrapper > *:nth-child(5) { animation-delay: 280ms; }
+  .dashShellMain .dashShellPageWrapper > *:nth-child(6) { animation-delay: 350ms; }
+}
+
+/* пасхалка: ASCII-кот выглядывает из-за логотипа при ховере.
+   Разметка: контейнер с data-logo, внутри .gickCatSlot > .gickCat > три span-строки. */
+.gickCatSlot {
+  position: absolute;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.gickCat {
+  display: block;
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--accent-primary);
+  transform: translateY(105%) rotate(-5deg);
+  transition: transform 0.32s cubic-bezier(0.3, 1.45, 0.45, 1);
+}
+
+.gickCat span { display: block; }
+
+.gickCatSlot.is-landing {
+  bottom: calc(100% - 2px);
+  left: 4px;
+  height: 50px;
+}
+
+.gickCatSlot.is-landing .gickCat {
+  font-size: 12px;
+}
+
+.gickCatSlot.is-sidebar {
+  right: 12px;
+  bottom: 14px;
+  height: 42px;
+}
+
+.gickCatSlot.is-sidebar .gickCat {
+  font-size: 10px;
+}
+
+[data-logo]:hover .gickCat { transform: translateY(0) rotate(0deg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .gickCat { transition: none; }
+}
+
+/* кабинет: невесомая геометрия в сайдбаре и стат-плитках (шаблон cabinet
+   из Claude Design). Слои: фон элемента → кубы (z:0) → контент (z:1);
+   z-index:-1 из макета не работает поверх непрозрачного фона сайдбара. */
+.dashSidebar {
+  overflow: hidden;
+}
+
+.dashSidebar > * {
+  position: relative;
+  z-index: 1;
+}
+
+.dashSidebarCubes {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.dashStatTile {
+  position: relative;
+  overflow: hidden;
+}
+
+.dashStatTile > * {
+  position: relative;
+  z-index: 1;
+}
+
+.dashStatTileCubes {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* мини-бар трафика внутри стат-плитки */
+.dashStatTileMeter {
+  width: 100%;
+  max-width: 180px;
+  height: 4px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.dashStatTileMeterFill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent-primary);
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Кабинет: главная «Подписка» (действия, алерт в шапке), экран «Помощь»
+ * (методичка и ссылка на поддержку), обучение (тур).
+ * Перенос из GickShop Design System, templates/cabinet/Cabinet.dc.html.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/* Шапка страницы кабинета: алерт + действие справа. */
+.dashPageHeaderAction {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* Cabinet home: the days-left card leads the page and takes its tone from the subscription
+   state; Status, Traffic and Actions share one two-column grid so their widths line up. */
+.dashDaysLeft {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 2rem 2.25rem;
+  border: 1px solid var(--surface-line);
+  border-radius: 1.25rem;
+  background: var(--canvas-1);
+}
+
+.dashDaysLeft.is-ending,
+.dashDaysLeft.is-expired {
+  border-color: color-mix(in srgb, hsl(var(--app-danger)) 45%, transparent);
+}
+
+.dashDaysLeft.is-expired {
+  background: color-mix(in srgb, hsl(var(--app-danger)) 6%, var(--canvas-1));
+}
+
+.dashDaysLeftMain {
+  display: flex;
+  flex: 1 1 22rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.dashDaysLeftBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 32%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+  color: var(--accent-primary);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dashDaysLeftBadge::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.dashDaysLeft.is-ending .dashDaysLeftBadge,
+.dashDaysLeft.is-expired .dashDaysLeftBadge {
+  border-color: color-mix(in srgb, hsl(var(--app-danger)) 45%, transparent);
+  background: color-mix(in srgb, hsl(var(--app-danger)) 8%, transparent);
+  color: hsl(var(--app-danger-strong));
+}
+
+.dashDaysLeftCount {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9rem;
+  margin: 0;
+}
+
+.dashDaysLeftNumber {
+  color: var(--text-primary);
+  font-family: var(--font-heading);
+  font-size: clamp(4.5rem, 9vw, 6.5rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+}
+
+.dashDaysLeft.is-ending .dashDaysLeftNumber {
+  color: hsl(var(--app-danger-strong));
+}
+
+.dashDaysLeftUnit {
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+}
+
+/* Only the day count gets hero size; a sentence that big ("Подписки нет") just shouts. */
+.dashDaysLeftHeadline {
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--font-heading);
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.dashDaysLeftNote {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.dashDaysLeftActions {
+  display: flex;
+  flex: 0 1 18.75rem;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dashOverviewGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(max(17.5rem, calc(50% - 0.625rem)), 1fr));
+  gap: 1.25rem;
+}
+
+@media (max-width: 768px) {
+  .dashDaysLeft {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    padding: 1.4rem;
+  }
+
+  .dashDaysLeftMain,
+  .dashDaysLeftActions {
+    flex-basis: auto;
+  }
+
+  .dashDaysLeftNumber {
+    font-size: 5rem;
+  }
+
+  .dashDaysLeftUnit {
+    font-size: 1.25rem;
+  }
+
+  /* Phones get the compact Status / Traffic pair instead of the big tiles. */
+  .dashOverviewGrid > .dashStatTile {
+    display: none;
+  }
+
+  .dashOverviewCompactStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.dashListRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dashListRowTitle {
+  display: block;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.dashListRowHint {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-tertiary);
+  font-size: 0.72rem;
+}
+
+.dashListRowChevron {
+  color: var(--text-tertiary);
+}
+
+.dashInlineStats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 36px;
+}
+
+.dashInlineStat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.dashInlineStatValue {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.dashInlineStatValue.is-accent {
+  color: var(--accent-primary);
+}
+
+.dashHint + .dashInlineStats {
+  margin-top: 1.1rem;
+}
+
+/* Подсказка под контентом карточки, поле «скопировать ссылку», строки таблиц. */
+.dashHint {
+  margin: 1rem 0 0;
+  color: var(--text-tertiary);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.dashCopyField {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--surface-line);
+  border-radius: 0.85rem;
+  background: var(--canvas-0);
+}
+
+.dashCopyFieldValue {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-secondary);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.85rem;
+}
+
+.dashCardToolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.dashTableTitle {
+  display: block;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+.dashTableSub {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: 0.76rem;
+}
+
+.dashTableCellActions {
+  text-align: right;
+}
+
+/* Методичка «Не работает подключение?» — <details> без нативного маркера. */
+.helpTroubleshootingCard {
+  align-content: start;
+}
+
+.helpIntro {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.helpPlatform {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.helpPlatformLabel {
+  color: var(--text-tertiary);
+  font-size: 0.78rem;
+}
+
+.helpPlatformSwitch {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--surface-line);
+  border-radius: 999px;
+  background: var(--canvas-0);
+}
+
+.helpPlatformOption {
+  min-height: 40px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.helpPlatformOption[aria-pressed="true"] {
+  background: var(--accent-primary);
+  color: var(--accent-fg);
+}
+
+.helpPlatformOption:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+.helpGroups {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.helpGroup {
+  display: grid;
+  gap: 8px;
+}
+
+.helpGroupLabel {
+  margin: 4px 0 0;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-primary);
+}
+
+.helpStep {
+  border: 1px solid var(--surface-line);
+  border-radius: 12px;
+  background: var(--canvas-0);
+  overflow: hidden;
+}
+
+.helpStepSummary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+
+.helpStepSummary::-webkit-details-marker {
+  display: none;
+}
+
+.helpStepNum {
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-primary);
+}
+
+.helpStepTitle {
+  flex: 1;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.helpStepChevron {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  transition: transform 0.2s ease;
+}
+
+.helpStep[open] .helpStepChevron {
+  transform: rotate(90deg);
+}
+
+.helpStepBody {
+  padding: 0 14px 13px 43px;
+  color: var(--text-tertiary);
+  font-size: 0.78rem;
+  line-height: 1.65;
+}
+
+.helpStepBody p {
+  margin: 0 0 8px;
+}
+
+.helpStepBody p:last-child {
+  margin-bottom: 0;
+}
+
+.helpStepBody strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.helpStepBody a {
+  color: var(--accent-primary);
+}
+
+.helpStepNote {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent-primary) 6%, transparent);
+  font-size: 0.72rem;
+}
+
+/* Loading: the root shows the wordmark with its blinking cursor; cabinet and admin pages show a
+   placeholder in the shape of a page (title, breadcrumbs, cards) so nothing jumps when it arrives. */
+.appLoading {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+}
+
+.appLoadingMark .appLogoWordmark {
+  font-size: 2rem;
+}
+
+.appLoadingMark .appLogoCursor {
+  width: 0.9rem;
+  height: 1.55rem;
+  transform: translateY(0.25rem);
+}
+
+.pageSkeletonTitle {
+  width: 16rem;
+  max-width: 100%;
+  height: 2.5rem;
+}
+
+.pageSkeletonCrumbs {
+  width: 9rem;
+  height: 0.85rem;
+}
+
+/* The shared .skeleton gradient is near-black and vanished on the cabinet canvas; these shimmer
+   between the card colour and a step lighter instead. */
+.pageSkeletonTitle,
+.pageSkeletonCrumbs,
+.pageSkeletonCard {
+  background: linear-gradient(90deg, var(--canvas-1) 0%, #1d1d1d 50%, var(--canvas-1) 100%);
+  background-size: 200% 100%;
+}
+
+.pageSkeletonCard {
+  height: 9rem;
+  border: 1px solid var(--surface-line);
+  border-radius: 1.25rem;
+}
+
+.pageSkeletonCard.is-tall {
+  height: 13rem;
+}
+
+/* Help: support card after the guide, shown only when a support URL is configured. */
+.helpSupportCard {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-color: color-mix(in srgb, var(--accent-primary) 32%, transparent);
+}
+
+.helpSupportText {
+  display: grid;
+  flex: 1 1 280px;
+  gap: 6px;
+  min-width: 0;
+}
+
+.helpSupportAction {
+  gap: 10px;
+  white-space: nowrap;
+}
+
+/* Profile: show/hide toggle inside each password field and the live checklist. */
+.profilePasswordInput {
+  position: relative;
+}
+
+.profilePasswordInput .profileFormInput {
+  padding-right: 3rem;
+}
+
+.profilePasswordToggle {
+  position: absolute;
+  top: 50%;
+  right: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  transform: translateY(-50%);
+  border: none;
+  border-radius: 0.6rem;
+  background: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+
+.profilePasswordToggle:hover,
+.profilePasswordToggle[aria-pressed="true"] {
+  color: var(--text-primary);
+}
+
+.profilePasswordToggle:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: -4px;
+}
+
+.profilePasswordChecks {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.profilePasswordCheck {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-tertiary);
+  font-size: 0.8rem;
+}
+
+.profilePasswordCheck.is-met {
+  color: var(--text-primary);
+}
+
+.profilePasswordCheck.is-met svg {
+  color: var(--accent-primary);
+}
+
+.helpTourLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px dashed color-mix(in srgb, var(--accent-primary) 45%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+  color: var(--accent-primary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Обучение (тур). Геометрия подсветки и подсказки приходит инлайном из JS;
+ * анимации живут в классах, чтобы reduced-motion гасил их каскадом. */
+.tourOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+}
+
+.tourBackdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 5, 4, 0.74);
+  pointer-events: none;
+}
+
+.tourSpot {
+  position: absolute;
+  border-radius: 16px;
+  box-shadow: 0 0 0 200vmax rgba(4, 5, 4, 0.74);
+  pointer-events: none;
+  transition:
+    top 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    left 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    height 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tourSpotPulse {
+  position: absolute;
+  inset: 0;
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 75%, transparent);
+  border-radius: 16px;
+  animation: gsTourPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.tourTip {
+  position: absolute;
+  animation: gsTourTipIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.tourTipCard {
+  display: grid;
+  gap: 10px;
+  padding: 20px 20px 16px;
+  border: 1px solid var(--surface-line);
+  border-radius: 16px;
+  background: #111310;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+
+.tourTipStep {
+  margin: 0;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-primary);
+}
+
+.tourTipTitle {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.tourTipText {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.tourTipFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.tourTipDots {
+  font-size: 0.7rem;
+  letter-spacing: 0.35em;
+  color: var(--accent-primary);
+}
+
+.tourTipActions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.tourSkip {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-tertiary);
+  font-size: 0.7rem;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.tourNext {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent-primary);
+  color: var(--accent-fg);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+@keyframes gsTourPulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-primary) 40%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 12px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@keyframes gsTourTipIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tourSpot,
+  .tourSpotPulse,
+  .tourTip {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* Devices: the device list beside an «add a device» card; each row carries a platform icon. */
+.devicesLayout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+.devicesCard {
+  flex: 999 1 30rem;
+  min-width: 0;
+}
+
+.devicesAddCard {
+  flex: 1 1 20rem;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.devicesAddCard .dashHint,
+.devicesEmpty .dashHint {
+  margin: 0;
+}
+
+.devicesEmpty {
+  display: grid;
+  justify-items: start;
+  gap: 0.5rem;
+}
+
+/* The QR is for adding a phone while the cabinet is open on a computer; a phone can't scan its own screen. */
+.devicesQr {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.devicesQr svg {
+  border-radius: 12px;
+}
+
+.devicesQrCaption {
+  color: var(--text-tertiary);
+  font-size: 0.76rem;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .devicesQr {
+    display: none;
+  }
+}
+
+.devicesEmptyLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  color: var(--accent-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.deviceRows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.deviceRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-top: 1px solid rgba(244, 244, 238, 0.08);
+}
+
+.deviceRow:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.deviceRowIcon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--surface-line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+}
+
+.deviceRowText {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 3px;
+  min-width: 0;
+}
+
+.deviceRowName {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.deviceRowMeta {
+  color: var(--text-tertiary);
+  font-size: 0.76rem;
+}
+
+/* Referrals: share buttons, the three-step explainer and every reward with its status. */
+.referralShare {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 1rem;
+}
+
+.referralSteps,
+.referralRewards {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.referralStep,
+.referralReward {
+  display: flex;
+  gap: 14px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(244, 244, 238, 0.08);
+}
+
+.referralStep {
+  align-items: flex-start;
+}
+
+.referralReward {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.referralStep:first-child,
+.referralReward:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.referralStepNum {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 45%, transparent);
+  border-radius: 999px;
+  color: var(--accent-primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.referralStepText,
+.referralRewardWho {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.referralRewardWho {
+  flex: 1 1 12rem;
+}
+
+.referralStepTitle,
+.referralRewardEmail {
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.referralStepHint,
+.referralRewardDate {
+  color: var(--text-tertiary);
+  font-size: 0.76rem;
+}
+
+.referralRewardValue {
+  color: var(--accent-primary);
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* History: what was bought and what a promo code saved; on phones each row becomes a card. */
+.historyTable tbody td,
+.historyTable thead th {
+  padding-right: 1rem;
+}
+
+.historyTable tbody td:last-child,
+.historyTable thead th:last-child {
+  padding-right: 0;
+}
+
+.historyNumber,
+.historyDate {
+  white-space: nowrap;
+}
+
+.historyPurchaseTitle {
+  display: block;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.historyPromo {
+  display: block;
+  margin-top: 4px;
+  color: var(--accent-primary);
+  font-size: 0.76rem;
+}
+
+.historyAmount {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.historyTable thead .historyAmountHead {
+  text-align: right;
+}
+
+.historyAction {
+  text-align: right;
+}
+
+.historyAction .button {
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .historyTable {
+    min-width: 0;
+  }
+
+  .historyTable thead {
+    display: none;
+  }
+
+  .historyTable tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .historyTable tbody tr {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "purchase purchase amount"
+      "date number status"
+      "action action action";
+    align-items: center;
+    gap: 8px 10px;
+    padding: 16px;
+    border: 1px solid var(--surface-line);
+    border-radius: 18px;
+    background: var(--canvas-0);
+  }
+
+  .historyTable tbody td {
+    padding: 0;
+    border: none;
+  }
+
+  .historyTable tbody tr:hover td {
+    background: none;
+  }
+
+  .historyPurchase {
+    grid-area: purchase;
+  }
+
+  .historyAmount {
+    grid-area: amount;
+    font-size: 1.05rem;
+  }
+
+  .historyDate {
+    grid-area: date;
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+  }
+
+  .historyNumber {
+    grid-area: number;
+  }
+
+  .historyNumber .dashTableTitle {
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .historyStatus {
+    grid-area: status;
+  }
+
+  .historyAction {
+    grid-area: action;
+  }
+
+  .historyAction:empty {
+    display: none;
+  }
+
+  .historyAction .button {
+    width: 100%;
+    min-height: 48px;
+  }
+}
+
+/* Buy: one page on desktop (sections on the left, a sticky order summary with the live total on
+   the right); phones show one step at a time, chosen by data-step, and move on only with «Далее». */
+.checkoutLayout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+.checkoutMain {
+  display: grid;
+  flex: 999 1 30rem;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.checkoutSummary {
+  position: sticky;
+  top: 1.5rem;
+  flex: 1 1 20rem;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.checkoutSummary .dashCardHead {
+  margin-bottom: 0;
+}
+
+.checkoutSectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.checkoutSectionTitle:focus {
+  outline: none;
+}
+
+.checkoutSectionNum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--surface-line);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.checkoutPlanCard {
+  justify-content: flex-start;
+}
+
+.checkoutPlanCardRight {
+  margin-left: auto;
+}
+
+.checkoutPlanRing {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  box-sizing: border-box;
+  border: 2px solid rgba(244, 244, 238, 0.3);
+  border-radius: 999px;
+}
+
+.checkoutPlanCard.is-selected,
+.checkoutDurationOption.is-active {
+  border-color: color-mix(in srgb, var(--accent-primary) 60%, transparent);
+  background: color-mix(in srgb, var(--accent-primary) 7%, transparent);
+}
+
+.checkoutPlanCard.is-selected .checkoutPlanRing {
+  border: 6px solid var(--accent-primary);
+}
+
+.checkoutDurationGrid {
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+}
+
+.checkoutTotal {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 1rem;
+  border-top: 1px solid var(--surface-line);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.checkoutTotalValue {
+  color: var(--text-primary);
+  font-family: var(--font-heading);
+  font-size: 2.1rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.checkoutTotalMeta {
+  margin: -0.5rem 0 0;
+  color: var(--text-tertiary);
+  font-size: 0.78rem;
+  text-align: right;
+}
+
+.checkoutPayBtn {
+  width: 100%;
+  min-height: 3.25rem;
+  font-weight: 600;
+}
+
+.checkoutSummary .checkoutProviderNote {
+  text-align: center;
+}
+
+.checkoutNextBtn,
+.checkoutStepBack,
+.dashCheckout > .checkoutStepIndicator {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .checkoutSummary {
+    position: static;
+  }
+
+  .dashCheckout > .checkoutStepIndicator {
+    display: flex;
+  }
+
+  .checkoutNextBtn {
+    display: inline-flex;
+    width: 100%;
+    margin-top: 1rem;
+  }
+
+  .checkoutStepBack {
+    display: inline-flex;
+    justify-self: start;
+    min-height: 44px;
+    margin-bottom: 0.5rem;
+  }
+
+  .dashCheckout[data-step="plan"] [data-checkout-step]:not([data-checkout-step="plan"]),
+  .dashCheckout[data-step="duration"] [data-checkout-step]:not([data-checkout-step="duration"]),
+  .dashCheckout[data-step="payment"] [data-checkout-step]:not([data-checkout-step="payment"]) {
+    display: none;
+  }
+}
+
+/* Typography rules for Cyrillic on a dark background, set over the older globals.css values:
+   mixed-case text is not tracked and only large text is tightened, slightly; small capitals get
+   +0.08em instead of up to 0.32em, and buttons and form labels drop capitals altogether; 600
+   replaces 700, because light text on black reads heavier than its weight; digits that sit in
+   columns or change are tabular. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.panelTitle {
+  letter-spacing: -0.01em;
+}
+
+.dashPageTitle {
+  letter-spacing: -0.01em;
+}
+
+.dashCardTitle,
+.dashBreadcrumb,
+.dashSidebarLink,
+.dashSidebarLogoutEmail,
+.dashStatTileValue,
+.label,
+.authStandaloneTitle,
+.authStandaloneInput,
+.authStandaloneInput::placeholder,
+.authStandaloneFooter,
+.authForgotLink {
+  letter-spacing: 0;
+}
+
+.screenHeaderEyebrow,
+.screenHeaderEyebrowCompact,
+.authStandaloneBrand,
+.dashSidebarBrandTagline,
+.dashSidebarOther > .dashSidebarOtherSummary,
+.dashStatTileLabel,
+.dashOverviewCompactStatLabel,
+.dashTable thead th,
+.statusBadge,
+.controlPanelEyebrow,
+.controlMetricLabel,
+.controlInfoLabel,
+.providerStatusBadge,
+.adminRecordMetadataLabel,
+.adminSummaryLabel {
+  letter-spacing: 0.08em;
+}
+
+.dashStatusPill,
+.badge {
+  letter-spacing: 0.06em;
+}
+
+.dashSidebarCta,
+.dashSidebarLogoutBtn,
+.authStandaloneSubmit,
+.profileFormSubmit,
+.profileFormLabel {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.dashPageTitle,
+.dashSidebarLink.is-active,
+.dashSidebarCta,
+.dashSidebarLogoutBtn,
+.dashStatTileValue,
+.dashOverviewCompactStatValue,
+.dashStatusPill,
+.badge,
+.authStandaloneTitle,
+.authStandaloneSubmit,
+.profileFormSubmit,
+.checkoutPlanCardPrice,
+.checkoutDurationPrice,
+.controlPanelEyebrow,
+.controlMetricLabel,
+.controlInfoLabel,
+.providerStatusBadge,
+.adminRecordMetadataLabel,
+.adminSummaryLabel,
+.dataTableHead {
+  font-weight: 600;
+}
+
+.profileFormLabel {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.dashStatTileValue,
+.dashOverviewCompactStatValue,
+.checkoutPlanCardPrice,
+.checkoutDurationPrice,
+.dashTable {
+  font-variant-numeric: tabular-nums;
+}

@@ -1,5 +1,5 @@
 import { requireApiAdminSession } from "@/lib/api-session";
-import { apiError, apiOk, parseRequestBody } from "@/lib/http";
+import { apiErrorFrom, apiOk, parseRequestBody } from "@/lib/http";
 import { toggleUserSchema } from "@/lib/schemas/admin";
 import { toggleUserRemnawaveState } from "@/lib/services/subscriptions";
 
@@ -20,6 +20,6 @@ export async function POST(request: Request, { params }: Params) {
       })
     });
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Не удалось изменить статус пользователя", 400);
+    return apiErrorFrom(error, "Не удалось изменить статус пользователя");
   }
 }

@@ -1,16 +1,13 @@
 import { PaymentProvider, PaymentStatus } from "@prisma/client";
 
 import { env } from "@/lib/env";
-import { isSupportedPlategaPaymentMethod } from "@/lib/payments/platega-methods";
 import { calculateDurationPricing, normalizePaymentMonths } from "@/lib/payments/pricing";
 import { isPaymentProviderEnabledFromEnv } from "@/lib/payments/provider-config";
-import { prisma } from "@/lib/prisma";
+import { prisma, toJsonValue } from "@/lib/prisma";
 import { logger, serializeError } from "@/lib/server/logger";
-import { logAdminAction } from "@/lib/services/admin-logs";
-import { mapPlategaStatus, mapYooKassaStatus } from "@/lib/services/payment-status";
-import { registerPromoUsage, validatePromoCode } from "@/lib/services/promos";
-import { activateSubscriptionFromPayment } from "@/lib/services/subscriptions";
-import { createPlategaPayment, getPlategaPaymentStatus } from "@/lib/services/platega";
+import { mapYooKassaStatus } from "@/lib/services/payment-status";
+import { failPromoUsage, registerPromoUsage, validatePromoCode } from "@/lib/services/promos";
+import { activateSubscriptionFromPayment } from "@/lib/services/payment-activation";
 import {
   createYooKassaPayment,
   getYooKassaPayment,
@@ -18,13 +15,22 @@ import {
   verifyYooKassaIp
 } from "@/lib/services/yookassa";
 
+// Marks a just-created payment FAILED with the reason in its payload so it
+// isn't left orphaned as PENDING.
+async function failPayment(paymentId: string, reason: string) {
+  const result = await prisma.payment.updateMany({
+    where: { id: paymentId, activationConfirmedAt: null, status: { not: PaymentStatus.SUCCEEDED } },
+    data: { status: PaymentStatus.FAILED, providerPayload: toJsonValue({ error: reason }) }
+  });
+  return result.count > 0;
+}
+
 export async function createPaymentForUser(input: {
   userId: string;
   planId: string;
   provider: PaymentProvider;
   promoCode?: string;
   months?: number;
-  paymentMethod?: number;
 }) {
   if (!isPaymentProviderEnabledFromEnv(input.provider)) {
     throw new Error("Способ оплаты недоступен");
@@ -55,25 +61,6 @@ export async function createPaymentForUser(input: {
   }
 
   const amount = promoOutcome?.finalAmount ?? durationPricing.subtotalAmount;
-  let selectedPlategaPaymentMethod: number | null = null;
-
-  if (input.provider === PaymentProvider.PLATEGA) {
-    selectedPlategaPaymentMethod = input.paymentMethod ?? env.plategaPaymentMethods[0] ?? null;
-    if (!selectedPlategaPaymentMethod) {
-      throw Object.assign(new Error("Методы оплаты Platega не настроены"), {
-        status: 400
-      });
-    }
-
-    if (
-      !isSupportedPlategaPaymentMethod(selectedPlategaPaymentMethod) ||
-      !env.plategaPaymentMethods.includes(selectedPlategaPaymentMethod)
-    ) {
-      throw Object.assign(new Error("Недоступный метод оплаты Platega"), {
-        status: 400
-      });
-    }
-  }
 
   const payment = await prisma.payment.create({
     data: {
@@ -89,69 +76,56 @@ export async function createPaymentForUser(input: {
   });
 
   if (promoOutcome?.promo.id) {
-    await registerPromoUsage({
-      promoCodeId: promoOutcome.promo.id,
-      userId: input.userId,
-      paymentId: payment.id
-    });
+    try {
+      await registerPromoUsage({
+        promoCodeId: promoOutcome.promo.id,
+        userId: input.userId,
+        paymentId: payment.id
+      });
+    } catch (error) {
+      // The atomic reservation rejected this redemption (global or per-user cap
+      // reached — possibly via a concurrent request that won the race). Mark the
+      // just-created payment FAILED so it isn't left orphaned as PENDING, then
+      // surface the error.
+      await failPayment(payment.id, error instanceof Error ? error.message : "Promo reservation failed");
+      throw error;
+    }
   }
 
   const returnUrl = `${env.NEXT_PUBLIC_SITE_URL}/dashboard`;
-  const failUrl = `${env.NEXT_PUBLIC_SITE_URL}/dashboard?payment=failed`;
 
   try {
-    if (input.provider === PaymentProvider.YOOKASSA) {
-      const remote = await createYooKassaPayment({
-        amount,
-        description: `GickShop — Тариф ${plan.name}`,
-        paymentId: payment.id,
-        returnUrl
-      });
-
-      return prisma.payment.update({
-        where: { id: payment.id },
-        data: {
-          externalPaymentId: remote.id,
-          confirmationUrl: remote.confirmation?.confirmation_url ?? null,
-          providerPayload: JSON.parse(JSON.stringify(remote))
-        }
-      });
-    }
-
-    const remote = await createPlategaPayment({
+    const remote = await createYooKassaPayment({
       amount,
       description: `GickShop — Тариф ${plan.name}`,
       paymentId: payment.id,
-      successUrl: returnUrl,
-      failUrl,
-      paymentMethod: selectedPlategaPaymentMethod!
+      returnUrl
     });
 
     return prisma.payment.update({
       where: { id: payment.id },
       data: {
-        externalPaymentId: remote.id ?? remote.transactionId ?? null,
-        confirmationUrl: remote.payment_url ?? remote.redirect ?? null,
-        providerPayload: JSON.parse(JSON.stringify(remote))
+        externalPaymentId: remote.id,
+        confirmationUrl: remote.confirmation?.confirmation_url ?? null,
+        providerPayload: toJsonValue(remote)
       }
     });
   } catch (error) {
-    await prisma.payment.update({
-      where: { id: payment.id },
-      data: {
-        status: PaymentStatus.FAILED,
-        providerPayload: JSON.parse(
-          JSON.stringify({
-            error: error instanceof Error ? error.message : "Unknown payment provider error"
-          })
-        )
-      }
-    });
+    const failed = await failPayment(payment.id, error instanceof Error ? error.message : "Unknown payment provider error");
+    // Release the promo reservation when the provider call fails — otherwise an
+    // abandoned/declined checkout permanently burns the user's per-user allotment
+    // and drains a limited promo's global supply.
+    if (failed && promoOutcome?.promo.id) {
+      await failPromoUsage(payment.id).catch((rollbackError) => {
+        logger.error("payment.promo_rollback_failed", {
+          paymentId: payment.id,
+          error: serializeError(rollbackError)
+        });
+      });
+    }
     throw error;
   }
 }
-
-export const createPaymentIntent = createPaymentForUser;
 
 export class WebhookIpForbiddenError extends Error {
   constructor(message = "Webhook source IP is not allowlisted") {
@@ -203,10 +177,6 @@ function mergeProviderPayload(current: unknown, patch: Record<string, unknown>) 
   );
 }
 
-function toErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Unknown payment processing error";
-}
-
 function assertYooKassaRemotePaymentMatchesLocal(input: {
   localPayment: {
     id: string;
@@ -254,100 +224,6 @@ function assertYooKassaRemotePaymentMatchesLocal(input: {
   }
 }
 
-async function writePaymentProcessingFailure(input: {
-  paymentId: string;
-  provider: PaymentProvider;
-  phase: string;
-  error: unknown;
-  details?: Record<string, unknown>;
-}) {
-  const message = toErrorMessage(input.error);
-  const currentPayment = await prisma.payment.findUnique({
-    where: { id: input.paymentId },
-    select: { providerPayload: true }
-  });
-
-  logger.error("payment.processing_failed", {
-    paymentId: input.paymentId,
-    provider: input.provider,
-    phase: input.phase,
-    message,
-    error: serializeError(input.error),
-    details: input.details
-  });
-
-  await Promise.allSettled([
-    prisma.payment.update({
-      where: { id: input.paymentId },
-      data: {
-        providerPayload: mergeProviderPayload(currentPayment?.providerPayload, {
-          ...(input.details ? { details: input.details } : {}),
-          lastProcessingError: {
-            phase: input.phase,
-            message,
-            at: new Date().toISOString()
-          }
-        })
-      }
-    }),
-    logAdminAction({
-      action: "PAYMENT_SYNC_ERROR",
-      targetType: "PAYMENT",
-      targetId: input.paymentId,
-      details: {
-        provider: input.provider,
-        phase: input.phase,
-        message,
-        ...(input.details ?? {})
-      }
-    })
-  ]);
-}
-
-async function syncPaymentStatusAndActivate(input: {
-  paymentId: string;
-  provider: PaymentProvider;
-  externalPaymentId?: string | null;
-  providerPayload?: unknown;
-  successDetails?: Record<string, unknown>;
-}) {
-  // Merge provider sync metadata into payload but DO NOT mark SUCCEEDED here —
-  // activateSubscriptionFromPayment owns the status transition (only after Remnawave
-  // provisioning succeeds, atomically with subscription link).
-  await prisma.payment.update({
-    where: { id: input.paymentId },
-    data: {
-      externalPaymentId: input.externalPaymentId ?? undefined,
-      providerPayload:
-        input.providerPayload === undefined
-          ? undefined
-          : mergeProviderPayload(input.providerPayload, {
-              lastProviderSync: {
-                status: "SUCCEEDED",
-                at: new Date().toISOString(),
-                ...(input.successDetails ?? {})
-              }
-            })
-    }
-  });
-
-  try {
-    return await activateSubscriptionFromPayment(input.paymentId);
-  } catch (error) {
-    await writePaymentProcessingFailure({
-      paymentId: input.paymentId,
-      provider: input.provider,
-      phase: "ACTIVATE_SUBSCRIPTION",
-      error,
-      details: input.successDetails
-    });
-
-    return prisma.payment.findUniqueOrThrow({
-      where: { id: input.paymentId }
-    });
-  }
-}
-
 async function processYooKassaRemotePayment(input: {
   localPaymentId: string;
   remotePayment: Awaited<ReturnType<typeof getYooKassaPayment>>;
@@ -380,102 +256,28 @@ async function processYooKassaRemotePayment(input: {
     lastProviderSync: {
       source: input.source,
       remoteStatus,
+      status: mapYooKassaStatus(remoteStatus),
       at: new Date().toISOString()
     }
   });
 
   if (mapYooKassaStatus(remoteStatus) === PaymentStatus.SUCCEEDED) {
-    return syncPaymentStatusAndActivate({
-      paymentId: localPayment.id,
-      provider: PaymentProvider.YOOKASSA,
+    return activateSubscriptionFromPayment(localPayment.id, {
       externalPaymentId: input.remotePayment.id,
-      providerPayload,
-      successDetails: {
-        source: input.source,
-        remoteStatus
-      }
+      providerPayload
     });
   }
 
-  return prisma.payment.update({
-    where: { id: localPayment.id },
+  // A late pending/canceled observation cannot revoke a confirmed or completed activation.
+  await prisma.payment.updateMany({
+    where: { id: localPayment.id, activationConfirmedAt: null, status: { not: PaymentStatus.SUCCEEDED } },
     data: {
       status: mapYooKassaStatus(remoteStatus),
       externalPaymentId: input.remotePayment.id,
       providerPayload
     }
   });
-}
-
-async function processPlategaPaymentStatus(input: {
-  localPaymentId: string;
-  payload: {
-    id?: string;
-    order_id?: string;
-    payload?: string;
-    status?: string;
-    payment_id?: string;
-    paymentMethod?: number;
-    merchantId?: string;
-    transaction?: {
-      id?: string;
-      status?: string;
-      payload?: string;
-      orderId?: string;
-      merchantId?: string;
-      mechantId?: string;
-    };
-  };
-  source: "WEBHOOK" | "ADMIN_REFRESH";
-}) {
-  const localPayment = await prisma.payment.findUnique({
-    where: { id: input.localPaymentId }
-  });
-
-  if (!localPayment) {
-    throw new Error("Local payment not found");
-  }
-
-  if (localPayment.status === PaymentStatus.SUCCEEDED && localPayment.subscriptionId) {
-    return localPayment;
-  }
-
-  const remoteStatus = normalizeProviderStatus(
-    input.payload.transaction?.status ?? input.payload.status
-  );
-  const remotePaymentId =
-    input.payload.payment_id ??
-    input.payload.transaction?.id ??
-    input.payload.id;
-  const providerPayload = mergeProviderPayload(input.payload, {
-    lastProviderSync: {
-      source: input.source,
-      remoteStatus,
-      at: new Date().toISOString()
-    }
-  });
-
-  if (mapPlategaStatus(remoteStatus) === PaymentStatus.SUCCEEDED) {
-    return syncPaymentStatusAndActivate({
-      paymentId: localPayment.id,
-      provider: PaymentProvider.PLATEGA,
-      externalPaymentId: remotePaymentId ?? localPayment.externalPaymentId,
-      providerPayload,
-      successDetails: {
-        source: input.source,
-        remoteStatus
-      }
-    });
-  }
-
-  return prisma.payment.update({
-    where: { id: localPayment.id },
-    data: {
-      status: mapPlategaStatus(remoteStatus),
-      externalPaymentId: remotePaymentId ?? localPayment.externalPaymentId,
-      providerPayload
-    }
-  });
+  return prisma.payment.findUniqueOrThrow({ where: { id: localPayment.id } });
 }
 
 export async function handleYookassaWebhook(input: {
@@ -530,96 +332,6 @@ export async function handleYookassaWebhook(input: {
   });
 }
 
-function readPayloadStringField(payload: unknown, field: string) {
-  if (
-    payload &&
-    typeof payload === "object" &&
-    field in payload &&
-    typeof (payload as Record<string, unknown>)[field] === "string"
-  ) {
-    return (payload as Record<string, string>)[field];
-  }
-  return null;
-}
-
-function resolvePlategaMerchantId(localPayloadFromDb: unknown) {
-  return (
-    readPayloadStringField(localPayloadFromDb, "merchantId") ||
-    readPayloadStringField(localPayloadFromDb, "merchant_id") ||
-    readPayloadStringField(localPayloadFromDb, "mechantId") ||
-    env.PLATEGA_MERCHANT_ID
-  );
-}
-
-export async function handlePlategaWebhook(input: {
-  payload: {
-    id?: string;
-    order_id?: string;
-    payload?: string;
-    status?: string;
-    payment_id?: string;
-    paymentMethod?: number;
-    merchantId?: string;
-    transaction?: {
-      id?: string;
-      status?: string;
-      payload?: string;
-      orderId?: string;
-      merchantId?: string;
-      mechantId?: string;
-    };
-  };
-}) {
-  const localPaymentId =
-    input.payload.order_id ??
-    input.payload.payload ??
-    input.payload.transaction?.payload ??
-    input.payload.transaction?.orderId;
-  const remotePaymentId =
-    input.payload.id ??
-    input.payload.payment_id ??
-    input.payload.transaction?.id;
-  let localPayment = localPaymentId
-    ? await prisma.payment.findUnique({
-        where: { id: localPaymentId }
-      })
-    : null;
-
-  if (!localPayment && remotePaymentId) {
-    localPayment = await prisma.payment.findUnique({
-      where: { externalPaymentId: remotePaymentId }
-    });
-  }
-
-  if (!localPayment) {
-    throw new Error("Local payment not found");
-  }
-
-  if (localPayment.status === PaymentStatus.SUCCEEDED && localPayment.subscriptionId) {
-    return localPayment;
-  }
-
-  const transactionId = localPayment.externalPaymentId ?? remotePaymentId;
-  if (!transactionId) {
-    throw new Error("Cannot verify Platega webhook: missing transaction id");
-  }
-
-  const merchantId = resolvePlategaMerchantId(localPayment.providerPayload);
-  const remotePayment = await getPlategaPaymentStatus({ transactionId, merchantId });
-
-  return processPlategaPaymentStatus({
-    localPaymentId: localPayment.id,
-    payload: {
-      id: remotePayment.id,
-      payment_id: remotePayment.id,
-      status: remotePayment.status,
-      payload: remotePayment.payload,
-      merchantId:
-        remotePayment.merchantId ?? remotePayment.merchant_id ?? remotePayment.mechantId
-    },
-    source: "WEBHOOK"
-  });
-}
 
 export async function refreshPaymentStatus(paymentId: string) {
   const payment = await prisma.payment.findUnique({
@@ -635,16 +347,7 @@ export async function refreshPaymentStatus(paymentId: string) {
   }
 
   if (payment.status === PaymentStatus.SUCCEEDED && !payment.subscriptionId) {
-    return syncPaymentStatusAndActivate({
-      paymentId: payment.id,
-      provider: payment.provider,
-      externalPaymentId: payment.externalPaymentId,
-      providerPayload: payment.providerPayload,
-      successDetails: {
-        source: "ADMIN_REFRESH",
-        remoteStatus: payment.status
-      }
-    });
+    return activateSubscriptionFromPayment(payment.id);
   }
 
   if (payment.provider === PaymentProvider.YOOKASSA) {
@@ -656,29 +359,6 @@ export async function refreshPaymentStatus(paymentId: string) {
     return processYooKassaRemotePayment({
       localPaymentId: payment.id,
       remotePayment,
-      source: "ADMIN_REFRESH"
-    });
-  }
-
-  if (payment.provider === PaymentProvider.PLATEGA) {
-    if (!payment.externalPaymentId) {
-      throw new Error("У платежа Platega отсутствует внешний идентификатор");
-    }
-
-    const merchantId = resolvePlategaMerchantId(payment.providerPayload);
-    const remotePayment = await getPlategaPaymentStatus({
-      transactionId: payment.externalPaymentId,
-      merchantId
-    });
-
-    return processPlategaPaymentStatus({
-      localPaymentId: payment.id,
-      payload: {
-        id: remotePayment.id,
-        payment_id: remotePayment.id,
-        status: remotePayment.status,
-        merchantId: remotePayment.merchantId ?? remotePayment.merchant_id ?? remotePayment.mechantId
-      },
       source: "ADMIN_REFRESH"
     });
   }

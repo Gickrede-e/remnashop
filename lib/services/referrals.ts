@@ -1,11 +1,11 @@
-import { prisma } from "@/lib/prisma";
+import { type DbClient, prisma } from "@/lib/prisma";
 import { env } from "@/lib/env";
 
 export async function createReferralRewardForFirstPayment(input: {
   referredUserId: string;
   paymentId: string;
-}) {
-  const user = await prisma.user.findUnique({
+}, db: DbClient = prisma) {
+  const user = await db.user.findUnique({
     where: { id: input.referredUserId },
     include: {
       referredBy: true
@@ -16,7 +16,7 @@ export async function createReferralRewardForFirstPayment(input: {
     return null;
   }
 
-  const successfulPayments = await prisma.payment.count({
+  const successfulPayments = await db.payment.count({
     where: {
       userId: user.id,
       status: "SUCCEEDED"
@@ -27,7 +27,7 @@ export async function createReferralRewardForFirstPayment(input: {
     return null;
   }
 
-  return prisma.referralReward.upsert({
+  return db.referralReward.upsert({
     where: {
       ownerId_referredUserId_paymentId: {
         ownerId: user.referredById,
@@ -46,8 +46,12 @@ export async function createReferralRewardForFirstPayment(input: {
   });
 }
 
-export async function consumeReferralBonuses(ownerId: string) {
-  const rewards = await prisma.referralReward.findMany({
+// Reads (without marking) the owner's unapplied FREE_DAYS/FREE_TRAFFIC_GB rewards.
+// The caller folds the sums into a subscription grant and then calls
+// markReferralRewardsApplied inside the same transaction so the bonus is credited
+// exactly once, atomically with the subscription write.
+export async function readPendingReferralBonuses(ownerId: string, db: DbClient = prisma) {
+  const rewards = await db.referralReward.findMany({
     where: {
       ownerId,
       applied: false,
@@ -64,18 +68,19 @@ export async function consumeReferralBonuses(ownerId: string) {
     .filter((reward) => reward.rewardType === "FREE_TRAFFIC_GB")
     .reduce((sum, reward) => sum + reward.rewardValue, 0);
 
-  if (rewards.length) {
-    await prisma.referralReward.updateMany({
-      where: {
-        id: { in: rewards.map((reward) => reward.id) }
-      },
-      data: {
-        applied: true
-      }
-    });
-  }
+  return { bonusDays, bonusTrafficGb, rewardIds: rewards.map((reward) => reward.id) };
+}
 
-  return { bonusDays, bonusTrafficGb, rewards };
+// Marks the given rewards applied. Idempotent (the applied:false filter makes a
+// re-run a no-op), so it's safe under activation retries.
+export async function markReferralRewardsApplied(rewardIds: string[], db: DbClient = prisma) {
+  if (!rewardIds.length) {
+    return { count: 0 };
+  }
+  return db.referralReward.updateMany({
+    where: { id: { in: rewardIds }, applied: false },
+    data: { applied: true }
+  });
 }
 
 export async function getMyReferralSummary(userId: string) {
@@ -108,29 +113,6 @@ export async function getMyReferralSummary(userId: string) {
   return {
     referredUsers,
     rewards
-  };
-}
-
-export async function getMyReferrals(userId: string) {
-  const summary = await getMyReferralSummary(userId);
-  const owner = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { referralCode: true }
-  });
-
-  return {
-    referralCode: owner?.referralCode ?? "",
-    referralLink: `${env.siteUrl}/register?ref=${owner?.referralCode ?? ""}`,
-    invitedCount: summary.referredUsers.length,
-    successfulReferralsCount: summary.referredUsers.filter((user) => user.payments.length > 0).length,
-    rewards: summary.rewards.map((reward) => ({
-      id: reward.id,
-      referredUserEmailMasked: reward.referredUser.email.replace(/(^.).*(@.*$)/, "$1***$2"),
-      rewardType: reward.rewardType,
-      rewardValue: reward.rewardValue,
-      applied: reward.applied,
-      createdAt: reward.createdAt
-    }))
   };
 }
 
@@ -182,5 +164,3 @@ export async function getReferralAdminOverview() {
     totalReferrals
   };
 }
-
-export const getAdminReferralOverview = getReferralAdminOverview;

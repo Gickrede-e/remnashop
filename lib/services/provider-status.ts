@@ -29,9 +29,7 @@ const placeholderConfig = {
   remnawaveBaseUrls: ["https://your-panel.example.com"],
   remnawaveApiTokens: ["placeholder_token", "your_remnawave_api_token"],
   yookassaShopIds: ["123456"],
-  yookassaSecretKeys: ["test_secret_key"],
-  plategaApiKeys: ["platega_placeholder_key", "your_platega_api_key"],
-  plategaWebhookSecrets: ["platega_placeholder_secret", "your_platega_webhook_secret"]
+  yookassaSecretKeys: ["test_secret_key"]
 } as const;
 
 class ProbeTimeoutError extends Error {
@@ -98,9 +96,6 @@ function getPlaceholderFlags() {
   const remnawaveApiToken = env.REMNAWAVE_API_TOKEN;
   const yookassaShopId = env.YOOKASSA_SHOP_ID;
   const yookassaSecretKey = env.YOOKASSA_SECRET_KEY;
-  const plategaApiKey = env.PLATEGA_API_KEY;
-  const plategaWebhookSecret = env.PLATEGA_WEBHOOK_SECRET;
-  const plategaMerchantId = env.PLATEGA_MERCHANT_ID;
 
   return {
     remnawave:
@@ -113,15 +108,7 @@ function getPlaceholderFlags() {
       isMissingValue(yookassaShopId) ||
       isMissingValue(yookassaSecretKey) ||
       hasPlaceholderValue(yookassaShopId, placeholderConfig.yookassaShopIds) ||
-      hasPlaceholderValue(yookassaSecretKey, placeholderConfig.yookassaSecretKeys),
-    plategaEnabled: env.PLATEGA_ENABLED,
-    platega:
-      isMissingValue(plategaApiKey) ||
-      isMissingValue(plategaWebhookSecret) ||
-      isMissingValue(plategaMerchantId) ||
-      hasPlaceholderValue(plategaApiKey, placeholderConfig.plategaApiKeys) ||
-      hasPlaceholderValue(plategaWebhookSecret, placeholderConfig.plategaWebhookSecrets) ||
-      !plategaMerchantId
+      hasPlaceholderValue(yookassaSecretKey, placeholderConfig.yookassaSecretKeys)
   } as const;
 }
 
@@ -155,32 +142,6 @@ function createProviderProbes() {
           cache: "no-store",
           signal
         })
-    },
-    {
-      label: "Platega",
-      isEnabled: placeholderFlags.plategaEnabled,
-      isConfigured: placeholderFlags.plategaEnabled && !placeholderFlags.platega,
-      // Platega docs expose GET /transaction/balance-unlock-operations with X-MerchantId/X-Secret.
-      run: (signal) => {
-        const to = new Date().toISOString();
-        const from = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        const query = new URLSearchParams({
-          from,
-          to,
-          page: "1",
-          size: "1"
-        });
-
-        return fetch(`https://app.platega.io/transaction/balance-unlock-operations?${query}`, {
-          headers: {
-            "X-MerchantId": env.PLATEGA_MERCHANT_ID,
-            "X-Secret": env.PLATEGA_API_KEY,
-            Accept: "text/plain"
-          },
-          cache: "no-store",
-          signal
-        });
-      }
     }
   ] satisfies ProviderProbe[];
 }

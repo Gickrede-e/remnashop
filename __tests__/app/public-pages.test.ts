@@ -18,40 +18,22 @@ vi.mock("next/navigation", async () => {
   };
 });
 
-import FaqPage from "@/app/faq/page";
 import HomePage from "@/app/page";
-import PricingPage from "@/app/pricing/page";
-import TermsPage from "@/app/terms/page";
 
 describe("public pages", () => {
   beforeEach(() => {
     redirectMock.mockReset();
   });
 
-  it("redirects the home page to login", async () => {
-    await HomePage();
+  it("renders the landing hero instead of redirecting", () => {
+    const markup = renderToStaticMarkup(HomePage());
 
-    expect(redirectMock).toHaveBeenCalledWith("/login");
-  });
-
-  it("renders FAQ as a compact public document page", () => {
-    const markup = renderToStaticMarkup(FaqPage());
-
-    expect(markup).toContain('data-testid="app-nav-rail"');
-    expect(markup).toContain("FAQ");
-  });
-
-  it("renders pricing as a compact public document page", () => {
-    const markup = renderToStaticMarkup(PricingPage());
-
-    expect(markup).toContain('data-testid="app-nav-rail"');
-    expect(markup).toContain("Тарифы");
-  });
-
-  it("renders terms as a compact public document page", async () => {
-    const markup = renderToStaticMarkup(React.createElement(TermsPage));
-
-    expect(markup).toContain('data-testid="app-nav-rail"');
-    expect(markup).toContain("Условия");
+    expect(markup).toContain("Ваш трафик —");
+    expect(markup).toContain("не наше дело.");
+    expect(markup).toMatch(/<a href="\/register"[^>]*>СОЗДАТЬ АККАУНТ/);
+    expect(markup).toMatch(/<a href="\/login"[^>]*>ВОЙТИ<\/a>/);
+    expect(markup).toContain("gickshop");
+    expect(markup).not.toMatch(/vpn|впн/i);
+    expect(redirectMock).not.toHaveBeenCalled();
   });
 });

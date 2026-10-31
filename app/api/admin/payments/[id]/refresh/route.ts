@@ -1,5 +1,5 @@
 import { requireApiAdminSession } from "@/lib/api-session";
-import { apiError, apiOk } from "@/lib/http";
+import { apiErrorFrom, apiOk } from "@/lib/http";
 import { logAdminAction } from "@/lib/services/admin-logs";
 import { refreshPaymentStatus } from "@/lib/services/payments";
 
@@ -31,15 +31,18 @@ export async function POST(_: Request, { params }: Params) {
 
     return apiOk(payment);
   } catch (error) {
-    await logAdminAction({
-      adminId,
-      action: "REFRESH_PAYMENT_STATUS_FAILED",
-      targetType: "PAYMENT",
-      targetId: paymentId,
-      details: {
-        error: error instanceof Error ? error.message : "Unknown refresh error"
-      }
-    }).catch(() => null);
-    return apiError(error instanceof Error ? error.message : "Не удалось проверить статус платежа", 400);
+    // Anyone can POST here; only audit failures once the caller is a verified admin.
+    if (adminId) {
+      await logAdminAction({
+        adminId,
+        action: "REFRESH_PAYMENT_STATUS_FAILED",
+        targetType: "PAYMENT",
+        targetId: paymentId,
+        details: {
+          error: error instanceof Error ? error.message : "Unknown refresh error"
+        }
+      }).catch(() => null);
+    }
+    return apiErrorFrom(error, "Не удалось проверить статус платежа");
   }
 }

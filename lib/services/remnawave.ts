@@ -92,6 +92,11 @@ function normalizeUser(payload: Record<string, unknown>): RemnawaveUserSnapshot 
   };
 }
 
+// Bound every panel call so a hung Remnawave endpoint can't hold a webhook /
+// activation handler (and, via the per-user provisioning transaction, a DB
+// connection) open indefinitely and pile up provider retries.
+const REMNAWAVE_TIMEOUT_MS = 10_000;
+
 async function remnawaveRequest<T>(path: string, init?: RequestInit) {
   const response = await fetch(`${env.REMNAWAVE_BASE_URL}${path}`, {
     ...init,
@@ -100,7 +105,8 @@ async function remnawaveRequest<T>(path: string, init?: RequestInit) {
       Authorization: `Bearer ${env.REMNAWAVE_API_TOKEN}`,
       ...(init?.headers ?? {})
     },
-    cache: "no-store"
+    cache: "no-store",
+    signal: init?.signal ?? AbortSignal.timeout(REMNAWAVE_TIMEOUT_MS)
   });
 
   const text = await response.text();
@@ -184,11 +190,6 @@ export async function getRemnawaveUserByUsername(username: string) {
   return normalizeUser(data);
 }
 
-export async function listRemnawaveUsers() {
-  const data = await remnawaveRequest<Array<Record<string, unknown>>>("/api/users");
-  return data.map(normalizeUser);
-}
-
 export async function listRemnawaveUsersByEmail(email: string) {
   const data = await remnawaveRequest<Array<Record<string, unknown>>>(
     `/api/users/by-email/${encodeURIComponent(email)}`
@@ -230,12 +231,6 @@ export async function disableRemnawaveUser(uuid: string) {
 
 export async function resetRemnawaveUserTraffic(uuid: string) {
   await remnawaveRequest(`/api/users/${uuid}/actions/reset-traffic`, { method: "POST" });
-}
-
-export async function getRemnawaveSubscriptionByShortUuid(shortUuid: string) {
-  return remnawaveRequest<Record<string, unknown>>(
-    `/api/subscriptions/by-short-uuid/${shortUuid}`
-  );
 }
 
 export type RemnawaveDevice = {

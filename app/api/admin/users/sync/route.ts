@@ -1,8 +1,8 @@
 import { requireApiAdminSession } from "@/lib/api-session";
-import { apiError, apiOk } from "@/lib/http";
+import { apiErrorFrom, apiOk } from "@/lib/http";
 import { logger, serializeError } from "@/lib/server/logger";
 import { logAdminAction } from "@/lib/services/admin-logs";
-import { syncActiveSubscriptionsToRemnawave } from "@/lib/services/subscriptions";
+import { syncActiveSubscriptionsToRemnawave } from "@/lib/services/remnawave-active-sync";
 
 export async function POST() {
   try {
@@ -42,11 +42,6 @@ export async function POST() {
 
     return apiOk(summary);
   } catch (error) {
-    return apiError(
-      error instanceof Error
-        ? error.message
-        : "Не удалось синхронизировать активные подписки",
-      400
-    );
+    return apiErrorFrom(error, "Не удалось синхронизировать активные подписки");
   }
 }

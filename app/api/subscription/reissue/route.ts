@@ -1,5 +1,5 @@
 import { requireApiSession } from "@/lib/api-session";
-import { apiError, apiOk } from "@/lib/http";
+import { apiError, apiErrorFrom, apiOk } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { RateLimitExceededError, enforceRateLimit } from "@/lib/server/rate-limit";
 import { getUserById } from "@/lib/services/auth";
@@ -41,7 +41,6 @@ export async function POST() {
       subscriptionUrl: snapshot.subscriptionUrl
     });
   } catch (error) {
-    const status = error instanceof Error && "status" in error ? Number(error.status) : 400;
-    return apiError(error instanceof Error ? error.message : "Не удалось перевыпустить подписку", status);
+    return apiErrorFrom(error, "Не удалось перевыпустить подписку");
   }
 }

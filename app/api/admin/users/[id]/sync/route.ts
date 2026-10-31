@@ -1,5 +1,5 @@
 import { requireApiAdminSession } from "@/lib/api-session";
-import { apiError, apiOk } from "@/lib/http";
+import { apiErrorFrom, apiOk } from "@/lib/http";
 import { serializeBigInts } from "@/lib/server/bigint";
 import { logAdminAction } from "@/lib/services/admin-logs";
 import { syncUserSubscription } from "@/lib/services/subscriptions";
@@ -21,6 +21,6 @@ export async function POST(_: Request, { params }: Params) {
     });
     return apiOk(serializeBigInts(user));
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Не удалось синхронизировать пользователя", 400);
+    return apiErrorFrom(error, "Не удалось синхронизировать пользователя");
   }
 }

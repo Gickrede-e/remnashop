@@ -1,5 +1,5 @@
 import { requireApiAdminSession } from "@/lib/api-session";
-import { apiError, apiOk, getPagination } from "@/lib/http";
+import { apiErrorFrom, apiOk, getPagination } from "@/lib/http";
 import { getAdminLogs } from "@/lib/services/admin-logs";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +18,6 @@ export async function GET(request: Request) {
       })
     );
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Не удалось получить журнал", 400);
+    return apiErrorFrom(error, "Не удалось получить журнал");
   }
 }

@@ -8,16 +8,13 @@ const {
   mockRegisterPromoUsage,
   mockValidatePromoCode,
   mockActivateSubscriptionFromPayment,
-  mockCreatePlategaPayment,
-  mockGetPlategaPaymentStatus,
   mockCreateYooKassaPayment,
   mockGetYooKassaPayment,
   mockVerifyYooKassaIp,
   mockIsPaymentProviderEnabledFromEnv
 } = vi.hoisted(() => ({
   mockEnv: {
-    NEXT_PUBLIC_SITE_URL: "https://vpn.example.com",
-    plategaPaymentMethods: [2, 10, 13]
+    NEXT_PUBLIC_SITE_URL: "https://vpn.example.com"
   },
   mockPrisma: {
     payment: {
@@ -25,7 +22,8 @@ const {
       findMany: vi.fn(),
       findUnique: vi.fn(),
       findUniqueOrThrow: vi.fn(),
-      update: vi.fn()
+      update: vi.fn(),
+      updateMany: vi.fn()
     },
     plan: {
       findUnique: vi.fn()
@@ -35,8 +33,6 @@ const {
   mockRegisterPromoUsage: vi.fn(),
   mockValidatePromoCode: vi.fn(),
   mockActivateSubscriptionFromPayment: vi.fn(),
-  mockCreatePlategaPayment: vi.fn(),
-  mockGetPlategaPaymentStatus: vi.fn(),
   mockCreateYooKassaPayment: vi.fn(),
   mockGetYooKassaPayment: vi.fn(),
   mockVerifyYooKassaIp: vi.fn(),
@@ -48,7 +44,7 @@ vi.mock("@/lib/env", () => ({
 }));
 
 vi.mock("@/lib/prisma", () => ({
-  prisma: mockPrisma
+  prisma: mockPrisma, toJsonValue: (value: unknown) => JSON.parse(JSON.stringify(value))
 }));
 
 vi.mock("@/lib/services/admin-logs", () => ({
@@ -60,13 +56,8 @@ vi.mock("@/lib/services/promos", () => ({
   validatePromoCode: mockValidatePromoCode
 }));
 
-vi.mock("@/lib/services/subscriptions", () => ({
+vi.mock("@/lib/services/payment-activation", () => ({
   activateSubscriptionFromPayment: mockActivateSubscriptionFromPayment
-}));
-
-vi.mock("@/lib/services/platega", () => ({
-  createPlategaPayment: mockCreatePlategaPayment,
-  getPlategaPaymentStatus: mockGetPlategaPaymentStatus
 }));
 
 vi.mock("@/lib/services/yookassa", () => ({
@@ -92,7 +83,7 @@ vi.mock("@/lib/payments/provider-config", () => ({
   isPaymentProviderEnabledFromEnv: mockIsPaymentProviderEnabledFromEnv
 }));
 
-import { mapPlategaStatus, mapYooKassaStatus } from "@/lib/services/payment-status";
+import { mapYooKassaStatus } from "@/lib/services/payment-status";
 
 describe("payment status mapping", () => {
   it.each([
@@ -103,30 +94,12 @@ describe("payment status mapping", () => {
   ])("maps YooKassa status %s", (input, expected) => {
     expect(mapYooKassaStatus(input)).toBe(expected);
   });
-
-  it.each([
-    ["confirmed", PaymentStatus.SUCCEEDED],
-    ["completed", PaymentStatus.SUCCEEDED],
-    ["succeeded", PaymentStatus.SUCCEEDED],
-    ["cancelled", PaymentStatus.CANCELED],
-    ["canceled", PaymentStatus.CANCELED],
-    ["failed", PaymentStatus.FAILED],
-    ["expired", PaymentStatus.FAILED],
-    ["declined", PaymentStatus.FAILED],
-    ["error", PaymentStatus.FAILED],
-    ["chargeback", PaymentStatus.FAILED],
-    ["chargebacked", PaymentStatus.FAILED],
-    ["processing", PaymentStatus.PENDING]
-  ])("maps Platega status %s", (input, expected) => {
-    expect(mapPlategaStatus(input)).toBe(expected);
-  });
 });
 
 describe("createPaymentForUser", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mockEnv.plategaPaymentMethods = [2, 10, 13];
     mockIsPaymentProviderEnabledFromEnv.mockReturnValue(true);
     mockPrisma.plan.findUnique.mockResolvedValue({
       id: "plan-1",
@@ -143,10 +116,6 @@ describe("createPaymentForUser", () => {
       confirmation: {
         confirmation_url: "https://pay.example.com/yookassa"
       }
-    });
-    mockCreatePlategaPayment.mockResolvedValue({
-      id: "remote-platega-1",
-      redirect: "https://pay.example.com/platega"
     });
     mockPrisma.payment.update.mockResolvedValue({
       id: "payment-1",
@@ -236,159 +205,6 @@ describe("createPaymentForUser", () => {
       userId: "user-1",
       paymentId: "payment-1"
     });
-  });
-
-  it("passes the selected Platega payment method to the provider", async () => {
-    const { createPaymentForUser } = await import("@/lib/services/payments");
-
-    await createPaymentForUser({
-      userId: "user-1",
-      planId: "plan-1",
-      provider: PaymentProvider.PLATEGA,
-      paymentMethod: 10
-    });
-
-    expect(mockCreatePlategaPayment).toHaveBeenCalledWith(
-      expect.objectContaining({
-        amount: 99000,
-        paymentMethod: 10
-      })
-    );
-    expect(mockPrisma.payment.update).toHaveBeenCalledWith({
-      where: { id: "payment-1" },
-      data: expect.objectContaining({
-        externalPaymentId: "remote-platega-1",
-        confirmationUrl: "https://pay.example.com/platega"
-      })
-    });
-  });
-
-  it("falls back to the first allowed Platega method when none is selected", async () => {
-    const { createPaymentForUser } = await import("@/lib/services/payments");
-    mockEnv.plategaPaymentMethods = [13, 2];
-
-    await createPaymentForUser({
-      userId: "user-1",
-      planId: "plan-1",
-      provider: PaymentProvider.PLATEGA
-    });
-
-    expect(mockCreatePlategaPayment).toHaveBeenCalledWith(
-      expect.objectContaining({
-        paymentMethod: 13
-      })
-    );
-  });
-
-  it("rejects Platega methods outside the configured allowlist", async () => {
-    const { createPaymentForUser } = await import("@/lib/services/payments");
-    mockEnv.plategaPaymentMethods = [2, 10];
-
-    await expect(
-      createPaymentForUser({
-        userId: "user-1",
-        planId: "plan-1",
-        provider: PaymentProvider.PLATEGA,
-        paymentMethod: 13
-      })
-    ).rejects.toMatchObject({
-      message: "Недоступный метод оплаты Platega",
-      status: 400
-    });
-
-    expect(mockPrisma.payment.create).not.toHaveBeenCalled();
-    expect(mockCreatePlategaPayment).not.toHaveBeenCalled();
-  });
-});
-
-describe("handlePlategaWebhook", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-
-    mockPrisma.payment.findUnique
-      .mockResolvedValueOnce({
-        id: "payment-1",
-        status: PaymentStatus.PENDING,
-        subscriptionId: null,
-        externalPaymentId: "remote-platega-1",
-        providerPayload: { merchantId: "merchant-1" }
-      })
-      .mockResolvedValueOnce({
-        id: "payment-1",
-        status: PaymentStatus.PENDING,
-        subscriptionId: null,
-        externalPaymentId: "remote-platega-1",
-        providerPayload: { merchantId: "merchant-1" }
-      });
-    mockPrisma.payment.update.mockResolvedValue({
-      id: "payment-1",
-      status: PaymentStatus.SUCCEEDED,
-      subscriptionId: "subscription-1"
-    });
-    mockActivateSubscriptionFromPayment.mockResolvedValue({
-      id: "payment-1",
-      status: PaymentStatus.SUCCEEDED,
-      subscriptionId: "subscription-1"
-    });
-  });
-
-  it("re-fetches authoritative status from Platega API regardless of webhook body status", async () => {
-    mockGetPlategaPaymentStatus.mockResolvedValue({
-      id: "remote-platega-1",
-      status: "CONFIRMED",
-      merchantId: "merchant-1"
-    });
-    const { handlePlategaWebhook } = await import("@/lib/services/payments");
-
-    const result = await handlePlategaWebhook({
-      payload: {
-        id: "remote-platega-1",
-        status: "PENDING"
-      }
-    });
-
-    expect(mockGetPlategaPaymentStatus).toHaveBeenCalledWith({
-      transactionId: "remote-platega-1",
-      merchantId: "merchant-1"
-    });
-    expect(result).toMatchObject({
-      id: "payment-1",
-      status: PaymentStatus.SUCCEEDED,
-      subscriptionId: "subscription-1"
-    });
-    expect(mockPrisma.payment.findUnique).toHaveBeenNthCalledWith(1, {
-      where: { externalPaymentId: "remote-platega-1" }
-    });
-    expect(mockActivateSubscriptionFromPayment).toHaveBeenCalledWith("payment-1");
-  });
-
-  it("ignores webhook body status when API still reports pending", async () => {
-    mockGetPlategaPaymentStatus.mockResolvedValue({
-      id: "remote-platega-1",
-      status: "PENDING",
-      merchantId: "merchant-1"
-    });
-    const { handlePlategaWebhook } = await import("@/lib/services/payments");
-
-    await handlePlategaWebhook({
-      payload: {
-        id: "remote-platega-1",
-        status: "CONFIRMED" // attacker tries to forge success
-      }
-    });
-
-    expect(mockActivateSubscriptionFromPayment).not.toHaveBeenCalled();
-  });
-
-  it("throws when no transaction id can be resolved", async () => {
-    mockPrisma.payment.findUnique.mockReset();
-    const { handlePlategaWebhook } = await import("@/lib/services/payments");
-
-    await expect(
-      handlePlategaWebhook({
-        payload: {}
-      })
-    ).rejects.toThrow("Local payment not found");
   });
 });
 
@@ -651,24 +467,14 @@ describe("handleYookassaWebhook", () => {
       where: { id: "payment-1" }
     });
     expect(mockGetYooKassaPayment).toHaveBeenCalledWith("remote-payment-1");
-    expect(mockPrisma.payment.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: "payment-1" },
-        data: expect.objectContaining({
-          externalPaymentId: "remote-payment-1"
-        })
+    expect(mockActivateSubscriptionFromPayment).toHaveBeenCalledWith("payment-1", expect.objectContaining({
+      externalPaymentId: "remote-payment-1",
+      providerPayload: expect.objectContaining({
+        id: "remote-payment-1",
+        paid: true,
+        lastProviderSync: expect.objectContaining({ status: "SUCCEEDED", source: "WEBHOOK" })
       })
-    );
-    expect(mockActivateSubscriptionFromPayment).toHaveBeenCalledWith("payment-1");
-    expect(
-      mockPrisma.payment.findUnique.mock.invocationCallOrder[0]
-    ).toBeLessThan(mockGetYooKassaPayment.mock.invocationCallOrder[0]);
-    expect(
-      mockGetYooKassaPayment.mock.invocationCallOrder[0]
-    ).toBeLessThan(mockPrisma.payment.update.mock.invocationCallOrder[0]);
-    expect(
-      mockPrisma.payment.update.mock.invocationCallOrder[0]
-    ).toBeLessThan(mockActivateSubscriptionFromPayment.mock.invocationCallOrder[0]);
+    }));
   });
 
   it("throws WebhookIntegrityError when remote amount does not match local payment amount", async () => {

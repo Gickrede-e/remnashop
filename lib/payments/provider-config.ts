@@ -3,23 +3,14 @@ import "server-only";
 import { PaymentProvider } from "@prisma/client";
 
 import { env } from "@/lib/env";
-import {
-  getEnabledPaymentProviders,
-  isPaymentProviderEnabled,
-  type PaymentProviderFlags
-} from "@/lib/payments/providers";
 
-export function getPaymentProviderFlagsFromEnv(): PaymentProviderFlags {
-  return {
-    [PaymentProvider.YOOKASSA]: env.YOOKASSA_ENABLED,
-    [PaymentProvider.PLATEGA]: env.PLATEGA_ENABLED
-  };
-}
-
-export function getEnabledPaymentProvidersFromEnv() {
-  return getEnabledPaymentProviders(getPaymentProviderFlagsFromEnv());
+// YooKassa is the only live provider. PLATEGA survives in the enum for
+// historical rows only and is never offered at checkout or accepted by
+// createPaymentForUser.
+export function getEnabledPaymentProvidersFromEnv(): PaymentProvider[] {
+  return env.YOOKASSA_ENABLED ? [PaymentProvider.YOOKASSA] : [];
 }
 
 export function isPaymentProviderEnabledFromEnv(provider: PaymentProvider) {
-  return isPaymentProviderEnabled(provider, getPaymentProviderFlagsFromEnv());
+  return getEnabledPaymentProvidersFromEnv().includes(provider);
 }

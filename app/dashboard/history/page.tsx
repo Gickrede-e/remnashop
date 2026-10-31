@@ -30,7 +30,7 @@ export default async function DashboardHistoryPage() {
     <div className="dashboardWorkspacePage dashboardSurfacePage dashboardSurfacePageHistory dashShellPageWrapper">
       <DashboardPageHeader
         title="История"
-        crumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "История" }]}
+        crumbs={[{ label: "Кабинет", href: "/dashboard" }, { label: "История" }]}
       />
       <PaymentHistoryList payments={payments} />
     </div>

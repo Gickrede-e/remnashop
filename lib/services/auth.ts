@@ -1,5 +1,3 @@
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
-
 import bcrypt from "bcryptjs";
 
 import { resolveRoleForEmail } from "@/lib/auth/roles";
@@ -26,6 +24,11 @@ export async function registerUser(input: {
   referralCode?: string;
 }) {
   const email = input.email.toLowerCase();
+  // No email code proves ownership on this path, so ADMIN_EMAILS addresses can't be claimed here.
+  if (resolveRoleForEmail(email) === "ADMIN") {
+    throw new Error("Регистрация с этим email недоступна");
+  }
+
   const existing = await prisma.user.findUnique({
     where: { email }
   });
@@ -97,79 +100,6 @@ export async function loginUser(input: { email: string; password: string }) {
   }
 
   return user;
-}
-
-export function verifyTelegramAuth(payload: Record<string, string>) {
-  const hash = payload.hash;
-  if (!hash) {
-    return false;
-  }
-
-  const secretKey = createHash("sha256")
-    .update(process.env.TELEGRAM_BOT_TOKEN ?? "")
-    .digest();
-
-  const checkString = Object.entries(payload)
-    .filter(([key]) => key !== "hash")
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([key, value]) => `${key}=${value}`)
-    .join("\n");
-
-  const digest = createHmac("sha256", secretKey).update(checkString).digest("hex");
-  if (digest.length !== hash.length) {
-    return false;
-  }
-
-  return timingSafeEqual(Buffer.from(digest), Buffer.from(hash));
-}
-
-export async function loginWithTelegram(input: {
-  id: string;
-  first_name?: string;
-  last_name?: string;
-  username?: string;
-  auth_date: string;
-  hash: string;
-}) {
-  const authTimestamp = Number(input.auth_date);
-  if (Number.isNaN(authTimestamp) || Date.now() / 1000 - authTimestamp > 60 * 60 * 24) {
-    throw new Error("Данные Telegram устарели");
-  }
-
-  const asStrings = Object.fromEntries(
-    Object.entries(input).map(([key, value]) => [key, value ? String(value) : ""])
-  );
-
-  if (!verifyTelegramAuth(asStrings)) {
-    throw new Error("Проверка Telegram не пройдена");
-  }
-
-  const placeholderEmail = `${input.id}@telegram.gickvpn.local`;
-  const existing = await prisma.user.findFirst({
-    where: {
-      OR: [{ telegramId: input.id }, { email: placeholderEmail }]
-    }
-  });
-
-  if (existing) {
-    return prisma.user.update({
-      where: { id: existing.id },
-      data: {
-        telegramId: input.id,
-        email: existing.email,
-        role: resolveRoleForEmail(existing.email)
-      }
-    });
-  }
-
-  return prisma.user.create({
-    data: {
-      email: placeholderEmail,
-      passwordHash: await bcrypt.hash(crypto.randomUUID(), 12),
-      telegramId: input.id,
-      role: resolveRoleForEmail(placeholderEmail)
-    }
-  });
 }
 
 export async function getUserById(userId: string) {

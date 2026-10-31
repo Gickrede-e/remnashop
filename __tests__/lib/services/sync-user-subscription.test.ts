@@ -1,19 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockEnv, mockPrisma, mockRemnawave } = vi.hoisted(() => ({
+const { mockEnv, mockPrisma, mockRemnawave } = vi.hoisted(() => {
+  const prisma = {
+    user: { findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn() },
+    subscription: { update: vi.fn() },
+    payment: { findFirst: vi.fn() },
+    $executeRaw: vi.fn(),
+    $transaction: vi.fn(async (fn: (tx: unknown) => unknown) => fn(prisma))
+  };
+  return {
   mockEnv: {
     REMNAWAVE_BASE_URL: "https://panel.example.com"
   },
-  mockPrisma: {
-    user: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      update: vi.fn()
-    },
-    subscription: {
-      update: vi.fn()
-    }
-  },
+  mockPrisma: prisma,
   mockRemnawave: {
     createRemnawaveUser: vi.fn(),
     disableRemnawaveUser: vi.fn(),
@@ -26,10 +25,11 @@ const { mockEnv, mockPrisma, mockRemnawave } = vi.hoisted(() => ({
     resetRemnawaveUserTraffic: vi.fn(),
     updateRemnawaveUser: vi.fn()
   }
-}));
+};
+});
 
 vi.mock("@/lib/prisma", () => ({
-  prisma: mockPrisma
+  prisma: mockPrisma, toJsonValue: (value: unknown) => JSON.parse(JSON.stringify(value))
 }));
 
 vi.mock("@/lib/env", () => ({
@@ -58,6 +58,8 @@ import { syncUserSubscription, syncUserSubscriptionForDashboard } from "@/lib/se
 
 describe("syncUserSubscription", () => {
   beforeEach(() => {
+    mockPrisma.$executeRaw.mockReset().mockResolvedValue(1);
+    mockPrisma.payment.findFirst.mockReset().mockResolvedValue(null);
     mockPrisma.user.findUnique.mockReset();
     mockPrisma.user.findMany.mockReset();
     mockPrisma.user.update.mockReset();
@@ -328,5 +330,25 @@ describe("syncUserSubscription", () => {
       user: finalUser,
       externalSubscriptionUrl: "https://panel.example.com/api/sub/short-4"
     });
+  });
+
+  it("returns the fresh local subscription without reading Remnawave while activation is pending", async () => {
+    const user = {
+      id: "user-waiting", remnawaveUuid: "5c819239-dcd1-45a1-b4ca-c9c32b3e98e7",
+      remnawaveShortUuid: "short-waiting", subscription: { expiresAt: new Date("2026-08-25") }
+    };
+    mockPrisma.$executeRaw.mockImplementationOnce(async () => {
+      expect(mockPrisma.user.findUnique).not.toHaveBeenCalled();
+      mockPrisma.user.findUnique.mockResolvedValue(user);
+      return 1;
+    });
+    mockPrisma.payment.findFirst.mockResolvedValue({ id: "failed-payment" });
+
+    const result = await syncUserSubscriptionForDashboard(user.id);
+
+    expect(result).toEqual({ user, externalSubscriptionUrl: "https://panel.example.com/api/sub/short-waiting" });
+    expect(mockRemnawave.getRemnawaveUser).not.toHaveBeenCalled();
+    expect(mockRemnawave.createRemnawaveUser).not.toHaveBeenCalled();
+    expect(mockPrisma.subscription.update).not.toHaveBeenCalled();
   });
 });

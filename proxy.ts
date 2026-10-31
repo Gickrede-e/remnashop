@@ -28,14 +28,19 @@ function buildCsp(nonce: string) {
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
-    `style-src 'self' 'nonce-${nonce}' 'unsafe-inline'`,
+    // Nonce guards <style> elements / injected stylesheets. SSR'd style="" attributes
+    // (dynamic geometry: tour highlight, meter width, <cube-field> position) are
+    // allowed via style-src-attr — a nonce in style-src would otherwise make
+    // 'unsafe-inline' inert and block them until hydration.
+    `style-src 'self' 'nonce-${nonce}'`,
+    "style-src-attr 'unsafe-inline'",
     "img-src 'self' data: https:",
     "font-src 'self' data:",
-    "connect-src 'self' https://api.yookassa.ru https://*.platega.io",
-    "frame-src 'self' https://yookassa.ru https://*.yookassa.ru https://*.platega.io",
+    "connect-src 'self' https://api.yookassa.ru",
+    "frame-src 'self' https://yookassa.ru https://*.yookassa.ru",
     "frame-ancestors 'none'",
     "base-uri 'self'",
-    "form-action 'self' https://yookassa.ru https://*.platega.io",
+    "form-action 'self' https://yookassa.ru",
     "object-src 'none'",
     "upgrade-insecure-requests"
   ].join("; ");

@@ -47,7 +47,6 @@ describe("proxy", () => {
   });
 
   it("allows public pages and operational endpoints without a session", async () => {
-    const pricingResponse = await proxy(createRequest("/pricing?plan=pro"));
     const homeResponse = await proxy(createRequest("/"));
     const loginResponse = await proxy(createRequest("/login"));
     const registerResponse = await proxy(createRequest("/register?ref=ALLY42"));
@@ -55,7 +54,6 @@ describe("proxy", () => {
     const healthResponse = await proxy(createRequest("/api/health"));
     const webhookResponse = await proxy(createRequest("/api/webhook/yookassa"));
 
-    expect(pricingResponse.headers.get("location")).toBeNull();
     expect(homeResponse.headers.get("location")).toBeNull();
     expect(loginResponse.headers.get("location")).toBeNull();
     expect(registerResponse.headers.get("location")).toBeNull();

@@ -1,6 +1,6 @@
 import { type NextRequest } from "next/server";
 
-import { apiError, apiOk, getClientIp, parseRequestBody } from "@/lib/http";
+import { apiError, apiErrorFrom, apiOk, getClientIp, parseRequestBody } from "@/lib/http";
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 import { forgotPasswordSchema } from "@/lib/schemas/auth";
@@ -43,6 +43,6 @@ export async function POST(request: NextRequest) {
     if (error instanceof TurnstileError) {
       return apiError(error.message, 400);
     }
-    return apiError(error instanceof Error ? error.message : "Ошибка отправки кода");
+    return apiErrorFrom(error, "Ошибка отправки кода");
   }
 }

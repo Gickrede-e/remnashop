@@ -1,14 +1,20 @@
 :root {
   color-scheme: dark;
+  /* Фирменный неоновый зелёный; --accent-primary и HSL-токены ниже выведены из него. */
+  --gick-accent: oklch(0.82 0.21 145);
+  --gick-accent-dim: oklch(0.62 0.14 145);
+  --gick-accent-soft: oklch(0.40 0.10 145);
+  --gick-accent-rgb: 102, 224, 138;
+  --accent-fg: #0a0b0a;
   --canvas-0: #090909;
   --canvas-1: #121212;
   --surface-line: rgba(244, 244, 238, 0.14);
-  --surface-line-strong: rgba(214, 255, 63, 0.28);
+  --surface-line-strong: rgba(var(--gick-accent-rgb), 0.32);
   --text-primary: #f3efe6;
   --text-secondary: #b8b1a3;
   --text-tertiary: #8c8578;
-  --accent-primary: #d6ff3f;
-  --accent-ambient: rgba(124, 92, 255, 0.18);
+  --accent-primary: #66e08a;
+  --accent-ambient: rgba(var(--gick-accent-rgb), 0.10);
   --app-bg: 0 0% 4%;
   --app-bg-strong: 0 0% 2%;
   --app-surface: 0 0% 7%;
@@ -16,19 +22,19 @@
   --app-surface-soft: 0 0% 9%;
   --app-surface-overlay: 0 0% 5%;
   --app-border: 36 10% 18%;
-  --app-border-strong: 72 100% 62%;
+  --app-border-strong: 140 64% 64%;
   --app-fg: 39 32% 93%;
   --app-muted: 34 10% 63%;
   --app-muted-strong: 35 16% 76%;
-  --app-accent: 72 100% 62%;
-  --app-accent-strong: 72 100% 72%;
+  --app-accent: 140 64% 64%;
+  --app-accent-strong: 140 70% 74%;
   --app-danger: 6 72% 58%;
   --app-danger-strong: 6 78% 68%;
   --app-success: 112 38% 54%;
   --app-success-strong: 112 42% 66%;
   --app-shadow: 220 60% 2%;
-  --font-body: "IBM Plex Sans", "Segoe UI", sans-serif;
-  --font-heading: "Space Grotesk", "Avenir Next", sans-serif;
+  --font-body: var(--font-sans, "Inter"), "Segoe UI", sans-serif;
+  --font-heading: var(--font-body);
   --background: 0 0% 4%;
   --foreground: 39 32% 93%;
   --muted: 0 0% 7%;
@@ -39,7 +45,7 @@
   --card-foreground: 39 32% 93%;
   --border: 36 10% 18%;
   --input: 36 10% 18%;
-  --primary: 72 100% 62%;
+  --primary: 140 64% 64%;
   --primary-foreground: 0 0% 6%;
   --secondary: 0 0% 10%;
   --secondary-foreground: 39 32% 93%;
@@ -47,7 +53,7 @@
   --accent-foreground: 39 32% 93%;
   --destructive: 6 72% 58%;
   --destructive-foreground: 39 32% 93%;
-  --ring: 72 100% 62%;
+  --ring: 140 64% 64%;
   --radius: 1rem;
 }
 
@@ -74,8 +80,7 @@ body {
 body.appBody {
   min-height: 100dvh;
   background:
-    radial-gradient(circle at top right, var(--accent-ambient) 0%, transparent 32%),
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 8%, transparent) 0%, transparent 18%),
+    radial-gradient(circle at 80% -10%, rgba(var(--gick-accent-rgb), 0.12) 0%, transparent 40%),
     linear-gradient(180deg, var(--canvas-1) 0%, var(--canvas-0) 100%);
   color: hsl(var(--app-fg));
   font-family: var(--font-body);
@@ -249,8 +254,7 @@ p {
 }
 
 @layer components {
-  .screenHeaderEyebrow,
-  .appLogoEyebrow {
+  .screenHeaderEyebrow {
     color: hsl(var(--app-muted));
     font-size: 0.72rem;
     font-weight: 700;
@@ -276,24 +280,10 @@ p {
     justify-self: center;
   }
 
-  .appStateBody,
-  .appStateSkeletonStack {
+  .appStateBody {
     display: grid;
     gap: 1.5rem;
-  }
-
-  .appStateBody {
     justify-items: start;
-  }
-
-  .appStateSkeletonHero {
-    width: 100%;
-    height: 8rem;
-  }
-
-  .appStateSkeletonCanvas {
-    width: 100%;
-    height: 16rem;
   }
 
   .screenHeader {
@@ -348,59 +338,49 @@ p {
 
   .appLogo {
     display: inline-flex;
-    align-items: center;
-    gap: 0.85rem;
+    align-items: baseline;
+    gap: 0.18rem;
     min-width: 0;
     text-decoration: none;
-  }
-
-  .appLogoMark {
-    position: relative;
-    width: 2.7rem;
-    height: 2.7rem;
-    flex: none;
-    border: 1px solid color-mix(in srgb, hsl(var(--app-border-strong)) 32%, hsl(var(--app-border)));
-    border-radius: calc(var(--radius) + 0.35rem);
-    background:
-      linear-gradient(145deg, color-mix(in srgb, hsl(var(--app-accent)) 22%, hsl(var(--app-surface-overlay))) 0%, color-mix(in srgb, hsl(var(--app-surface-strong)) 96%, transparent) 100%);
-    box-shadow:
-      inset 0 1px 0 color-mix(in srgb, white 9%, transparent),
-      0 16px 28px color-mix(in srgb, hsl(var(--app-shadow)) 42%, transparent);
-  }
-
-  .appLogoMarkCore {
-    position: absolute;
-    inset: 0.32rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: calc(var(--radius) + 0.05rem);
-    background: linear-gradient(180deg, color-mix(in srgb, hsl(var(--app-accent-strong)) 92%, white) 0%, hsl(var(--app-accent)) 100%);
-    color: hsl(var(--app-bg-strong));
-  }
-
-  .appLogoBody {
-    display: grid;
-    gap: 0.08rem;
-    min-width: 0;
+    line-height: 1;
   }
 
   .appLogoWordmark {
-    color: hsl(var(--app-fg));
-    font-family: var(--font-heading);
-    font-size: 1.1rem;
-    font-weight: 600;
-    letter-spacing: -0.04em;
+    color: var(--text-primary);
+    font-family: var(--font-heading), var(--font-body), system-ui, sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
     white-space: nowrap;
   }
 
-  .appLogoCompact .appLogoMark {
-    width: 2.35rem;
-    height: 2.35rem;
+  .appLogoCursor {
+    display: inline-block;
+    width: 0.62rem;
+    height: 1.05rem;
+    background: var(--accent-primary);
+    border-radius: 1px;
+    transform: translateY(0.18rem);
+    box-shadow: 0 0 12px rgba(var(--gick-accent-rgb), 0.55);
+    animation: gickCursorBlink 1.1s steps(2) infinite;
   }
 
   .appLogoCompact .appLogoWordmark {
-    font-size: 1rem;
+    font-size: 1.1rem;
+  }
+
+  .appLogoCompact .appLogoCursor {
+    width: 0.5rem;
+    height: 0.9rem;
+  }
+
+  @keyframes gickCursorBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.18; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .appLogoCursor { animation: none; }
   }
 
   .srOnly {
@@ -423,7 +403,6 @@ p {
     padding: clamp(1.25rem, 3vw, 2.5rem);
     background: var(--canvas-0);
     color: var(--text-primary);
-    font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     overflow: hidden;
   }
 
@@ -433,8 +412,30 @@ p {
   }
 
   .authSceneViewport {
+    position: relative;
+    z-index: 1;
     width: min(100%, 26rem);
     margin: 0 auto;
+  }
+
+  /* фикс жёлтой заливки автозаполнения браузера в auth-полях */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--text-primary);
+    -webkit-box-shadow: 0 0 0 1000px #161815 inset;
+    caret-color: var(--text-primary);
+    transition: background-color 999999s ease-out;
+  }
+
+  /* появление карточки авторизации */
+  @keyframes gsAuthIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .authStandaloneCard { animation: gsAuthIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
   }
 
   .authCard.authStandaloneCard {
@@ -674,7 +675,6 @@ p {
     min-height: 100dvh;
     background: var(--canvas-0);
     color: var(--text-primary);
-    font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
 
   .dashShellMain {
@@ -718,25 +718,18 @@ p {
 
   .dashSidebarBrand {
     display: grid;
-    gap: 0.35rem;
+    gap: 0.45rem;
     padding: 0.5rem 0.75rem 1rem;
     border-bottom: 1px solid var(--surface-line);
   }
 
-  .dashSidebarBrandWordmark {
-    margin: 0;
-    color: var(--text-primary);
-    font-size: 1.05rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-  }
-
   .dashSidebarBrandTagline {
     margin: 0;
+    padding-left: 0.05rem;
     color: var(--text-tertiary);
-    font-size: 0.62rem;
+    font-size: 0.6rem;
     font-weight: 500;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
   }
 
@@ -771,12 +764,16 @@ p {
     color: var(--text-primary);
     font-weight: 700;
     border-color: var(--surface-line);
-    box-shadow: inset 2px 0 0 var(--text-primary);
+    box-shadow: inset 2px 0 0 var(--accent-primary);
   }
 
   .dashSidebarLinkIcon {
     width: 1.1rem;
     height: 1.1rem;
+  }
+
+  .dashSidebarLink.is-active .dashSidebarLinkIcon {
+    color: var(--accent-primary);
   }
 
   .dashSidebarOther {
@@ -849,6 +846,7 @@ p {
   .dashSidebarCta:hover {
     background: #ffffff;
     transform: translateY(-1px);
+    box-shadow: 0 18px 28px rgba(var(--gick-accent-rgb), 0.18);
   }
 
   .dashSidebarLogoutRow {
@@ -1277,7 +1275,7 @@ p {
   }
 
   .dashStatusPill.is-completed {
-    background: var(--text-primary);
+    background: var(--accent-primary);
     color: var(--canvas-0);
   }
 
@@ -1321,7 +1319,7 @@ p {
   }
 
   .dashListItem.is-completed {
-    border-left: 2px solid var(--text-primary);
+    border-left: 2px solid var(--accent-primary);
     color: var(--text-primary);
   }
 
@@ -2403,9 +2401,53 @@ p {
 
   .checkoutPlanCardPrice {
     color: var(--text-primary);
-    font-size: 1.05rem;
+    font-size: 1.6rem;
     font-weight: 700;
     white-space: nowrap;
+  }
+
+  .checkoutPlanCard.is-featured {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 5%, transparent);
+  }
+
+  .checkoutPlanCardTitleRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .checkoutPlanFeatures {
+    display: grid;
+    gap: 0.3rem;
+    margin-top: 0.3rem;
+  }
+
+  .checkoutPlanFeature {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+  }
+
+  .checkoutPlanFeatureMark {
+    color: var(--accent-primary);
+    font-weight: 700;
+  }
+
+  .checkoutDurationBadge {
+    position: absolute;
+    top: -0.6rem;
+    right: -0.4rem;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.6rem;
+  }
+
+  .checkoutProviderNote {
+    margin: 0;
+    color: var(--text-tertiary);
+    font-size: 0.82rem;
   }
 
   .checkoutPlanCardUnit {
@@ -2421,6 +2463,7 @@ p {
   }
 
   .checkoutDurationOption {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -2905,46 +2948,6 @@ p {
     gap: 1.25rem;
   }
 
-  .routeStatePage {
-    display: grid;
-    gap: 1.5rem;
-  }
-
-  .routeStatePanelBody {
-    display: grid;
-    gap: 1rem;
-  }
-
-  .routeStateMetricsGrid {
-    display: grid;
-    gap: 0.75rem;
-  }
-
-  .routeStateMetricSkeleton {
-    width: 100%;
-    height: 6rem;
-  }
-
-  .routeStateLineSkeleton {
-    width: 10rem;
-    height: 1.25rem;
-  }
-
-  .routeStateRowSkeleton {
-    width: 100%;
-    height: 3.5rem;
-  }
-
-  .routeStateCanvas {
-    width: 100%;
-    height: 18rem;
-    border-radius: calc(var(--radius) + 0.75rem);
-  }
-
-  .routeStateCanvasWide {
-    height: 24rem;
-  }
-
   .routeStateInfo {
     display: grid;
     gap: 0.75rem;
@@ -3155,10 +3158,6 @@ p {
   @media (min-width: 48rem) {
     .authScene {
       padding: clamp(1.5rem, 4vw, 3rem);
-    }
-
-    .routeStateMetricsGrid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .dashboardOverview {
@@ -3929,10 +3928,6 @@ p {
     .dataDesktopTable {
       display: block;
     }
-
-    .routeStateMetricsGridWide {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
   }
 
   @media (max-width: 640px) {
@@ -4031,13 +4026,58 @@ p {
   }
 
   @media (max-width: 768px) {
+    /* minmax(0, 1fr), not 1fr: a bare 1fr track resolves its min to the
+       content's min-content, so wide content (the referral cards' 30rem
+       flex-basis, a data table) blows the single column out past the viewport
+       and the phone zooms out. Clamping the track to 0 keeps it at device width. */
+    /* Header and content stack in one column; without align-content the rows stretch to
+       fill 100dvh on short pages and push the content down. */
     .dashShell {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
+      align-content: start;
     }
 
     .dashShellMain {
       grid-column: 1;
+      min-width: 0;
       padding: 1.25rem 1.25rem calc(7rem + env(safe-area-inset-bottom));
+    }
+
+    /* Cards go full-width single-column on phones (the 30rem/20rem flex-basis is
+       a desktop side-by-side hint; without this they force the column wide). */
+    .dashCardGrid > .dashCardWide,
+    .dashCardGrid > .dashCardNarrow {
+      flex-basis: 100%;
+    }
+
+    /* Data tables (payment history) scroll horizontally within their card instead
+       of squishing 5 columns into 390px (which collided "СУММА"/"СТАТУС" and
+       clipped the status pills). The desktop .tableWrap overflow rule lives inside
+       a min-width:48rem block, so mobile needs its own. */
+    .tableWrap {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .dashTable {
+      min-width: 34rem;
+    }
+
+    /* The dashboard nests grids/flex several deep (dashShellMain > page wrapper >
+       dashWorkspace > dashCardGrid > dashCard > card head/body > …). Grid and
+       flex ITEMS default to min-width: auto (= their min-content), so a single
+       wide descendant propagates its intrinsic width all the way back up and
+       blows the column past the device viewport — the phone then zooms out.
+       A zero-specificity min-width: 0 on every descendant lets each link shrink
+       to its parent so the device-width clamp actually reaches the content.
+       Anything that needs a real floor (the payment table's 34rem, above) sets
+       it explicitly and wins on specificity, scrolling inside its own wrapper.
+       The whole selector sits inside :where() so it has ZERO specificity —
+       otherwise `.dashShellMain …` (0,1,0) would tie and, being later in source,
+       override `.dashTable { min-width: 34rem }` and re-squish the table. */
+    :where(.dashShellMain *) {
+      min-width: 0;
     }
 
     .dashSidebar {

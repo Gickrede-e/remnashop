@@ -19,7 +19,7 @@ import { AppShell } from "@/components/shell/app-shell";
 
 const TestableAppShell = AppShell as React.ComponentType<
   React.PropsWithChildren<{
-    area: "dashboard" | "admin" | "public";
+    area: "dashboard" | "admin";
     canAccessAdmin?: boolean;
     accountSummary?: { email: string } | null;
   }>
@@ -53,22 +53,22 @@ describe("app shell structure", () => {
 
     expect(markup.match(/<aside class="[^"]*\bdashSidebar\b[^"]*"/g) ?? []).toHaveLength(1);
     expect(markup).toContain('data-testid="app-nav-rail"');
-    expect(markup).toContain("GICKSHOP");
+    expect(markup).toContain("gickshop");
+    expect(markup).toContain("ЛИЧНЫЙ КАБИНЕТ");
+    expect(markup).not.toMatch(/vpn|впн/i);
     expectTextInOrder(markup, ["Подписка", "Купить", "Устройства", "История", "Рефералы"]);
   });
 
-  it("shows OTHER STUFF only when other nav items exist", () => {
+  it("groups profile and admin links under a Russian «Другое» heading", () => {
     const dashboardMarkup = renderShell();
-    const publicMarkup = renderShell({ area: "public" });
 
-    expect(dashboardMarkup).toContain("OTHER STUFF");
-    expect(publicMarkup).not.toContain("OTHER STUFF");
+    expect(dashboardMarkup).toContain(">Другое</span>");
+    expect(dashboardMarkup).not.toMatch(/OTHER STUFF|LOG OUT/);
   });
 
-  it("omits shell CTA pills in dashboard and admin while keeping public auth entry", () => {
+  it("omits shell CTA pills in dashboard and admin", () => {
     const withAccountMarkup = renderShell();
     const withoutAccountMarkup = renderShell({ area: "dashboard", canAccessAdmin: true, accountSummary: null });
-    const publicMarkup = renderShell({ area: "public" });
     const adminMarkup = renderShell({ area: "admin", accountSummary: { email: "admin@example.com" } });
 
     expect(withAccountMarkup).not.toContain("КУПИТЬ ПОДПИСКУ");
@@ -77,7 +77,6 @@ describe("app shell structure", () => {
     expect(withAccountMarkup).toContain("user@example.com");
     expect(withoutAccountMarkup).not.toContain('action="/api/auth/logout"');
     expect(withoutAccountMarkup).not.toContain("user@example.com");
-    expect(publicMarkup).toContain("ВОЙТИ");
     expect(adminMarkup).not.toContain("В КАБИНЕТ");
     expect(adminMarkup).toContain("admin@example.com");
   });
@@ -113,9 +112,9 @@ describe("app shell structure", () => {
     expect(adminMarkup).toContain('href="/dashboard"');
   });
 
-  it("keeps public shell without the authenticated mobile bottom nav", () => {
-    const publicMarkup = renderShell({ area: "public" });
+  it("hides the mobile bottom nav without an account", () => {
+    const markup = renderShell({ area: "dashboard", accountSummary: null });
 
-    expect(publicMarkup).not.toContain('data-testid="app-mobile-nav"');
+    expect(markup).not.toContain('data-testid="app-mobile-nav"');
   });
 });

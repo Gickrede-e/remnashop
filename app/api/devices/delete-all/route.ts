@@ -1,5 +1,5 @@
 import { requireApiSession } from "@/lib/api-session";
-import { apiError, apiOk } from "@/lib/http";
+import { apiError, apiErrorFrom, apiOk } from "@/lib/http";
 import { RateLimitExceededError, enforceRateLimit } from "@/lib/server/rate-limit";
 import { getUserById } from "@/lib/services/auth";
 import { deleteAllUserDevices } from "@/lib/services/remnawave";
@@ -30,7 +30,6 @@ export async function POST() {
     const result = await deleteAllUserDevices(user.remnawaveUuid);
     return apiOk({ total: result.total });
   } catch (error) {
-    const status = error instanceof Error && "status" in error ? Number(error.status) : 400;
-    return apiError(error instanceof Error ? error.message : "Не удалось удалить устройства", status);
+    return apiErrorFrom(error, "Не удалось удалить устройства");
   }
 }

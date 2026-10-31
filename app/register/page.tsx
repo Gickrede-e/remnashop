@@ -1,3 +1,4 @@
+import { AuthScene } from "@/components/blocks/auth/auth-scene";
 import { AuthStandaloneCard } from "@/components/blocks/auth/auth-standalone-card";
 import { RegisterForm } from "@/components/auth/register-form";
 import { getSession } from "@/lib/auth/session";
@@ -20,16 +21,15 @@ export default async function RegisterPage({
   const nextPath = sanitizeNextPath(resolvedSearchParams?.next);
 
   return (
-    <main className="authScene">
-      <div className="authSceneViewport">
-        <AuthStandaloneCard title="Регистрация">
-          <RegisterForm
-            emailEnabled={env.EMAIL_ENABLED}
-            referralCode={referralCode}
-            nextPath={nextPath}
-          />
-        </AuthStandaloneCard>
-      </div>
-    </main>
+    <AuthScene>
+      <AuthStandaloneCard title="Регистрация">
+        <RegisterForm
+          emailEnabled={env.EMAIL_ENABLED}
+          turnstileSiteKey={env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+          referralCode={referralCode}
+          nextPath={nextPath}
+        />
+      </AuthStandaloneCard>
+    </AuthScene>
   );
 }

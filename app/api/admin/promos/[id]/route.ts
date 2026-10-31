@@ -1,6 +1,7 @@
 import { requireApiAdminSession } from "@/lib/api-session";
-import { apiError, apiOk, parseRequestBody } from "@/lib/http";
+import { apiErrorFrom, apiOk, parseRequestBody } from "@/lib/http";
 import { promoCreateSchema } from "@/lib/schemas/payments";
+import { logAdminAction } from "@/lib/services/admin-logs";
 import { deactivatePromo, updatePromo } from "@/lib/services/promos";
 
 type Params = {
@@ -10,20 +11,43 @@ type Params = {
 export async function PATCH(request: Request, { params }: Params) {
   try {
     const { id } = await params;
-    await requireApiAdminSession();
+    const session = await requireApiAdminSession();
     const body = await parseRequestBody(request, promoCreateSchema);
-    return apiOk(await updatePromo(id, body));
+    const promo = await updatePromo(id, body);
+    await logAdminAction({
+      adminId: session.userId,
+      action: "UPDATE_PROMO",
+      targetType: "PROMO_CODE",
+      targetId: id,
+      details: {
+        code: body.code,
+        type: body.type,
+        value: body.value,
+        isActive: body.isActive
+      }
+    });
+    return apiOk(promo);
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Не удалось обновить промокод", 400);
+    return apiErrorFrom(error, "Не удалось обновить промокод");
   }
 }
 
 export async function DELETE(_: Request, { params }: Params) {
   try {
     const { id } = await params;
-    await requireApiAdminSession();
-    return apiOk(await deactivatePromo(id));
+    const session = await requireApiAdminSession();
+    const promo = await deactivatePromo(id);
+    await logAdminAction({
+      adminId: session.userId,
+      action: "DEACTIVATE_PROMO",
+      targetType: "PROMO_CODE",
+      targetId: id,
+      details: {
+        isActive: false
+      }
+    });
+    return apiOk(promo);
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Не удалось деактивировать промокод", 400);
+    return apiErrorFrom(error, "Не удалось деактивировать промокод");
   }
 }

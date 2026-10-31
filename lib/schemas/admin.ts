@@ -8,10 +8,6 @@ export const grantSubscriptionSchema = z.object({
   note: z.string().trim().max(300).optional()
 });
 
-export const revokeSubscriptionSchema = z.object({
-  subscriptionId: z.string().min(1)
-});
-
 export const toggleUserSchema = z.object({
   enabled: z.boolean().optional()
 });

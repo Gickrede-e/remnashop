@@ -6,6 +6,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/font/google", () => ({
+  Inter: () => ({
+    variable: "font-sans-mock"
+  }),
   JetBrains_Mono: () => ({
     variable: "font-mono-mock"
   })
@@ -15,11 +18,16 @@ vi.mock("next/headers", () => ({
   headers: async () => new Headers({ "x-nonce": "test-nonce" })
 }));
 
-import RootLayout from "@/app/layout";
+import RootLayout, { metadata } from "@/app/layout";
 
 const globalsCssPath = path.resolve(process.cwd(), "app/globals.css");
 
 describe("root layout foundation", () => {
+  it("disables search indexing and uses a neutral site description", () => {
+    expect(metadata.robots).toEqual({ index: false, follow: false });
+    expect(JSON.stringify(metadata)).not.toMatch(/vpn|впн/i);
+  });
+
   it("renders the application root hooks for the plain CSS foundation", async () => {
     const tree = await RootLayout({
       children: React.createElement("div", null, "Screen body")
@@ -28,6 +36,7 @@ describe("root layout foundation", () => {
 
     expect(markup).toContain("Screen body");
     expect(markup).toMatch(/<html[^>]*class="[^"]*\bdark\b[^"]*"/);
+    expect(markup).toMatch(/<html[^>]*class="[^"]*\bfont-sans-mock\b[^"]*"/);
     expect(markup).toMatch(/<body[^>]*class="[^"]*\bappBody\b[^"]*"/);
     expect(markup).toMatch(/class="[^"]*\bappRoot\b[^"]*"/);
     expect(markup).not.toContain('data-testid="app-root"');
@@ -43,8 +52,8 @@ describe("root layout foundation", () => {
     expect(source).toContain("--canvas-0: #090909");
     expect(source).toContain("--canvas-1: #121212");
     expect(source).toContain("--text-primary: #f3efe6");
-    expect(source).toContain("--accent-primary: #d6ff3f");
-    expect(source).toContain("--accent-ambient: rgba(124, 92, 255, 0.18)");
+    expect(source).toContain("--accent-primary: #66e08a");
+    expect(source).toContain("--accent-ambient: rgba(var(--gick-accent-rgb), 0.10)");
     expect(source).toContain("--radius: 1rem");
     expect(source).toContain(".container");
     expect(source).toContain(".sr-only");

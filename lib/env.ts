@@ -2,19 +2,15 @@ import "server-only";
 
 import { z } from "zod";
 
-import {
-  normalizePlategaPaymentMethods,
-  parsePlategaPaymentMethods
-} from "@/lib/payments/platega-methods";
-
 const NODE_ENV = process.env.NODE_ENV ?? "development";
 const isProduction = NODE_ENV === "production";
+const isProductionBuild = process.env.NEXT_PHASE === "phase-production-build";
 // During `next build`'s "Collecting page data" phase, route handlers are imported
 // while production env vars are intentionally absent (the Dockerfile strips the
 // build secret to NEXT_PUBLIC_* + NODE_ENV + DATABASE_URL to prevent server-side
 // secrets from leaking into the bundle). Skip strict prod validation during build;
 // the runtime container will validate on its first import.
-const isStrict = isProduction && process.env.NEXT_PHASE !== "phase-production-build";
+const isStrict = isProduction && !isProductionBuild;
 
 const DEV_ENV_FALLBACKS = {
   DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/gickvpn?schema=public",
@@ -24,23 +20,19 @@ const DEV_ENV_FALLBACKS = {
   JWT_SECRET: "development_only_change_me_to_a_long_secret",
   ADMIN_EMAILS: "",
   ADMIN_INITIAL_PASSWORD: "",
-  NEXT_PUBLIC_SITE_URL: "https://vpn.example.com",
+  NEXT_PUBLIC_SITE_URL: "https://example.com",
   NEXT_PUBLIC_SITE_NAME: "GickShop",
-  NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: "",
   NEXT_PUBLIC_SUPPORT_TELEGRAM_URL: "",
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: "",
   TURNSTILE_SECRET_KEY: "",
+  // Bot token for admin Telegram *notifications* only (see lib/services/notifications.ts).
+  // Telegram login/auth was removed; this token no longer gates any authentication path.
   TELEGRAM_BOT_TOKEN: "",
   REMNAWAVE_BASE_URL: "https://your-panel.example.com",
   REMNAWAVE_API_TOKEN: "placeholder_token",
   YOOKASSA_ENABLED: "false",
   YOOKASSA_SHOP_ID: "123456",
   YOOKASSA_SECRET_KEY: "test_secret_key",
-  PLATEGA_ENABLED: "false",
-  PLATEGA_API_KEY: "platega_placeholder_key",
-  PLATEGA_MERCHANT_ID: "platega_dev_merchant_id",
-  PLATEGA_WEBHOOK_SECRET: "platega_placeholder_secret",
-  PLATEGA_PAYMENT_METHODS: "2,10,13",
   SMTP_HOST: "smtp",
   SMTP_PORT: "2525",
   SMTP_SECURE: "false",
@@ -61,9 +53,6 @@ const EXAMPLE_ENV_PLACEHOLDERS = {
   JWT_SECRET: "REPLACE_WITH_OPENSSL_RAND_HEX_32",
   REMNAWAVE_API_TOKEN: "REPLACE_WITH_REMNAWAVE_API_TOKEN",
   YOOKASSA_SECRET_KEY: "REPLACE_WITH_YOOKASSA_SECRET_KEY",
-  PLATEGA_API_KEY: "REPLACE_WITH_PLATEGA_API_KEY",
-  PLATEGA_MERCHANT_ID: "REPLACE_WITH_PLATEGA_MERCHANT_ID",
-  PLATEGA_WEBHOOK_SECRET: "REPLACE_WITH_PLATEGA_WEBHOOK_SECRET",
   CRON_SECRET: "REPLACE_WITH_OPENSSL_RAND_HEX_16"
 } as const;
 
@@ -81,18 +70,12 @@ const KNOWN_PLACEHOLDERS = new Set<string>([
   DEV_ENV_FALLBACKS.JWT_SECRET,
   DEV_ENV_FALLBACKS.REMNAWAVE_API_TOKEN,
   DEV_ENV_FALLBACKS.YOOKASSA_SECRET_KEY,
-  DEV_ENV_FALLBACKS.PLATEGA_API_KEY,
-  DEV_ENV_FALLBACKS.PLATEGA_MERCHANT_ID,
-  DEV_ENV_FALLBACKS.PLATEGA_WEBHOOK_SECRET,
   DEV_ENV_FALLBACKS.MAIL_DOMAIN,
   DEV_ENV_FALLBACKS.MAIL_HOSTNAME,
   DEV_ENV_FALLBACKS.CRON_SECRET,
   EXAMPLE_ENV_PLACEHOLDERS.JWT_SECRET,
   EXAMPLE_ENV_PLACEHOLDERS.REMNAWAVE_API_TOKEN,
   EXAMPLE_ENV_PLACEHOLDERS.YOOKASSA_SECRET_KEY,
-  EXAMPLE_ENV_PLACEHOLDERS.PLATEGA_API_KEY,
-  EXAMPLE_ENV_PLACEHOLDERS.PLATEGA_MERCHANT_ID,
-  EXAMPLE_ENV_PLACEHOLDERS.PLATEGA_WEBHOOK_SECRET,
   EXAMPLE_ENV_PLACEHOLDERS.CRON_SECRET
 ]);
 
@@ -143,7 +126,6 @@ const rawEnv = {
   ADMIN_INITIAL_PASSWORD: readEnvValue("ADMIN_INITIAL_PASSWORD"),
   NEXT_PUBLIC_SITE_URL: readEnvValue("NEXT_PUBLIC_SITE_URL"),
   NEXT_PUBLIC_SITE_NAME: readEnvValue("NEXT_PUBLIC_SITE_NAME"),
-  NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: readEnvValue("NEXT_PUBLIC_TELEGRAM_BOT_USERNAME"),
   NEXT_PUBLIC_SUPPORT_TELEGRAM_URL: readEnvValue("NEXT_PUBLIC_SUPPORT_TELEGRAM_URL"),
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: readEnvValue("NEXT_PUBLIC_TURNSTILE_SITE_KEY"),
   TURNSTILE_SECRET_KEY: readEnvValue("TURNSTILE_SECRET_KEY"),
@@ -153,11 +135,6 @@ const rawEnv = {
   YOOKASSA_ENABLED: readEnvValue("YOOKASSA_ENABLED"),
   YOOKASSA_SHOP_ID: readEnvValue("YOOKASSA_SHOP_ID"),
   YOOKASSA_SECRET_KEY: readEnvValue("YOOKASSA_SECRET_KEY"),
-  PLATEGA_ENABLED: readEnvValue("PLATEGA_ENABLED"),
-  PLATEGA_API_KEY: readEnvValue("PLATEGA_API_KEY"),
-  PLATEGA_MERCHANT_ID: readEnvValue("PLATEGA_MERCHANT_ID"),
-  PLATEGA_WEBHOOK_SECRET: readEnvValue("PLATEGA_WEBHOOK_SECRET"),
-  PLATEGA_PAYMENT_METHODS: readEnvValue("PLATEGA_PAYMENT_METHODS"),
   SMTP_HOST: readEnvValue("SMTP_HOST"),
   SMTP_PORT: readEnvValue("SMTP_PORT"),
   SMTP_SECURE: readEnvValue("SMTP_SECURE"),
@@ -186,10 +163,9 @@ const envSchema = z.object({
   ADMIN_INITIAL_PASSWORD: z.string().default(""),
   NEXT_PUBLIC_SITE_URL: z.string().url(),
   NEXT_PUBLIC_SITE_NAME: z.string().min(1),
-  NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: z.string().default(""),
   NEXT_PUBLIC_SUPPORT_TELEGRAM_URL: z.string().default(""),
-  NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().default(""),
-  TURNSTILE_SECRET_KEY: z.string().default(""),
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().trim().default(""),
+  TURNSTILE_SECRET_KEY: z.string().trim().default(""),
   TELEGRAM_BOT_TOKEN: z.string().default(""),
   REMNAWAVE_BASE_URL: z.string().url(),
   REMNAWAVE_API_TOKEN: requiredProductionString("REMNAWAVE_API_TOKEN"),
@@ -199,14 +175,6 @@ const envSchema = z.object({
     .transform((value) => value === "true"),
   YOOKASSA_SHOP_ID: z.string().default(""),
   YOOKASSA_SECRET_KEY: z.string().default(""),
-  PLATEGA_ENABLED: z
-    .string()
-    .default("false")
-    .transform((value) => value === "true"),
-  PLATEGA_API_KEY: z.string().default(""),
-  PLATEGA_MERCHANT_ID: z.string().default(""),
-  PLATEGA_WEBHOOK_SECRET: z.string().default(""),
-  PLATEGA_PAYMENT_METHODS: z.string().default("2,10,13"),
   SMTP_HOST: z.string().min(1),
   SMTP_PORT: z.coerce.number().int().positive(),
   SMTP_SECURE: z
@@ -229,6 +197,14 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
   LOG_FORMAT: z.enum(["json", "pretty"]).optional()
 }).superRefine((value, ctx) => {
+  if (!isProductionBuild && !!value.NEXT_PUBLIC_TURNSTILE_SITE_KEY !== !!value.TURNSTILE_SECRET_KEY) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: [value.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? "TURNSTILE_SECRET_KEY" : "NEXT_PUBLIC_TURNSTILE_SITE_KEY"],
+      message: "NEXT_PUBLIC_TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY must be set together"
+    });
+  }
+
   if (value.YOOKASSA_ENABLED) {
     if (!value.YOOKASSA_SHOP_ID) {
       ctx.addIssue({
@@ -249,45 +225,6 @@ const envSchema = z.object({
         code: z.ZodIssueCode.custom,
         path: ["YOOKASSA_SECRET_KEY"],
         message: "YOOKASSA_SECRET_KEY is set to a placeholder value — generate a real secret"
-      });
-    }
-  }
-
-  if (value.PLATEGA_ENABLED) {
-    for (const field of [
-      "PLATEGA_API_KEY",
-      "PLATEGA_MERCHANT_ID",
-      "PLATEGA_WEBHOOK_SECRET"
-    ] as const) {
-      if (!value[field]) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: [field],
-          message: `${field} is required in production`
-        });
-      } else if (isStrict && KNOWN_PLACEHOLDERS.has(value[field])) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: [field],
-          message: `${field} is set to a placeholder value — generate a real secret`
-        });
-      }
-    }
-
-    const parsedPaymentMethods = parsePlategaPaymentMethods(value.PLATEGA_PAYMENT_METHODS);
-    if (parsedPaymentMethods.invalidValues.length > 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["PLATEGA_PAYMENT_METHODS"],
-        message: `PLATEGA_PAYMENT_METHODS contains unsupported values: ${parsedPaymentMethods.invalidValues.join(", ")}`
-      });
-    }
-
-    if (parsedPaymentMethods.methods.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["PLATEGA_PAYMENT_METHODS"],
-        message: "PLATEGA_PAYMENT_METHODS must include at least one supported payment method"
       });
     }
   }
@@ -355,17 +292,11 @@ export const env = {
   ...base,
   siteUrl: base.NEXT_PUBLIC_SITE_URL.replace(/\/+$/, ""),
   siteName: base.NEXT_PUBLIC_SITE_NAME,
-  plategaPaymentMethods: normalizePlategaPaymentMethods(base.PLATEGA_PAYMENT_METHODS),
+  // Days credited per paying referral when the programme pays in days (dashboard copy).
+  referralBonusDays: base.REFERRAL_REWARD_TYPE === "FREE_DAYS" ? base.REFERRAL_REWARD_VALUE : null,
   adminEmails: base.ADMIN_EMAILS.split(",")
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean)
-};
-
-export const publicEnv = {
-  NEXT_PUBLIC_SITE_URL: env.NEXT_PUBLIC_SITE_URL,
-  NEXT_PUBLIC_SITE_NAME: env.NEXT_PUBLIC_SITE_NAME,
-  NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME,
-  NEXT_PUBLIC_SUPPORT_TELEGRAM_URL: env.NEXT_PUBLIC_SUPPORT_TELEGRAM_URL
 };
 
 export function getAdminEmails() {

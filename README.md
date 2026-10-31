@@ -2,7 +2,9 @@
 
 [![CI](https://github.com/Gickrede-e/remnashop/actions/workflows/ci.yml/badge.svg)](https://github.com/Gickrede-e/remnashop/actions/workflows/ci.yml)
 
-Магазин VPN-подписок на базе [Remnawave](https://github.com/remnawave) с личным кабинетом, админ-панелью и оплатой через ЮKassa / Platega.
+Магазин подписок на базе [Remnawave](https://github.com/remnawave) с личным кабинетом, админ-панелью и оплатой через ЮKassa / Platega.
+
+Поисковая индексация отключена для всего сайта через `noindex, nofollow` в метаданных и заголовке `X-Robots-Tag`. В `robots.txt` обход разрешён, чтобы поисковики могли прочитать запрет и удалить ранее найденные страницы после повторного обхода.
 
 ## Стек
 

@@ -60,6 +60,21 @@ describe("dashboard profile page", () => {
     expect(redirectMock).not.toHaveBeenCalled();
   });
 
+  it("renders a show-password toggle per field and the unmet password checklist", async () => {
+    getSessionMock.mockResolvedValue({
+      userId: "user-1",
+      email: "user@example.com",
+      role: "USER"
+    });
+
+    const markup = renderToStaticMarkup(await ProfilePage());
+
+    expect(markup.match(/aria-label="Показать пароль" aria-pressed="false"/g) ?? []).toHaveLength(3);
+    expect(markup).toContain("Минимум 8 символов");
+    expect(markup).toContain("Пароли совпадают");
+    expect(markup).not.toContain("profilePasswordCheck is-met");
+  });
+
   it("redirects unauthenticated users to login", async () => {
     getSessionMock.mockResolvedValue(null);
     redirectMock.mockImplementation(() => {

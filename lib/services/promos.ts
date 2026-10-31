@@ -1,6 +1,6 @@
 import { PromoCodeType, PromoUsageStatus } from "@prisma/client";
 
-import { prisma } from "@/lib/prisma";
+import { type DbClient, prisma } from "@/lib/prisma";
 
 export class PromoLimitExceededError extends Error {
   constructor(message = "Лимит использований промокода исчерпан") {
@@ -8,8 +8,6 @@ export class PromoLimitExceededError extends Error {
     this.name = "PromoLimitExceededError";
   }
 }
-
-type DbClient = typeof prisma | Parameters<Parameters<typeof prisma["$transaction"]>[0]>[0];
 
 export async function getPromoByCode(code: string) {
   return prisma.promoCode.findUnique({
@@ -28,8 +26,6 @@ export async function listPromoCodes() {
     orderBy: [{ isActive: "desc" }, { createdAt: "desc" }]
   });
 }
-
-export const listPromos = listPromoCodes;
 
 export async function validatePromoCode(input: {
   code: string;
@@ -135,13 +131,46 @@ export function calculatePromoOutcome(
 }
 
 // Atomically reserves a slot in the promo counter and creates a PENDING PromoUsage row.
-// Throws PromoLimitExceededError if maxUsages is reached. Race-safe.
+// Throws PromoLimitExceededError if the global OR the per-user cap is reached. Race-safe:
+// the global cap is guarded by a conditional UPDATE, and the per-user cap by a
+// per-(promo,user) advisory lock that serializes concurrent reservations for the same
+// user — without it, count-then-insert is a TOCTOU under READ COMMITTED and N parallel
+// requests could each pass the check and all redeem a one-per-user promo.
 export async function registerPromoUsage(input: {
   promoCodeId: string;
   userId: string;
   paymentId: string;
 }) {
   return prisma.$transaction(async (tx) => {
+    // Serialize concurrent reservations for this exact (promo, user) pair. Other
+    // users hash to different keys and don't block each other.
+    await tx.$executeRaw`
+      SELECT pg_advisory_xact_lock(
+        hashtext(${`promo_user:${input.promoCodeId}:${input.userId}`})::bigint
+      )
+    `;
+
+    const promo = await tx.promoCode.findUnique({
+      where: { id: input.promoCodeId },
+      select: { maxUsagesPerUser: true }
+    });
+    if (!promo) {
+      throw new PromoLimitExceededError();
+    }
+
+    // Authoritative per-user enforcement (validatePromoCode's earlier count is a
+    // best-effort preview only). Inside the advisory lock the count is accurate.
+    const userUsages = await tx.promoUsage.count({
+      where: {
+        promoCodeId: input.promoCodeId,
+        userId: input.userId,
+        status: { not: PromoUsageStatus.FAILED }
+      }
+    });
+    if (userUsages >= promo.maxUsagesPerUser) {
+      throw new PromoLimitExceededError("Промокод уже использован максимальное число раз");
+    }
+
     const reserved = await tx.$executeRaw`
       UPDATE "promo_codes"
       SET "currentUsages" = "currentUsages" + 1
@@ -263,5 +292,3 @@ export async function deactivatePromo(id: string) {
     data: { isActive: false }
   });
 }
-
-export const softDeletePromo = deactivatePromo;

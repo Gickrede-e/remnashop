@@ -16,7 +16,7 @@ const { mockPrisma } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/prisma", () => ({
-  prisma: mockPrisma
+  prisma: mockPrisma, toJsonValue: (value: unknown) => JSON.parse(JSON.stringify(value))
 }));
 
 import { validatePromoCode } from "@/lib/services/promos";

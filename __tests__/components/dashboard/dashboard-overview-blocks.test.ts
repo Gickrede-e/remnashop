@@ -15,110 +15,118 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { DashboardOverviewBlocks } from "@/components/blocks/dashboard/dashboard-overview-blocks";
-import { formatBytes, formatDateTime } from "@/lib/utils";
+import { formatBytes } from "@/lib/utils";
 
-const TestableDashboardOverviewBlocks = DashboardOverviewBlocks as React.ComponentType<{
-  subscription: {
-    status: "ACTIVE" | "PENDING" | "EXPIRED" | "DISABLED";
-    planName: string | null;
-    expiresAt: Date | null;
-    trafficLimitBytes: bigint | null;
-    trafficUsedBytes: bigint | null;
-  } | null;
-  referralLink: string;
-  externalSubscriptionUrl: string | null;
-  remnawaveUuid: string | null;
-}>;
+const GB = 1024n * 1024n * 1024n;
+
+function formatDateOnly(date: Date) {
+  return new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium" }).format(date);
+}
+
+function renderOverview(
+  subscription: React.ComponentProps<typeof DashboardOverviewBlocks>["subscription"],
+  externalSubscriptionUrl: string | null = "https://example.com/subscription"
+) {
+  return renderToStaticMarkup(
+    React.createElement(DashboardOverviewBlocks, {
+      subscription,
+      externalSubscriptionUrl,
+      remnawaveUuid: subscription ? "uuid-1" : null,
+      referralBonusDays: null
+    })
+  );
+}
 
 describe("dashboard overview blocks", () => {
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  it("renders the AdminHub-style overview shell", () => {
+  it("leads with the days left, then status, traffic and actions in one grid", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-04-01T00:00:00.000Z"));
+    const expiresAt = new Date("2026-05-01T00:00:00.000Z");
+
+    const markup = renderOverview({
+      status: "ACTIVE",
+      planName: "Pro 90",
+      expiresAt,
+      trafficLimitBytes: 120n * GB,
+      trafficUsedBytes: 48n * GB
+    });
+
+    expect(markup).toContain('class="dashDaysLeft is-active"');
+    expect(markup).toContain('<span class="dashDaysLeftNumber">30</span>');
+    expect(markup).toContain("дней осталось");
+    expect(markup).toContain(`До ${formatDateOnly(expiresAt)} · Pro 90`);
+    expect(markup).toMatch(/<a class="button buttonPrimary[^"]*" href="https:\/\/example\.com\/subscription"/);
+    expect(markup).toContain(">Продлить</a>");
+    expect(markup).toContain('class="dashOverviewGrid"');
+    expect(markup.match(/class="dashStatTile"/g) ?? []).toHaveLength(2);
+    expect(markup.match(/class="dashOverviewCompactStat"/g) ?? []).toHaveLength(2);
+    expect(markup).toContain(`${formatBytes(48n * GB)} / ${formatBytes(120n * GB)}`);
+    expect(markup).toContain("Пригласить друга");
+    expect(markup).toContain("Перевыпуск подписки");
+    expect(markup).not.toContain("Сеть в работе");
+    expect(markup).not.toContain("авто-продлен");
+    expect(markup).not.toContain("От 200");
+  });
+
+  it("turns red and puts renewal first when five days or fewer are left", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-04-29T00:00:00.000Z"));
 
-    const subscription = {
-      status: "ACTIVE" as const,
-      planName: "Pro 90",
+    const markup = renderOverview({
+      status: "ACTIVE",
+      planName: null,
       expiresAt: new Date("2026-05-01T00:00:00.000Z"),
-      trafficLimitBytes: 120n * 1024n * 1024n * 1024n,
-      trafficUsedBytes: 48n * 1024n * 1024n * 1024n
-    };
+      trafficLimitBytes: null,
+      trafficUsedBytes: null
+    });
 
-    const markup = renderToStaticMarkup(
-      React.createElement(TestableDashboardOverviewBlocks, {
-        subscription,
-        referralLink: "https://example.com/register?ref=ALLY42",
-        externalSubscriptionUrl: "https://example.com/subscription",
-        remnawaveUuid: "uuid-1"
-      })
-    );
-
-    expect(markup).toMatch(/class="[^"]*\bdashWorkspace\b[^"]*\bdashOverview\b[^"]*"/);
-    expect(markup).toContain('class="dashStatGrid"');
-    expect(markup.match(/class="dashStatTile"/g) ?? []).toHaveLength(3);
-    expect(markup).toContain('class="dashOverviewCompactStats"');
-    expect(markup.match(/class="dashOverviewCompactStat"/g) ?? []).toHaveLength(3);
-    expect(markup).toContain("СТАТУС");
-    expect(markup).toContain("Активна");
-    expect(markup).toContain("ДОСТУП ДО");
-    expect(markup).toContain(formatDateTime(subscription.expiresAt));
-    expect(markup).toContain("ТРАФИК");
-    expect(markup).toContain(
-      `${formatBytes(subscription.trafficUsedBytes)} / ${formatBytes(subscription.trafficLimitBytes)}`
-    );
-    expect(markup).toContain("Осталось");
-    expect(markup).toContain("2 дня");
-    expect(markup).toMatch(/class="[^"]*\bdashCardGrid\b[^"]*"/);
-    expect(markup).toMatch(/class="[^"]*\bdashCard\b[^"]*\bdashCardNarrow\b[^"]*"/);
-    expect(markup).not.toContain("Последние операции");
-    expect(markup).not.toContain("Быстрые действия");
-    expect(markup).toContain("Подключить");
-    expect(markup).toContain('href="https://example.com/subscription"');
-    expect(markup).toContain("Перевыпуск подписки");
-    expect(markup).not.toContain("Управлять устройствами");
-    expect(markup).toContain("Пригласить друга");
-    expect(markup).not.toContain("dashListIcon");
-    expect(markup).not.toMatch(/\btelemetry[A-Za-z-]*\b/);
-    expect(markup).not.toMatch(/\bcommandPanel[A-Za-z-]*\b/);
-    expect(markup).not.toMatch(/\breferralPanel[A-Za-z-]*\b/);
+    expect(markup).toContain('class="dashDaysLeft is-ending"');
+    expect(markup).toContain("Скоро закончится");
+    expect(markup).toContain('<span class="dashDaysLeftNumber">2</span>');
+    expect(markup).toContain("дня осталось");
+    expect(markup.indexOf("Продлить сейчас")).toBeLessThan(markup.indexOf("Подключить"));
   });
 
-  it("rounds remaining days up when less than a day is left", () => {
+  it("rounds the remaining days up when less than a day is left", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-04-30T12:00:00.000Z"));
 
-    const markup = renderToStaticMarkup(
-      React.createElement(TestableDashboardOverviewBlocks, {
-        subscription: {
-          status: "ACTIVE",
-          planName: "Pro 30",
-          expiresAt: new Date("2026-05-01T00:00:00.000Z"),
-          trafficLimitBytes: 60n * 1024n * 1024n * 1024n,
-          trafficUsedBytes: 10n * 1024n * 1024n * 1024n
-        },
-        referralLink: "https://example.com/register?ref=ALLY42",
-        externalSubscriptionUrl: "https://example.com/subscription",
-        remnawaveUuid: "uuid-1"
-      })
-    );
+    const markup = renderOverview({
+      status: "ACTIVE",
+      planName: "Pro 30",
+      expiresAt: new Date("2026-05-01T00:00:00.000Z"),
+      trafficLimitBytes: 60n * GB,
+      trafficUsedBytes: 10n * GB
+    });
 
-    expect(markup).toContain("1 день");
+    expect(markup).toContain('<span class="dashDaysLeftNumber">1</span>');
+    expect(markup).toContain("день остался");
   });
 
-  it("keeps the purchase action and hides reissue when subscription actions are unavailable", () => {
-    const markup = renderToStaticMarkup(
-      React.createElement(TestableDashboardOverviewBlocks, {
-        subscription: null,
-        referralLink: "https://example.com/register?ref=ALLY42",
-        externalSubscriptionUrl: null,
-        remnawaveUuid: null
-      })
-    );
+  it("offers to resume an expired subscription without a connect button", () => {
+    const markup = renderOverview({
+      status: "EXPIRED",
+      planName: "Pro 30",
+      expiresAt: new Date("2026-04-01T00:00:00.000Z"),
+      trafficLimitBytes: 60n * GB,
+      trafficUsedBytes: 60n * GB
+    });
 
-    expect(markup).toContain("Купить подписку");
+    expect(markup).toContain('class="dashDaysLeft is-expired"');
+    expect(markup).toContain("Доступ отключён");
+    expect(markup).toContain("Возобновить подписку");
+    expect(markup).not.toContain("Подключить");
+  });
+
+  it("offers to buy and hides reissue when there is no subscription", () => {
+    const markup = renderOverview(null, null);
+
+    expect(markup).toContain("Подписки нет");
+    expect(markup).toMatch(/<a href="\/dashboard\/buy" class="button buttonPrimary[^"]*" data-tour="connect">Купить подписку/);
     expect(markup).not.toContain("Подключить");
     expect(markup).not.toContain("Перевыпуск подписки");
   });

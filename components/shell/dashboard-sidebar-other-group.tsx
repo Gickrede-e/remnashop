@@ -6,15 +6,17 @@ import { ChevronRight } from "lucide-react";
 const STORAGE_KEY = "dashboardSidebar.otherStuff.open";
 
 export function DashboardSidebarOtherGroup({ children }: { children: ReactNode }) {
+  // По макету секция раскрыта по умолчанию; localStorage хранит только
+  // явное решение пользователя её свернуть.
   const [open, setOpen] = useState(() => {
     if (typeof window === "undefined") {
-      return false;
+      return true;
     }
 
     try {
-      return window.localStorage.getItem(STORAGE_KEY) === "1";
+      return window.localStorage.getItem(STORAGE_KEY) !== "0";
     } catch {
-      return false;
+      return true;
     }
   });
 
@@ -33,7 +35,7 @@ export function DashboardSidebarOtherGroup({ children }: { children: ReactNode }
       }}
     >
       <summary className="dashSidebarOtherSummary">
-        <span className="dashSidebarOtherLabel">OTHER STUFF</span>
+        <span className="dashSidebarOtherLabel">Другое</span>
         <ChevronRight className="dashSidebarOtherChevron" aria-hidden="true" />
       </summary>
       <div className="dashSidebarOtherBody">{children}</div>

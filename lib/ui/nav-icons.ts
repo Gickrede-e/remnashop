@@ -9,24 +9,22 @@ import {
   Gauge,
   History,
   LayoutDashboard,
+  LifeBuoy,
   Share2,
   Smartphone,
   Users,
   type LucideIcon
 } from "lucide-react";
 
-import type { AppShellNavArea } from "@/lib/ui/app-shell-nav";
+import type { AppShellArea } from "@/lib/ui/app-shell-nav";
 
 const navIcons: Record<string, LucideIcon> = {
-  "/": Gauge,
-  "/pricing": CreditCard,
-  "/faq": ClipboardList,
-  "/terms": BadgePercent,
   "/dashboard": Gauge,
   "/dashboard/buy": CreditCard,
   "/dashboard/devices": Smartphone,
   "/dashboard/history": History,
   "/dashboard/referrals": Share2,
+  "/dashboard/help": LifeBuoy,
   "/dashboard/profile": CircleUserRound,
   "/admin": LayoutDashboard,
   "/admin/users": Users,
@@ -38,7 +36,7 @@ const navIcons: Record<string, LucideIcon> = {
   "/admin/export": ArrowDownToLine
 };
 
-export function resolveNavIcon(area: AppShellNavArea, href: string) {
+export function resolveNavIcon(area: AppShellArea, href: string) {
   if (area === "admin" && href === "/dashboard") {
     return ArrowLeft;
   }

@@ -8,11 +8,7 @@ const { mockEnv, envReads } = vi.hoisted(() => {
     REMNAWAVE_API_TOKEN: "placeholder_token",
     YOOKASSA_ENABLED: true,
     YOOKASSA_SHOP_ID: "123456",
-    YOOKASSA_SECRET_KEY: "test_secret_key",
-    PLATEGA_ENABLED: true,
-    PLATEGA_API_KEY: "platega_placeholder_key",
-    PLATEGA_WEBHOOK_SECRET: "platega_placeholder_secret",
-    PLATEGA_MERCHANT_ID: ""
+    YOOKASSA_SECRET_KEY: "test_secret_key"
   };
   const reads: string[] = [];
 
@@ -40,10 +36,6 @@ function configureAllProviders() {
   mockEnv.YOOKASSA_ENABLED = true;
   mockEnv.YOOKASSA_SHOP_ID = "shop-id";
   mockEnv.YOOKASSA_SECRET_KEY = "secret";
-  mockEnv.PLATEGA_ENABLED = true;
-  mockEnv.PLATEGA_API_KEY = "platega-real-key";
-  mockEnv.PLATEGA_WEBHOOK_SECRET = "platega-real-secret";
-  mockEnv.PLATEGA_MERCHANT_ID = "merchant-1";
 }
 
 describe("getProviderStatuses", () => {
@@ -56,10 +48,6 @@ describe("getProviderStatuses", () => {
     mockEnv.YOOKASSA_ENABLED = true;
     mockEnv.YOOKASSA_SHOP_ID = "123456";
     mockEnv.YOOKASSA_SECRET_KEY = "test_secret_key";
-    mockEnv.PLATEGA_ENABLED = true;
-    mockEnv.PLATEGA_API_KEY = "platega_placeholder_key";
-    mockEnv.PLATEGA_WEBHOOK_SECRET = "platega_placeholder_secret";
-    mockEnv.PLATEGA_MERCHANT_ID = "";
   });
 
   afterEach(() => {
@@ -67,9 +55,6 @@ describe("getProviderStatuses", () => {
   });
 
   it("marks placeholder providers as not_configured without calling fetch", async () => {
-    mockEnv.PLATEGA_API_KEY = "your_platega_api_key";
-    mockEnv.PLATEGA_WEBHOOK_SECRET = "your_platega_webhook_secret";
-
     const fetchSpy = vi.spyOn(globalThis, "fetch");
 
     const result = await getProviderStatuses();
@@ -81,11 +66,7 @@ describe("getProviderStatuses", () => {
         "REMNAWAVE_API_TOKEN",
         "YOOKASSA_ENABLED",
         "YOOKASSA_SHOP_ID",
-        "YOOKASSA_SECRET_KEY",
-        "PLATEGA_ENABLED",
-        "PLATEGA_API_KEY",
-        "PLATEGA_WEBHOOK_SECRET",
-        "PLATEGA_MERCHANT_ID"
+        "YOOKASSA_SECRET_KEY"
       ])
     );
     expect(result).toEqual([
@@ -104,13 +85,6 @@ describe("getProviderStatuses", () => {
         summary: "Не настроен",
         detail: "placeholder config",
         checkedAt: expect.any(String)
-      },
-      {
-        label: "Platega",
-        status: "not_configured",
-        summary: "Не настроен",
-        detail: "placeholder config",
-        checkedAt: expect.any(String)
       }
     ]);
   });
@@ -120,9 +94,6 @@ describe("getProviderStatuses", () => {
     mockEnv.REMNAWAVE_API_TOKEN = "your_remnawave_api_token";
     mockEnv.YOOKASSA_SHOP_ID = "shop-id";
     mockEnv.YOOKASSA_SECRET_KEY = "";
-    mockEnv.PLATEGA_API_KEY = "";
-    mockEnv.PLATEGA_WEBHOOK_SECRET = "";
-    mockEnv.PLATEGA_MERCHANT_ID = "";
 
     const fetchSpy = vi.spyOn(globalThis, "fetch");
 
@@ -142,10 +113,6 @@ describe("getProviderStatuses", () => {
     mockEnv.YOOKASSA_ENABLED = false;
     mockEnv.YOOKASSA_SHOP_ID = "";
     mockEnv.YOOKASSA_SECRET_KEY = "";
-    mockEnv.PLATEGA_ENABLED = false;
-    mockEnv.PLATEGA_API_KEY = "";
-    mockEnv.PLATEGA_WEBHOOK_SECRET = "";
-    mockEnv.PLATEGA_MERCHANT_ID = "";
 
     const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
@@ -153,11 +120,6 @@ describe("getProviderStatuses", () => {
     const result = await getProviderStatuses();
 
     expect(result.find((item) => item.label === "YooKassa")).toMatchObject({
-      status: "disabled",
-      summary: "Выключен",
-      detail: "module disabled by env flag"
-    });
-    expect(result.find((item) => item.label === "Platega")).toMatchObject({
       status: "disabled",
       summary: "Выключен",
       detail: "module disabled by env flag"
@@ -170,9 +132,6 @@ describe("getProviderStatuses", () => {
     mockEnv.REMNAWAVE_API_TOKEN = "";
     mockEnv.YOOKASSA_SHOP_ID = "shop-id";
     mockEnv.YOOKASSA_SECRET_KEY = "";
-    mockEnv.PLATEGA_API_KEY = "";
-    mockEnv.PLATEGA_WEBHOOK_SECRET = "platega-real-secret";
-    mockEnv.PLATEGA_MERCHANT_ID = "merchant-1";
 
     const fetchSpy = vi.spyOn(globalThis, "fetch");
 
@@ -180,7 +139,6 @@ describe("getProviderStatuses", () => {
 
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(result.map((item) => item.status)).toEqual([
-      "not_configured",
       "not_configured",
       "not_configured"
     ]);
@@ -268,11 +226,7 @@ describe("getProviderStatuses", () => {
       "fetch",
       vi.fn((input: RequestInfo | URL) => {
         const url = String(input);
-        const delay = url.includes("panel.example.com")
-          ? 10
-          : url.includes("yookassa.ru")
-            ? 20
-            : 30;
+        const delay = url.includes("panel.example.com") ? 10 : 20;
 
         return new Promise<Response>((resolve) => {
           setTimeout(() => {
@@ -284,20 +238,15 @@ describe("getProviderStatuses", () => {
 
     const resultPromise = getProviderStatuses();
 
-    await vi.advanceTimersByTimeAsync(30);
+    await vi.advanceTimersByTimeAsync(20);
 
     const result = await resultPromise;
     const remnawave = result.find((item) => item.label === "Remnawave");
     const yookassa = result.find((item) => item.label === "YooKassa");
-    const platega = result.find((item) => item.label === "Platega");
 
     expect(remnawave?.checkedAt).not.toBe(yookassa?.checkedAt);
-    expect(yookassa?.checkedAt).not.toBe(platega?.checkedAt);
     expect(Date.parse(remnawave?.checkedAt ?? "")).toBeLessThan(
       Date.parse(yookassa?.checkedAt ?? "")
-    );
-    expect(Date.parse(yookassa?.checkedAt ?? "")).toBeLessThan(
-      Date.parse(platega?.checkedAt ?? "")
     );
   });
 
@@ -307,14 +256,13 @@ describe("getProviderStatuses", () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(new Response("{}", { status: 401, statusText: "Unauthorized" }))
-      .mockRejectedValueOnce(new TypeError("fetch failed"))
-      .mockResolvedValueOnce(new Response("{}", { status: 200 }));
+      .mockRejectedValueOnce(new TypeError("fetch failed"));
 
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await getProviderStatuses();
 
-    expect(result).toHaveLength(3);
+    expect(result).toHaveLength(2);
     expect(result.find((item) => item.label === "Remnawave")).toMatchObject({
       status: "unavailable",
       summary: "Недоступен",
@@ -325,13 +273,8 @@ describe("getProviderStatuses", () => {
       summary: "Недоступен",
       detail: "fetch failed"
     });
-    expect(result.find((item) => item.label === "Platega")).toMatchObject({
-      status: "available",
-      summary: "Доступен",
-      detail: "auth ok"
-    });
 
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
@@ -353,32 +296,6 @@ describe("getProviderStatuses", () => {
           Authorization: `Basic ${Buffer.from("shop-id:secret", "utf8").toString("base64")}`
         },
         cache: "no-store"
-      })
-    );
-
-    const plategaCall = fetchMock.mock.calls[2];
-    const plategaUrl = new URL(String(plategaCall?.[0]));
-    const plategaInit = plategaCall?.[1] as RequestInit | undefined;
-
-    // Platega docs expose GET /transaction/balance-unlock-operations with X-MerchantId/X-Secret.
-    expect(plategaUrl.origin).toBe("https://app.platega.io");
-    expect(plategaUrl.pathname).toBe("/transaction/balance-unlock-operations");
-    expect(plategaUrl.searchParams.get("page")).toBe("1");
-    expect(plategaUrl.searchParams.get("size")).toBe("1");
-    expect(plategaUrl.searchParams.get("from")).toMatch(
-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/
-    );
-    expect(plategaUrl.searchParams.get("to")).toMatch(
-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/
-    );
-    expect(plategaInit).toEqual(
-      expect.objectContaining({
-      headers: {
-        Accept: "text/plain",
-        "X-MerchantId": "merchant-1",
-        "X-Secret": "platega-real-key"
-      },
-      cache: "no-store"
       })
     );
   });

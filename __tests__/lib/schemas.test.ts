@@ -2,7 +2,7 @@ import { PaymentProvider, PromoCodeType } from "@prisma/client";
 import { describe, expect, it } from "vitest";
 
 import { grantSubscriptionSchema } from "@/lib/schemas/admin";
-import { loginSchema, registerSchema, telegramAuthSchema } from "@/lib/schemas/auth";
+import { loginSchema, registerSchema } from "@/lib/schemas/auth";
 import { paymentCreateSchema, promoCreateSchema, promoValidateSchema } from "@/lib/schemas/payments";
 import { planSchema } from "@/lib/schemas/plans";
 
@@ -52,34 +52,15 @@ describe("lib/schemas", () => {
     }), ["password"]);
   });
 
-  it("validates and transforms telegramAuthSchema", () => {
-    const parsed = telegramAuthSchema.parse({
-      id: 123456,
-      first_name: "Test",
-      username: "tester",
-      auth_date: 1710000000,
-      hash: "hash-value"
-    });
-
-    expect(parsed.id).toBe("123456");
-    expect(parsed.auth_date).toBe("1710000000");
-
-    expectIssuePath(telegramAuthSchema.safeParse({
-      id: 1,
-      auth_date: 1,
-      hash: ""
-    }), ["hash"]);
-  });
-
   it("validates paymentCreateSchema", () => {
     expect(paymentCreateSchema.parse({
       planId: "plan_1",
       provider: PaymentProvider.YOOKASSA,
-      paymentMethod: "2"
+      months: "3"
     })).toMatchObject({
       planId: "plan_1",
       provider: PaymentProvider.YOOKASSA,
-      paymentMethod: 2
+      months: 3
     });
 
     expectIssuePath(paymentCreateSchema.safeParse({
@@ -88,9 +69,9 @@ describe("lib/schemas", () => {
     }), ["provider"]);
     expectIssuePath(paymentCreateSchema.safeParse({
       planId: "plan_1",
-      provider: PaymentProvider.PLATEGA,
-      paymentMethod: "not-a-number"
-    }), ["paymentMethod"]);
+      provider: PaymentProvider.YOOKASSA,
+      months: "not-a-number"
+    }), ["months"]);
   });
 
   it("validates and transforms promoValidateSchema", () => {

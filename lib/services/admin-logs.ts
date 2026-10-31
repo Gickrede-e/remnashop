@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { prisma, toJsonValue } from "@/lib/prisma";
 
 type AdminLogInput = {
   adminId?: string | null;
@@ -15,12 +15,10 @@ export async function logAdminAction(input: AdminLogInput) {
       action: input.action,
       targetType: input.targetType,
       targetId: input.targetId,
-      details: input.details ? JSON.parse(JSON.stringify(input.details)) : undefined
+      details: input.details ? toJsonValue(input.details) : undefined
     }
   });
 }
-
-export const writeAdminLog = logAdminAction;
 
 export async function getAdminLogs(input: {
   page: number;
@@ -53,5 +51,3 @@ export async function getAdminLogs(input: {
 
   return { items, total };
 }
-
-export const listAdminLogs = getAdminLogs;

@@ -270,27 +270,6 @@ describe("lib/server/logger", () => {
     expect(error.stack).toEqual(expect.any(String));
   });
 
-  it("serializes AppError metadata", async () => {
-    const { serializeError } = await loadLoggerModule();
-    const { AppError } = await import("@/lib/http/errors");
-    const error = serializeError(
-      new AppError({
-        code: "TEAPOT",
-        message: "short and stout",
-        status: 418,
-        retryable: true
-      })
-    );
-
-    expect(error).toMatchObject({
-      name: "AppError",
-      message: "short and stout",
-      code: "TEAPOT",
-      status: 418,
-      retryable: true
-    });
-  });
-
   it("serializes cause chains", async () => {
     const { serializeError } = await loadLoggerModule();
     const rootCause = new Error("root");

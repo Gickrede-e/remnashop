@@ -1,10 +1,11 @@
 export type AppShellArea = "dashboard" | "admin";
-export type AppShellNavArea = AppShellArea | "public";
 
 export type AppNavItem = {
   href: string;
   label: string;
   slot: "primary" | "other";
+  /** Якорь для обучения по кабинету: рендерится как data-tour на ссылке. */
+  tourId?: string;
 };
 
 export type AppFooterAction = {
@@ -19,23 +20,13 @@ type OtherNavOptions = {
   canAccessAdmin?: boolean;
 };
 
-type PrimaryCtaOptions = {
-  authenticated: boolean;
-};
-
-const publicPrimaryNavItems: AppNavItem[] = [
-  { href: "/", label: "Главная", slot: "primary" },
-  { href: "/pricing", label: "Тарифы", slot: "primary" },
-  { href: "/faq", label: "FAQ", slot: "primary" },
-  { href: "/terms", label: "Условия", slot: "primary" }
-];
-
 const dashboardPrimaryNavItems: AppNavItem[] = [
   { href: "/dashboard", label: "Подписка", slot: "primary" },
-  { href: "/dashboard/buy", label: "Купить", slot: "primary" },
+  { href: "/dashboard/buy", label: "Купить", slot: "primary", tourId: "buy" },
   { href: "/dashboard/devices", label: "Устройства", slot: "primary" },
   { href: "/dashboard/history", label: "История", slot: "primary" },
-  { href: "/dashboard/referrals", label: "Рефералы", slot: "primary" }
+  { href: "/dashboard/referrals", label: "Рефералы", slot: "primary" },
+  { href: "/dashboard/help", label: "Помощь", slot: "primary" }
 ];
 
 const adminPrimaryNavItems: AppNavItem[] = [
@@ -53,19 +44,11 @@ const adminOtherNavItems: AppNavItem[] = [
   { href: "/dashboard", label: "Личный кабинет", slot: "other" }
 ];
 
-export function getPrimaryNavItems(area: AppShellNavArea): AppNavItem[] {
-  if (area === "public") {
-    return publicPrimaryNavItems;
-  }
-
+export function getPrimaryNavItems(area: AppShellArea): AppNavItem[] {
   return area === "dashboard" ? dashboardPrimaryNavItems : adminPrimaryNavItems;
 }
 
-export function getOtherNavItems(area: AppShellNavArea, options: OtherNavOptions = {}): AppNavItem[] {
-  if (area === "public") {
-    return [];
-  }
-
+export function getOtherNavItems(area: AppShellArea, options: OtherNavOptions = {}): AppNavItem[] {
   if (area === "dashboard") {
     return options.canAccessAdmin
       ? [
@@ -76,18 +59,6 @@ export function getOtherNavItems(area: AppShellNavArea, options: OtherNavOptions
   }
 
   return adminOtherNavItems;
-}
-
-export function getPrimaryCta(area: AppShellNavArea, options: PrimaryCtaOptions) {
-  if (!options.authenticated || area === "public") {
-    return { label: "ВОЙТИ", href: "/login" };
-  }
-
-  if (area === "admin") {
-    return { label: "В КАБИНЕТ", href: "/dashboard" };
-  }
-
-  return { label: "КУПИТЬ ПОДПИСКУ", href: "/dashboard/buy" };
 }
 
 export function isNavItemActive(pathname: string, href: string) {

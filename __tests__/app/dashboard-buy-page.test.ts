@@ -34,12 +34,6 @@ vi.mock("@/lib/payments/provider-config", () => ({
   getEnabledPaymentProvidersFromEnv: getEnabledPaymentProvidersFromEnvMock
 }));
 
-vi.mock("@/lib/env", () => ({
-  env: {
-    plategaPaymentMethods: [2, 10, 13]
-  }
-}));
-
 vi.mock("@/components/dashboard/payment-checkout", () => ({
   PaymentCheckout: (props: unknown) => {
     paymentCheckoutPropsMock(props);
@@ -58,17 +52,14 @@ describe("dashboard buy page", () => {
     paymentCheckoutPropsMock.mockReset();
   });
 
-  it("passes the configured Platega payment methods into checkout", async () => {
+  it("passes the enabled providers and active plans into checkout", async () => {
     getSessionMock.mockResolvedValue({
       userId: "user-1",
       email: "user@example.com",
       role: "USER"
     });
-    getEnabledPaymentProvidersFromEnvMock.mockReturnValue([
-      PaymentProvider.YOOKASSA,
-      PaymentProvider.PLATEGA
-    ]);
-    getActivePlansMock.mockResolvedValue([
+    getEnabledPaymentProvidersFromEnvMock.mockReturnValue([PaymentProvider.YOOKASSA]);
+    const plans = [
       {
         id: "plan-1",
         slug: "starter",
@@ -86,16 +77,15 @@ describe("dashboard buy page", () => {
         createdAt: new Date("2026-04-01T00:00:00.000Z"),
         updatedAt: new Date("2026-04-01T00:00:00.000Z")
       }
-    ]);
+    ];
+    getActivePlansMock.mockResolvedValue(plans);
 
     renderToStaticMarkup(await DashboardBuyPage());
 
-    expect(paymentCheckoutPropsMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        enabledProviders: [PaymentProvider.YOOKASSA, PaymentProvider.PLATEGA],
-        plategaPaymentMethods: [2, 10, 13]
-      })
-    );
+    expect(paymentCheckoutPropsMock).toHaveBeenCalledWith({
+      enabledProviders: [PaymentProvider.YOOKASSA],
+      plans
+    });
     expect(redirectMock).not.toHaveBeenCalled();
   });
 

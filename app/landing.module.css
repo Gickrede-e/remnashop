@@ -1,0 +1,280 @@
+/* app/landing.module.css
+ * Hero «с геометрией» — шаблон из Claude Design (templates/landing-hero).
+ * Фон — интерактивные кубы <cube-field>; словознак с глитчем; ротация
+ * слоганов «дешифровкой». Scoped через CSS Modules.
+ */
+
+.landing {
+  position: relative;
+  min-height: 100dvh;
+  overflow: hidden;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: 34px clamp(24px, 4vw, 56px) 30px;
+  background:
+    radial-gradient(
+      1100px 720px at 70% 36%,
+      color-mix(in srgb, var(--accent-primary) 6%, transparent) 0%,
+      transparent 62%
+    ),
+    radial-gradient(140% 100% at 50% 0%, #0a0d0b 0%, #070908 70%),
+    #070908;
+  color: #f2f5ef;
+  font-family: var(--font-body, "Inter"), system-ui, sans-serif;
+  cursor: crosshair;
+  isolation: isolate;
+}
+
+/* ─── nav ─── */
+.nav {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.heroLogo {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  cursor: default;
+}
+
+.heroLogoGlitch {
+  display: inline-block;
+}
+
+.heroLogoCursor {
+  display: inline-block;
+  width: 11px;
+  height: 19px;
+  margin-left: 5px;
+  background: var(--accent-primary);
+  transform: translateY(2px);
+}
+
+.navCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 22px;
+  border: 1px solid rgba(244, 244, 238, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.02);
+  color: #f2f5ef;
+  text-decoration: none;
+  font-family: var(--font-mono, "JetBrains Mono"), ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+
+.navCta:hover {
+  border-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
+  color: var(--accent-primary);
+}
+
+/* ─── hero ─── */
+.hero {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 48px 0;
+}
+
+.heroInner {
+  max-width: 660px;
+}
+
+/* ─── слоган с «дешифровкой» ─── */
+.heroTitle {
+  position: relative;
+  display: grid;
+  overflow: hidden;
+  margin: 0;
+  font-size: clamp(44px, 5.2vw, 80px);
+  line-height: 1.04;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.sloganLive {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+.sloganGhost {
+  grid-area: 1 / 1;
+  visibility: hidden;
+  user-select: none;
+}
+
+.sloganAccent {
+  color: var(--accent-primary);
+  text-shadow: 0 0 46px color-mix(in srgb, var(--accent-primary) 35%, transparent);
+}
+
+.sloganCursor {
+  display: inline-block;
+  width: 0.42em;
+  height: 0.78em;
+  margin-left: 0.12em;
+  background: var(--accent-primary);
+}
+
+.sloganGhostCursor {
+  display: inline-block;
+  width: 0.42em;
+  margin-left: 0.12em;
+}
+
+.heroLead {
+  margin: 28px 0 0;
+  max-width: 470px;
+  font-size: 18px;
+  line-height: 1.55;
+  color: rgba(242, 245, 239, 0.64);
+  text-wrap: pretty;
+}
+
+.heroActions {
+  margin-top: 46px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 17px 30px;
+  border-radius: 999px;
+  background: var(--accent-primary);
+  color: #06130a;
+  text-decoration: none;
+  font-family: var(--font-mono, "JetBrains Mono"), ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  transition: filter 0.18s ease, box-shadow 0.18s ease;
+}
+
+.btnPrimary:hover {
+  filter: brightness(1.09);
+  box-shadow: 0 0 38px color-mix(in srgb, var(--accent-primary) 36%, transparent);
+}
+
+.btnSecondary {
+  display: inline-flex;
+  align-items: center;
+  padding: 16px 29px;
+  border: 1px solid rgba(244, 244, 238, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.02);
+  color: #f2f5ef;
+  text-decoration: none;
+  font-family: var(--font-mono, "JetBrains Mono"), ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+
+.btnSecondary:hover {
+  border-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
+  color: var(--accent-primary);
+}
+
+/* ─── footer ─── */
+.footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 24px;
+  font-family: var(--font-mono, "JetBrains Mono"), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: rgba(242, 245, 239, 0.32);
+}
+
+/* ─── анимации ─── */
+@keyframes gsGlitch {
+  0%,
+  91.5%,
+  97.5%,
+  100% {
+    transform: none;
+    text-shadow: none;
+  }
+  92.5% {
+    transform: translate(-1.5px, 0.5px);
+    text-shadow:
+      2px 0 var(--accent-primary),
+      -2px 0 rgba(124, 92, 255, 0.7);
+  }
+  94% {
+    transform: translate(1.5px, -1px);
+    text-shadow:
+      -2px 0 var(--accent-primary),
+      2px 0 rgba(124, 92, 255, 0.7);
+  }
+  95.5% {
+    transform: translate(-1px, 1px);
+    text-shadow: 1.5px 0 var(--accent-primary);
+  }
+}
+
+@keyframes gsBlink {
+  0%,
+  55% {
+    opacity: 1;
+  }
+  56%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .heroLogoGlitch {
+    animation: gsGlitch 4.4s linear infinite;
+  }
+  .sloganCursor {
+    animation: gsBlink 1.05s steps(1) infinite;
+  }
+}
+
+/* мобильная адаптация */
+@media (max-width: 640px) {
+  .landing {
+    cursor: auto;
+  }
+
+  .heroActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btnPrimary,
+  .btnSecondary {
+    justify-content: center;
+  }
+}

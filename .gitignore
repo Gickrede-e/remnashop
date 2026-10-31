@@ -25,3 +25,9 @@ PROMPT-CODEX.md
 api-1.json
 *:Zone.Identifier
 .superpowers/
+
+# design-sync (generated/staged — see .design-sync/config.json)
+.ds-sync/
+ds-bundle/
+.design-sync/
+graphify-out/

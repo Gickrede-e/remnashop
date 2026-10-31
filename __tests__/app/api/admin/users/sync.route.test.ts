@@ -14,7 +14,7 @@ vi.mock("@/lib/services/admin-logs", () => ({
   logAdminAction: mockLogAdminAction
 }));
 
-vi.mock("@/lib/services/subscriptions", () => ({
+vi.mock("@/lib/services/remnawave-active-sync", () => ({
   syncActiveSubscriptionsToRemnawave: mockSyncActiveSubscriptionsToRemnawave
 }));
 
@@ -28,12 +28,12 @@ describe("POST /api/admin/users/sync", () => {
   });
 
   it("requires an admin session", async () => {
-    mockRequireApiAdminSession.mockRejectedValue(new Error("Требуется авторизация"));
+    mockRequireApiAdminSession.mockRejectedValue(Object.assign(new Error("Требуется авторизация"), { status: 401 }));
 
     const response = await POST();
     const payload = await response.json();
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(401);
     expect(payload).toEqual({
       ok: false,
       error: "Требуется авторизация",

@@ -42,8 +42,6 @@ export async function getActivePlans() {
   });
 }
 
-export const getPublicPlans = getActivePlans;
-
 export async function getAllPlans() {
   return prisma.plan.findMany({
     orderBy: [{ isActive: "desc" }, { sortOrder: "asc" }, { createdAt: "desc" }]
@@ -84,5 +82,3 @@ export async function setPlanActiveState(id: string, isActive: boolean) {
 export async function restorePlan(id: string) {
   return setPlanActiveState(id, true);
 }
-
-export const softDeletePlan = deactivatePlan;

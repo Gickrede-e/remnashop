@@ -1,4 +1,3 @@
-import { AppError } from "@/lib/http/errors";
 import { getLoggerContext } from "@/lib/server/logger-context";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
@@ -346,13 +345,6 @@ function serializeErrorInternal(error: unknown, depth: number): Record<string, u
     serialized.stack = trimStack(error.stack);
   }
 
-  if (error instanceof AppError) {
-    serialized.code = error.code;
-    serialized.status = error.status;
-    serialized.fieldErrors = error.fieldErrors;
-    serialized.retryable = error.retryable;
-  }
-
   const cause = (error as Error & { cause?: unknown }).cause;
   if (cause !== undefined && depth < MAX_ERROR_CAUSE_DEPTH) {
     serialized.cause = serializeErrorInternal(cause, depth + 1);
@@ -369,8 +361,4 @@ export const logger = createLogger();
 
 export function setLogSink(sink: LogSink) {
   currentSink = sink;
-}
-
-export function resetLogSink() {
-  currentSink = createDefaultSink();
 }

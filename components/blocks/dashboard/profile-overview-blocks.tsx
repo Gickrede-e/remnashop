@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch, type UseFormRegisterReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Circle, CircleCheck, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
+
+import { readApiEnvelope } from "@/lib/api-envelope";
 
 const changePasswordSchema = z
   .object({
@@ -35,6 +38,16 @@ export function ProfileOverviewBlocks({ email }: ProfileOverviewBlocksProps) {
       confirmPassword: ""
     }
   });
+  const { errors } = form.formState;
+
+  const [newPassword, confirmPassword] = useWatch({
+    control: form.control,
+    name: ["newPassword", "confirmPassword"]
+  });
+  const passwordChecks = [
+    { label: "Минимум 8 символов", isMet: newPassword.length >= 8 },
+    { label: "Пароли совпадают", isMet: confirmPassword !== "" && confirmPassword === newPassword }
+  ];
 
   const onSubmit = form.handleSubmit((values) => {
     setError(null);
@@ -49,10 +62,10 @@ export function ProfileOverviewBlocks({ email }: ProfileOverviewBlocksProps) {
         })
       });
 
-      const payload = (await response.json()) as { ok: boolean; error?: string };
+      const payload = await readApiEnvelope(response);
 
-      if (!response.ok || !payload.ok) {
-        setError(payload.error ?? "Не удалось изменить пароль");
+      if (!response.ok || !payload?.ok) {
+        setError(payload?.error ?? "Не удалось изменить пароль");
         return;
       }
 
@@ -67,7 +80,14 @@ export function ProfileOverviewBlocks({ email }: ProfileOverviewBlocksProps) {
         <div className="dashCardHead">
           <h2 className="dashCardTitle">Учётная запись</h2>
         </div>
-        <p className="profileEmail">{email}</p>
+        <div className="profileForm">
+          <div className="profileFormField">
+            <label htmlFor="accountEmail" className="profileFormLabel">
+              Email
+            </label>
+            <input id="accountEmail" type="email" className="profileFormInput" value={email} readOnly disabled />
+          </div>
+        </div>
       </div>
 
       <div className="dashCard">
@@ -75,53 +95,41 @@ export function ProfileOverviewBlocks({ email }: ProfileOverviewBlocksProps) {
           <h2 className="dashCardTitle">Изменить пароль</h2>
         </div>
         <form onSubmit={onSubmit} className="profileForm" noValidate>
-          <div className="profileFormField">
-            <label htmlFor="currentPassword" className="profileFormLabel">
-              Текущий пароль
-            </label>
-            <input
-              id="currentPassword"
-              type="password"
-              autoComplete="current-password"
-              className="profileFormInput"
-              {...form.register("currentPassword")}
-            />
-            {form.formState.errors.currentPassword && (
-              <p className="profileFormError">{form.formState.errors.currentPassword.message}</p>
-            )}
-          </div>
+          <PasswordField
+            id="currentPassword"
+            label="Текущий пароль"
+            autoComplete="current-password"
+            error={errors.currentPassword?.message}
+            registration={form.register("currentPassword")}
+          />
+          <PasswordField
+            id="newPassword"
+            label="Новый пароль"
+            autoComplete="new-password"
+            error={errors.newPassword?.message}
+            registration={form.register("newPassword")}
+          />
+          <PasswordField
+            id="confirmPassword"
+            label="Подтвердите новый пароль"
+            autoComplete="new-password"
+            error={errors.confirmPassword?.message}
+            registration={form.register("confirmPassword")}
+          />
 
-          <div className="profileFormField">
-            <label htmlFor="newPassword" className="profileFormLabel">
-              Новый пароль
-            </label>
-            <input
-              id="newPassword"
-              type="password"
-              autoComplete="new-password"
-              className="profileFormInput"
-              {...form.register("newPassword")}
-            />
-            {form.formState.errors.newPassword && (
-              <p className="profileFormError">{form.formState.errors.newPassword.message}</p>
-            )}
-          </div>
-
-          <div className="profileFormField">
-            <label htmlFor="confirmPassword" className="profileFormLabel">
-              Подтвердите новый пароль
-            </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              autoComplete="new-password"
-              className="profileFormInput"
-              {...form.register("confirmPassword")}
-            />
-            {form.formState.errors.confirmPassword && (
-              <p className="profileFormError">{form.formState.errors.confirmPassword.message}</p>
-            )}
-          </div>
+          <ul className="profilePasswordChecks" aria-live="polite">
+            {passwordChecks.map((check) => (
+              <li key={check.label} className={check.isMet ? "profilePasswordCheck is-met" : "profilePasswordCheck"}>
+                {check.isMet ? (
+                  <CircleCheck className="iconSm iconNoShrink" aria-hidden="true" />
+                ) : (
+                  <Circle className="iconSm iconNoShrink" aria-hidden="true" />
+                )}
+                {check.label}
+                <span className="srOnly">{check.isMet ? ": выполнено" : ": не выполнено"}</span>
+              </li>
+            ))}
+          </ul>
 
           {error && <p className="profileFormError">{error}</p>}
           {success && <p className="profileFormSuccess">{success}</p>}
@@ -131,6 +139,49 @@ export function ProfileOverviewBlocks({ email }: ProfileOverviewBlocksProps) {
           </button>
         </form>
       </div>
+    </div>
+  );
+}
+
+type PasswordFieldProps = {
+  id: keyof ChangePasswordValues;
+  label: string;
+  autoComplete: "current-password" | "new-password";
+  error?: string;
+  registration: UseFormRegisterReturn;
+};
+
+function PasswordField({ id, label, autoComplete, error, registration }: PasswordFieldProps) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  return (
+    <div className="profileFormField">
+      <label htmlFor={id} className="profileFormLabel">
+        {label}
+      </label>
+      <div className="profilePasswordInput">
+        <input
+          id={id}
+          type={isVisible ? "text" : "password"}
+          autoComplete={autoComplete}
+          className="profileFormInput"
+          {...registration}
+        />
+        <button
+          type="button"
+          className="profilePasswordToggle"
+          aria-label="Показать пароль"
+          aria-pressed={isVisible}
+          onClick={() => setIsVisible((visible) => !visible)}
+        >
+          {isVisible ? (
+            <EyeOff className="iconSm" aria-hidden="true" />
+          ) : (
+            <Eye className="iconSm" aria-hidden="true" />
+          )}
+        </button>
+      </div>
+      {error && <p className="profileFormError">{error}</p>}
     </div>
   );
 }

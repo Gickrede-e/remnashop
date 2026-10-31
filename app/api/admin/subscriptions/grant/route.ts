@@ -1,5 +1,5 @@
 import { requireApiAdminSession } from "@/lib/api-session";
-import { apiError, apiOk, parseRequestBody } from "@/lib/http";
+import { apiErrorFrom, apiOk, parseRequestBody } from "@/lib/http";
 import { grantSubscriptionSchema } from "@/lib/schemas/admin";
 import { grantSubscriptionByAdmin } from "@/lib/services/subscriptions";
 
@@ -13,6 +13,6 @@ export async function POST(request: Request) {
     });
     return apiOk(subscription);
   } catch (error) {
-    return apiError(error instanceof Error ? error.message : "Не удалось выдать подписку", 400);
+    return apiErrorFrom(error, "Не удалось выдать подписку");
   }
 }

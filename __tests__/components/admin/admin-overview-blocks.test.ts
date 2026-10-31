@@ -26,7 +26,7 @@ const providerStatuses = [
     checkedAt: "2026-03-22T00:00:00.000Z"
   },
   {
-    label: "Platega",
+    label: "Backup",
     status: "timeout" as const,
     summary: "Таймаут",
     detail: "request timed out after 2500ms",
@@ -77,7 +77,7 @@ describe("AdminOverviewBlocks provider status section", () => {
     expect(markup).toContain("Статусы модулей");
     expect(markup).toContain("Remnawave");
     expect(markup).toContain("YooKassa");
-    expect(markup).toContain("Platega");
+    expect(markup).toContain("Backup");
     expect(markup).toContain("Webhook");
     expect(markup).toContain("Доступен");
     expect(markup).toContain("Недоступен");
@@ -89,8 +89,8 @@ describe("AdminOverviewBlocks provider status section", () => {
     expect(markup).toContain("module disabled by env flag");
     expect((markup.match(/data-status="/g) ?? []).length).toBe(4);
     expect(markup.indexOf("Remnawave")).toBeLessThan(markup.indexOf("YooKassa"));
-    expect(markup.indexOf("YooKassa")).toBeLessThan(markup.indexOf("Platega"));
-    expect(markup.indexOf("Platega")).toBeLessThan(markup.indexOf("Webhook"));
+    expect(markup.indexOf("YooKassa")).toBeLessThan(markup.indexOf("Backup"));
+    expect(markup.indexOf("Backup")).toBeLessThan(markup.indexOf("Webhook"));
     expect(markup).toContain("data-status=\"available\"");
     expect(markup).toContain("data-status=\"unavailable\"");
     expect(markup).toContain("data-status=\"timeout\"");

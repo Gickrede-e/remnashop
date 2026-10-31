@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { readApiEnvelope } from "@/lib/api-envelope";
 
 export function GrantSubscriptionForm({
   users,
@@ -107,9 +108,9 @@ export function GrantSubscriptionForm({
                   })
                 });
 
-                const payload = (await response.json()) as { ok: boolean; error?: { message?: string } };
-                if (!response.ok || !payload.ok) {
-                  setError(payload.error?.message ?? "Не удалось выдать подписку");
+                const payload = await readApiEnvelope(response);
+                if (!response.ok || !payload?.ok) {
+                  setError(payload?.error ?? "Не удалось выдать подписку");
                   return;
                 }
 

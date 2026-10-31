@@ -7,7 +7,6 @@ import {
   formatDateTime,
   gbToBytes,
   maskEmail,
-  serializeBigInt,
   slugToRemnawaveTag,
   slugify
 } from "@/lib/utils";
@@ -71,23 +70,5 @@ describe("lib/utils", () => {
     expect(maskEmail("ab@mail.ru")).toBe("a*@mail.ru");
     expect(maskEmail("a@mail.ru")).toBe("a*@mail.ru");
     expect(maskEmail("test@")).toBe("test@");
-  });
-
-  it("serializes bigint values recursively", () => {
-    const serialized = serializeBigInt({
-      count: 1n,
-      nested: {
-        value: 2n
-      },
-      list: [3n, { inner: 4n }]
-    });
-
-    expect(serialized).toEqual({
-      count: "1",
-      nested: {
-        value: "2"
-      },
-      list: ["3", { inner: "4" }]
-    });
   });
 });
