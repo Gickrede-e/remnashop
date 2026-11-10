@@ -24,3 +24,10 @@ export const PAYMENT_STATUS_LABELS = {
   CANCELED: "Отменен",
   FAILED: "Ошибка"
 } as const;
+
+// Shown on /terms: YooKassa requires the seller's ИНН and ОГРНИП on the site.
+export const LEGAL_ENTITY = {
+  name: "ИП Мещеряков Аркадий Витальевич",
+  inn: "582102450102",
+  ogrnip: "326580000078120"
+} as const;

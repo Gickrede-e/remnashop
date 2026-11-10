@@ -71,6 +71,7 @@ describe("auth pages", () => {
     expect(markup).not.toMatch(/class="[^"]*\bauthHint\b[^"]*"/);
     expect(markup).toContain("Вход");
     expect(markup).toContain('href="/forgot-password"');
+    expect(markup).toContain('href="/terms"');
   });
 
   it("renders the register page inside the semantic auth scene", async () => {
@@ -94,6 +95,7 @@ describe("auth pages", () => {
     expect(markup).not.toMatch(/class="[^"]*\bauthHint\b[^"]*"/);
     expect(markup).toContain("Регистрация");
     expect(markup).toContain("ALLY42");
+    expect(markup).toContain('href="/terms"');
     expect(formSpy).toHaveBeenCalledWith(
       expect.objectContaining({ turnstileSiteKey: "runtime-site-key" }),
       undefined

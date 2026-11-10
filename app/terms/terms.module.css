@@ -1,0 +1,85 @@
+/* Plain reading page in the landing's palette: legal text has to stay legible, so no effects. */
+
+.page {
+  min-height: 100dvh;
+  box-sizing: border-box;
+  padding: 34px clamp(20px, 4vw, 56px) 56px;
+  background: #070908;
+  color: #f2f5ef;
+  font-family: var(--font-body, "Inter"), system-ui, sans-serif;
+}
+
+.nav {
+  max-width: 760px;
+  margin: 0 auto 40px;
+}
+
+.logo {
+  font-family: var(--font-mono, "JetBrains Mono"), ui-monospace, monospace;
+  font-size: 14px;
+  letter-spacing: 0.16em;
+  color: var(--accent-primary);
+  text-decoration: none;
+}
+
+.article {
+  max-width: 760px;
+  margin: 0 auto;
+  font-size: 15px;
+  line-height: 1.65;
+  color: rgba(242, 245, 239, 0.82);
+}
+
+.article h1 {
+  margin: 0 0 8px;
+  font-size: clamp(24px, 4vw, 32px);
+  line-height: 1.25;
+  color: #f2f5ef;
+}
+
+.article h2 {
+  margin: 36px 0 12px;
+  font-size: 18px;
+  color: #f2f5ef;
+}
+
+.article p {
+  margin: 0 0 12px;
+}
+
+.article ul {
+  margin: 0 0 12px;
+  padding-left: 22px;
+}
+
+.article li {
+  margin-bottom: 4px;
+}
+
+.article a {
+  color: var(--accent-primary);
+}
+
+.edition {
+  font-family: var(--font-mono, "JetBrains Mono"), ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: rgba(242, 245, 239, 0.45);
+}
+
+.requisites {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 24px;
+  margin: 0;
+}
+
+.requisites dt {
+  color: rgba(242, 245, 239, 0.5);
+}
+
+.requisites dd {
+  margin: 0;
+  color: #f2f5ef;
+  overflow-wrap: anywhere;
+}

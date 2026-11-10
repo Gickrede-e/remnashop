@@ -567,7 +567,8 @@ p {
     letter-spacing: 0.04em;
   }
 
-  .authStandaloneFooterLink {
+  .authStandaloneFooterLink,
+  .profileTermsLink {
     color: var(--text-secondary);
     text-decoration: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.18);
@@ -575,7 +576,8 @@ p {
     transition: color 140ms ease, border-color 140ms ease;
   }
 
-  .authStandaloneFooterLink:hover {
+  .authStandaloneFooterLink:hover,
+  .profileTermsLink:hover {
     color: var(--text-primary);
     border-bottom-color: var(--text-primary);
   }
@@ -1362,6 +1364,11 @@ p {
     display: grid;
     gap: 1.1rem;
     max-width: 28rem;
+  }
+
+  .profileTermsLink {
+    justify-self: start;
+    font-size: 0.85rem;
   }
 
   .profileFormField {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useForm, useWatch, type UseFormRegisterReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Circle, CircleCheck, Eye, EyeOff } from "lucide-react";
@@ -87,6 +88,9 @@ export function ProfileOverviewBlocks({ email }: ProfileOverviewBlocksProps) {
             </label>
             <input id="accountEmail" type="email" className="profileFormInput" value={email} readOnly disabled />
           </div>
+          <Link href="/terms" className="profileTermsLink">
+            Пользовательское соглашение
+          </Link>
         </div>
       </div>
 

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 
 import { publicEnv } from "@/lib/public-env";
 
@@ -15,6 +16,11 @@ export function AuthStandaloneCard({ title, children }: AuthStandaloneCardProps)
         <h1 className="authStandaloneTitle">{title}</h1>
       </header>
       <div className="authStandaloneBody">{children}</div>
+      <p className="authStandaloneFooter">
+        <Link href="/terms" className="authStandaloneFooterLink">
+          Пользовательское соглашение
+        </Link>
+      </p>
     </section>
   );
 }

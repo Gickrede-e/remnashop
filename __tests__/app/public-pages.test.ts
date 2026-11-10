@@ -19,6 +19,9 @@ vi.mock("next/navigation", async () => {
 });
 
 import HomePage from "@/app/page";
+import { TERMS_SECTIONS } from "@/app/terms/content";
+import TermsPage from "@/app/terms/page";
+import { LEGAL_ENTITY } from "@/lib/constants";
 
 describe("public pages", () => {
   beforeEach(() => {
@@ -34,6 +37,24 @@ describe("public pages", () => {
     expect(markup).toMatch(/<a href="\/login"[^>]*>ВОЙТИ<\/a>/);
     expect(markup).toContain("gickshop");
     expect(markup).not.toMatch(/vpn|впн/i);
+    expect(redirectMock).not.toHaveBeenCalled();
+  });
+
+  it("links the agreement from the landing footer", () => {
+    const markup = renderToStaticMarkup(HomePage());
+
+    expect(markup).toMatch(/<a href="\/terms"[^>]*>СОГЛАШЕНИЕ<\/a>/);
+  });
+
+  it("renders every agreement section and the requisites on the terms page", () => {
+    const markup = renderToStaticMarkup(TermsPage());
+
+    for (const section of TERMS_SECTIONS) {
+      expect(markup).toContain(section.title);
+    }
+    expect(markup).toContain("15. Реквизиты и контакты");
+    expect(markup).toContain(LEGAL_ENTITY.inn);
+    expect(markup).toContain(LEGAL_ENTITY.ogrnip);
     expect(redirectMock).not.toHaveBeenCalled();
   });
 });

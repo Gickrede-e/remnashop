@@ -54,6 +54,7 @@ describe("dashboard profile page", () => {
     expect(markup).toContain("Изменить пароль");
     expect(markup).toContain('href="https://t.me/gick_support"');
     expect(markup).toContain("Поддержка");
+    expect(markup).toContain('href="/terms"');
     expect(markup).toContain('id="currentPassword"');
     expect(markup).toContain('id="newPassword"');
     expect(markup).toContain('id="confirmPassword"');

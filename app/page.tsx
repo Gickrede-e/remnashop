@@ -62,6 +62,9 @@ export default function HomePage() {
       {/* footer */}
       <footer className={styles.footer}>
         <span>© 2026 GICKSHOP</span>
+        <Link href="/terms" className={styles.footerLink}>
+          СОГЛАШЕНИЕ
+        </Link>
       </footer>
     </main>
   );

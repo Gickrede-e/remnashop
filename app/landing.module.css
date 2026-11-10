@@ -215,6 +215,16 @@
   color: rgba(242, 245, 239, 0.32);
 }
 
+.footerLink {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.footerLink:hover {
+  color: var(--accent-primary);
+}
+
 /* ─── анимации ─── */
 @keyframes gsGlitch {
   0%,
