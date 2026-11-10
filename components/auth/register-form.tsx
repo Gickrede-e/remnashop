@@ -190,7 +190,7 @@ export function RegisterForm({ emailEnabled, turnstileSiteKey = "", referralCode
           id="referralCode"
           type="text"
           defaultValue={referralCode ?? ""}
-          placeholder="Реферальный код (необязательно)"
+          placeholder="Реферальный код"
           className="authStandaloneInput"
           {...form.register("referralCode")}
         />

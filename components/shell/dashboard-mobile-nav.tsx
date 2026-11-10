@@ -6,6 +6,13 @@ import { MoreHorizontal, Power, type LucideIcon } from "lucide-react";
 import type { DashboardSidebarItem } from "@/components/shell/dashboard-sidebar";
 import { cn } from "@/lib/utils";
 
+// Words too long for a ~56px phone nav button get a soft hyphen at a proper syllable break: browsers
+// don't reliably hyphenate Russian on their own, and a break anywhere reads as "Устройств / а".
+const MOBILE_LABEL_BREAKS: Record<string, string> = {
+  Пользователи: "Пользо\u00ADватели",
+  Устройства: "Устрой\u00ADства"
+};
+
 type DashboardMobileNavProps = {
   primaryItems: DashboardSidebarItem[];
   otherItems: DashboardSidebarItem[];
@@ -33,7 +40,7 @@ function MobileNavItem({
       className={cn("dashMobileNavLink", active && "is-active")}
     >
       <Icon className="dashMobileNavIcon" aria-hidden="true" />
-      <span className="dashMobileNavLabel">{label}</span>
+      <span className="dashMobileNavLabel">{MOBILE_LABEL_BREAKS[label] ?? label}</span>
     </Link>
   );
 }

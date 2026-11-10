@@ -150,7 +150,8 @@ body.appBody {
   transform: translateY(0);
 }
 
-a {
+/* Unlayered, so it beats every @layer rule: keep it off .button links or they lose their button color. */
+a:not(.button) {
   color: inherit;
 }
 
@@ -915,7 +916,8 @@ p {
     gap: 0.35rem;
     min-width: 0;
     min-height: 4.1rem;
-    padding: 0.58rem 0.22rem 0.48rem;
+    /* Thin side padding: at 320px a button has ~49px, and "Подписка" needs 47. */
+    padding: 0.58rem 0.12rem 0.48rem;
     border: 1px solid transparent;
     border-radius: 1rem;
     background: transparent;
@@ -950,7 +952,9 @@ p {
     letter-spacing: 0.01em;
     text-align: center;
     white-space: normal;
-    overflow-wrap: anywhere;
+    /* Long words break at the soft hyphens set in dashboard-mobile-nav.tsx; break-word is the last resort. */
+    overflow-wrap: break-word;
+    hyphens: manual;
     overflow: hidden;
   }
 
@@ -1175,6 +1179,7 @@ p {
 
   .dashCardHead {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
@@ -1267,7 +1272,9 @@ p {
 
   .dashStatusPill {
     display: inline-flex;
+    flex-shrink: 0;
     align-items: center;
+    white-space: nowrap;
     padding: 0.3rem 0.85rem;
     border-radius: 999px;
     font-size: 0.65rem;
@@ -1318,6 +1325,14 @@ p {
     border-radius: 0.85rem;
     color: var(--text-secondary);
     font-size: 0.85rem;
+  }
+
+  /* A long email is cut with an ellipsis instead of pushing into the status pill next to it. */
+  .dashListItem > span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .dashListItem.is-completed {
@@ -2377,6 +2392,7 @@ p {
   }
 
   .checkoutPlanCardName {
+    flex-shrink: 0;
     color: var(--text-primary);
     font-size: 1rem;
     font-weight: 600;
@@ -2414,8 +2430,9 @@ p {
 
   .checkoutPlanCardTitleRow {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 8px;
+    gap: 4px 8px;
   }
 
   .checkoutPlanFeatures {
