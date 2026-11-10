@@ -96,4 +96,18 @@ describe("prisma/seed", () => {
     expect(promoCodeUpsertMock).toHaveBeenCalledTimes(1);
     expect(userUpsertMock).toHaveBeenCalledTimes(1);
   });
+
+  it("creates the default promo code but never overwrites an existing one", async () => {
+    setProcessEnv({
+      ADMIN_INITIAL_PASSWORD: "seed-password"
+    });
+
+    await import(seedModuleUrl);
+
+    expect(promoCodeUpsertMock).toHaveBeenCalledWith({
+      where: { code: "WELCOME10" },
+      update: {},
+      create: expect.objectContaining({ code: "WELCOME10", isActive: true })
+    });
+  });
 });

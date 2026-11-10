@@ -33,10 +33,12 @@ const promoCodes = [
 ];
 
 async function main() {
+  // The seed runs on every container start, so it only creates missing promo codes: an admin's
+  // edits (disabling WELCOME10, changing its value or limits) must survive a restart.
   for (const promo of promoCodes) {
     await prisma.promoCode.upsert({
       where: { code: promo.code },
-      update: promo,
+      update: {},
       create: promo
     });
   }
