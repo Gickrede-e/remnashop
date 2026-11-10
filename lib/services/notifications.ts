@@ -1,7 +1,11 @@
 import { env } from "@/lib/env";
 import { logger, serializeError } from "@/lib/server/logger";
+import { splitParagraphs } from "@/lib/utils";
 
 const SITE_NAME = env.NEXT_PUBLIC_SITE_NAME;
+const MONO_FONT = "'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace";
+const CODE_STYLE = `display:inline-block;margin:0 0 16px;padding:8px 14px;border-radius:10px;background:#e7f9ee;color:#0a0a0a;font-family:${MONO_FONT};font-size:2rem;letter-spacing:0.3em;`;
+const BUTTON_STYLE = `display:inline-block;padding:12px 24px;border-radius:999px;background:#66e08a;color:#0a0a0a;font-family:${MONO_FONT};font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;text-decoration:none;`;
 
 // Pull the bare address out of EMAIL_FROM ("GickShop <support@x>" -> "support@x")
 // for the Reply-To / List-Unsubscribe headers.
@@ -16,8 +20,13 @@ function senderAddress(): string | null {
 // document. HTML-only bare fragments (no <html>/<body>, and no text/plain part)
 // are a well-known spam signal; a valid document plus a plaintext alternative
 // removes it. Inline styles only — email clients strip <style>/external CSS.
-function renderEmailDocument(bodyHtml: string): string {
+function renderEmailDocument(
+  bodyHtml: string,
+  footerHtml = `Это автоматическое письмо от ${SITE_NAME}. Если вы его не запрашивали — просто проигнорируйте.`
+): string {
   const year = new Date().getFullYear();
+  // Site palette and logo (app/globals.css, components/shared/logo.tsx) in the header, on a light card, which
+  // renders the same in every client, unlike a fully dark email that some clients recolor.
   return `<!doctype html>
 <html lang="ru">
 <head>
@@ -26,13 +35,13 @@ function renderEmailDocument(bodyHtml: string): string {
 <meta name="color-scheme" content="light only">
 <title>${SITE_NAME}</title>
 </head>
-<body style="margin:0;padding:24px 0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#111827;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+<body style="margin:0;padding:24px 0;background:#f3efe7;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a1a1a;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#f3efe7" style="border-collapse:collapse;background:#f3efe7;">
 <tr><td align="center">
-<table role="presentation" cellpadding="0" cellspacing="0" style="width:480px;max-width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;">
-<tr><td style="padding:20px 32px;background:#0f172a;color:#ffffff;font-size:18px;font-weight:700;">${SITE_NAME}</td></tr>
-<tr><td style="padding:28px 32px;font-size:15px;line-height:1.6;color:#111827;">${bodyHtml}</td></tr>
-<tr><td style="padding:18px 32px;border-top:1px solid #eef0f3;font-size:12px;line-height:1.5;color:#9ca3af;">Это автоматическое письмо от ${SITE_NAME}. Если вы его не запрашивали — просто проигнорируйте.<br>© ${year} ${SITE_NAME}</td></tr>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:480px;border-collapse:separate;background:#ffffff;border:1px solid #e4ddd0;border-radius:16px;overflow:hidden;">
+<tr><td bgcolor="#0a0a0a" style="padding:18px 32px;background:#0a0a0a;color:#f3efe6;font-size:21px;font-weight:700;letter-spacing:-0.02em;">${SITE_NAME.toLowerCase()}<span style="color:#66e08a;font-size:17px;">&#9608;</span></td></tr>
+<tr><td style="padding:28px 32px;font-size:15px;line-height:1.6;color:#1a1a1a;">${bodyHtml}</td></tr>
+<tr><td style="padding:18px 32px;border-top:1px solid #eee7da;font-size:12px;line-height:1.5;color:#8c8578;">${footerHtml}<br>© ${year} ${SITE_NAME}</td></tr>
 </table>
 </td></tr>
 </table>
@@ -90,6 +99,7 @@ async function sendEmailNotification(input: {
   subject: string;
   html: string;
   text: string;
+  footerHtml?: string;
 }) {
   if (!env.SMTP_HOST || !env.EMAIL_FROM) {
     return;
@@ -107,7 +117,7 @@ async function sendEmailNotification(input: {
       // Send BOTH a plaintext and an HTML part (multipart/alternative). The
       // plaintext alternative is what removes the biggest content spam signal.
       text: input.text,
-      html: renderEmailDocument(input.html),
+      html: renderEmailDocument(input.html, input.footerHtml),
       ...(replyTo
         ? {
             replyTo,
@@ -160,7 +170,7 @@ export async function sendVerificationCode(email: string, code: string) {
     subject: `${SITE_NAME}: код подтверждения`,
     html: `
       <p style="margin:0 0 16px;">Ваш код подтверждения для регистрации:</p>
-      <p style="margin:0 0 16px;letter-spacing:0.3em;font-size:2rem;font-weight:700;">${code}</p>
+      <p style="${CODE_STYLE}">${code}</p>
       <p style="margin:0;">Код действителен <strong>15 минут</strong>. Не сообщайте его никому.</p>
     `,
     text: `Ваш код подтверждения для регистрации: ${code}\n\nКод действителен 15 минут. Не сообщайте его никому.\n\n— ${SITE_NAME}`
@@ -173,10 +183,33 @@ export async function sendPasswordResetCode(email: string, code: string) {
     subject: `${SITE_NAME}: сброс пароля`,
     html: `
       <p style="margin:0 0 16px;">Ваш код для сброса пароля:</p>
-      <p style="margin:0 0 16px;letter-spacing:0.3em;font-size:2rem;font-weight:700;">${code}</p>
+      <p style="${CODE_STYLE}">${code}</p>
       <p style="margin:0;">Код действителен <strong>15 минут</strong>. Если вы не запрашивали сброс, проигнорируйте это письмо.</p>
     `,
     text: `Ваш код для сброса пароля: ${code}\n\nКод действителен 15 минут. Если вы не запрашивали сброс, проигнорируйте это письмо.\n\n— ${SITE_NAME}`
+  });
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+// Admin broadcasts are plain text written in the admin panel, so escape it before it goes into HTML.
+export async function sendBroadcastEmail(input: { to: string; subject: string; text: string }) {
+  const html = splitParagraphs(input.text)
+    .map((paragraph) => `<p style="margin:0 0 12px;">${escapeHtml(paragraph).replace(/\n/g, "<br>")}</p>`)
+    .join("");
+
+  await sendEmailNotification({
+    to: input.to,
+    subject: input.subject,
+    html,
+    text: `${input.text}\n\n— ${SITE_NAME}`,
+    footerHtml: `Вы получили это письмо, потому что зарегистрированы на ${SITE_NAME}.`
   });
 }
 
@@ -211,9 +244,8 @@ export async function notifySubscriptionExpired(input: {
       subject: "GickShop: подписка истекла",
       html: `
         <p style="margin:0 0 12px;">Срок действия вашей подписки${planText} истёк.</p>
-        <p style="margin:0;">Чтобы продолжить пользоваться сервисом, продлите её в личном кабинете:
-          <a href="${env.NEXT_PUBLIC_SITE_URL}/dashboard/buy" style="color:#2563eb;">${env.NEXT_PUBLIC_SITE_URL}/dashboard/buy</a>.
-        </p>
+        <p style="margin:0 0 20px;">Чтобы продолжить пользоваться сервисом, продлите её в личном кабинете.</p>
+        <a href="${env.NEXT_PUBLIC_SITE_URL}/dashboard/buy" style="${BUTTON_STYLE}">Продлить подписку</a>
       `,
       text: `Срок действия вашей подписки${planText} истёк.\n\nЧтобы продолжить пользоваться сервисом, продлите её в личном кабинете:\n${env.NEXT_PUBLIC_SITE_URL}/dashboard/buy\n\n— ${SITE_NAME}`
     }),

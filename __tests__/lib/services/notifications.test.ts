@@ -89,6 +89,21 @@ describe("lib/services/notifications", () => {
     );
   });
 
+  it("sends a broadcast as escaped paragraphs with the broadcast footer", async () => {
+    mockEnv();
+
+    const { sendBroadcastEmail } = await import("@/lib/services/notifications");
+
+    await sendBroadcastEmail({ to: "user@example.com", subject: "Работы", text: "Привет <b>\nвсем\n\nВторой" });
+
+    const mail = sendMailMock.mock.calls[0]?.[0];
+    expect(mail.subject).toBe("Работы");
+    expect(mail.text).toBe("Привет <b>\nвсем\n\nВторой\n\n— GickShop");
+    expect(mail.html).toContain('<p style="margin:0 0 12px;">Привет &lt;b&gt;<br>всем</p><p style="margin:0 0 12px;">Второй</p>');
+    expect(mail.html).toContain("Вы получили это письмо, потому что зарегистрированы на GickShop.");
+    expect(mail.html).not.toContain("Если вы его не запрашивали");
+  });
+
   it("logs and rethrows SMTP send failures", async () => {
     mockEnv();
     sendMailMock.mockRejectedValue(new Error("smtp failed"));

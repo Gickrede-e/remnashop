@@ -10,6 +10,7 @@ import {
   History,
   LayoutDashboard,
   LifeBuoy,
+  Mail,
   Share2,
   Smartphone,
   Users,
@@ -32,6 +33,7 @@ const navIcons: Record<string, LucideIcon> = {
   "/admin/plans": Boxes,
   "/admin/promos": BadgePercent,
   "/admin/referrals": Share2,
+  "/admin/broadcasts": Mail,
   "/admin/logs": ClipboardList,
   "/admin/export": ArrowDownToLine
 };

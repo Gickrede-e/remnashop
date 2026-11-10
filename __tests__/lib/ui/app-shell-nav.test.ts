@@ -48,6 +48,7 @@ describe("app shell nav", () => {
 
     expect(futureNavModule.getOtherNavItems("admin")).toEqual([
       { href: "/admin/referrals", label: "Рефералы", slot: "other" },
+      { href: "/admin/broadcasts", label: "Рассылка", slot: "other" },
       { href: "/admin/logs", label: "Логи", slot: "other" },
       { href: "/admin/export", label: "Экспорт", slot: "other" },
       { href: "/dashboard", label: "Личный кабинет", slot: "other" }

@@ -2913,6 +2913,63 @@ p {
     color: color-mix(in srgb, hsl(var(--app-danger-strong)) 80%, white);
   }
 
+  /* Mirrors the light email template in lib/services/notifications.ts, so it stays light in the dark admin. */
+  .broadcastPreview {
+    max-width: 480px;
+    overflow: hidden;
+    border: 1px solid #e4ddd0;
+    border-radius: 16px;
+    background: #ffffff;
+    color: #1a1a1a;
+  }
+
+  .broadcastPreviewSubject {
+    margin: 0;
+    padding: 10px 20px;
+    border-bottom: 1px solid #eee7da;
+    font-size: 13px;
+    color: #8c8578;
+  }
+
+  .broadcastPreviewHeader {
+    padding: 16px 20px;
+    background: #0a0a0a;
+    color: #f3efe6;
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    text-transform: lowercase;
+  }
+
+  .broadcastPreviewHeader::after {
+    content: "\2588";
+    color: #66e08a;
+    font-size: 17px;
+  }
+
+  .broadcastPreviewBody {
+    padding: 20px;
+    font-size: 15px;
+    line-height: 1.6;
+    white-space: pre-line;
+  }
+
+  .broadcastPreviewBody p {
+    margin: 0 0 12px;
+  }
+
+  .broadcastPreviewPlaceholder {
+    color: #8c8578;
+  }
+
+  .broadcastPreviewFooter {
+    padding: 14px 20px;
+    border-top: 1px solid #eee7da;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #8c8578;
+  }
+
   .adminActionButton {
     justify-content: center;
   }

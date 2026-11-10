@@ -179,3 +179,11 @@ export function maskEmail(email: string) {
 
   return `${name[0]}${"*".repeat(Math.max(1, name.length - 2))}${name[name.length - 1]}@${domain}`;
 }
+
+// A blank line separates paragraphs in plain-text admin emails (the email and its preview).
+export function splitParagraphs(text: string) {
+  return text
+    .split(/\n\s*\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+}
