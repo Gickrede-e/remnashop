@@ -2189,14 +2189,8 @@ p {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    padding-bottom: 0.7rem;
     color: hsl(var(--app-muted-strong));
     font-size: 0.92rem;
-    border-bottom: 1px solid color-mix(in srgb, hsl(var(--app-border)) 80%, transparent);
-  }
-
-  .checkoutSummaryRow:last-child {
-    padding-bottom: 0;
   }
 
   .checkoutSummaryRowAccent {
