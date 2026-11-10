@@ -29,5 +29,6 @@ export const PAYMENT_STATUS_LABELS = {
 export const LEGAL_ENTITY = {
   name: "ИП Мещеряков Аркадий Витальевич",
   inn: "582102450102",
-  ogrnip: "326580000078120"
+  ogrnip: "326580000078120",
+  email: "admin@gickshop.net"
 } as const;

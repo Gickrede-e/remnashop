@@ -58,6 +58,10 @@ export default function TermsPage() {
             <dd>{LEGAL_ENTITY.ogrnip}</dd>
             <dt>Сайт</dt>
             <dd>gickshop.net</dd>
+            <dt>Почта</dt>
+            <dd>
+              <a href={`mailto:${LEGAL_ENTITY.email}`}>{LEGAL_ENTITY.email}</a>
+            </dd>
             {supportUrl ? (
               <>
                 <dt>Поддержка</dt>

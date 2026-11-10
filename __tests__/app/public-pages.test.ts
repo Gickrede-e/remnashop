@@ -55,6 +55,7 @@ describe("public pages", () => {
     expect(markup).toContain("15. Реквизиты и контакты");
     expect(markup).toContain(LEGAL_ENTITY.inn);
     expect(markup).toContain(LEGAL_ENTITY.ogrnip);
+    expect(markup).toContain(`href="mailto:${LEGAL_ENTITY.email}"`);
     expect(redirectMock).not.toHaveBeenCalled();
   });
 });
