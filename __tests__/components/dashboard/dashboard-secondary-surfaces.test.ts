@@ -61,7 +61,7 @@ describe("dashboard secondary surfaces", () => {
     expect(markup).toContain('aria-pressed="true"');
     expect(markup.match(/>Далее</g) ?? []).toHaveLength(2);
     expect(markup).toContain(`Оплатить ${formatPrice(99000)}`);
-    expect(markup).toContain("Оплата через ЮKassa");
+    expect(markup).not.toContain("Оплата через");
     expect(markup).not.toContain("Платежи временно недоступны");
     expect(markup).not.toContain("СБП");
     expect(markup).not.toContain("Карты РФ");

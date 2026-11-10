@@ -1292,10 +1292,6 @@
   font-weight: 600;
 }
 
-.checkoutSummary .checkoutProviderNote {
-  text-align: center;
-}
-
 .checkoutNextBtn,
 .checkoutStepBack,
 .dashCheckout > .checkoutStepIndicator {

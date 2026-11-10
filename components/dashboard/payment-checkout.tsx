@@ -9,7 +9,6 @@ import type { PaymentProvider, Plan } from "@prisma/client";
 
 import { DashboardCard } from "@/components/blocks/dashboard/dashboard-card";
 import { readApiEnvelope } from "@/lib/api-envelope";
-import { PAYMENT_PROVIDER_LABELS } from "@/lib/constants";
 import { calculateDurationPricing, calculateEffectiveMonthlyAmount } from "@/lib/payments/pricing";
 import { cn, formatDayCount, formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -471,9 +470,7 @@ export function PaymentCheckout({
               {paymentError}
             </p>
           ) : null}
-          {provider ? (
-            <p className="checkoutProviderNote">Оплата через {PAYMENT_PROVIDER_LABELS[provider]}</p>
-          ) : (
+          {provider ? null : (
             <p role="status" aria-live="polite" className="checkoutStatus">
               Платежи временно недоступны
             </p>

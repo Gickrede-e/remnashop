@@ -2445,12 +2445,6 @@ p {
     font-size: 0.6rem;
   }
 
-  .checkoutProviderNote {
-    margin: 0;
-    color: var(--text-tertiary);
-    font-size: 0.82rem;
-  }
-
   .checkoutPlanCardUnit {
     color: hsl(var(--app-muted-strong));
     font-size: 0.8rem;
