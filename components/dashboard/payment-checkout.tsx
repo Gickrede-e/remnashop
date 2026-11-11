@@ -10,7 +10,6 @@ import type { PaymentProvider, Plan } from "@prisma/client";
 import { DashboardCard } from "@/components/blocks/dashboard/dashboard-card";
 import { readApiEnvelope } from "@/lib/api-envelope";
 import { PAYMENT_PROVIDER_LABELS } from "@/lib/constants";
-import { PLATEGA_PAYMENT_METHOD_LABELS } from "@/lib/payments/platega-methods";
 import { calculateDurationPricing, calculateEffectiveMonthlyAmount } from "@/lib/payments/pricing";
 import { cn, formatDayCount, formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -18,12 +17,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 type Step = "plan" | "duration" | "payment";
-
-type PaymentOption = {
-  provider: PaymentProvider;
-  paymentMethod?: number;
-  label: string;
-};
 
 type PromoState = {
   finalAmount: number;
@@ -114,27 +107,12 @@ const CheckoutPlanCard = memo(function CheckoutPlanCard({
   );
 });
 
-// Platega asks for its method up front, so each enabled Platega method is its own choice.
-function getPaymentOptions(enabledProviders: PaymentProvider[], plategaPaymentMethods: number[]) {
-  return enabledProviders.flatMap((provider): PaymentOption[] =>
-    provider === "PLATEGA"
-      ? plategaPaymentMethods.map((paymentMethod) => ({
-          provider,
-          paymentMethod,
-          label: PLATEGA_PAYMENT_METHOD_LABELS[paymentMethod] ?? `Метод ${paymentMethod}`
-        }))
-      : [{ provider, label: PAYMENT_PROVIDER_LABELS[provider] }]
-  );
-}
-
 export function PaymentCheckout({
   enabledProviders,
-  plans,
-  plategaPaymentMethods
+  plans
 }: {
   enabledProviders: PaymentProvider[];
   plans: Plan[];
-  plategaPaymentMethods: number[];
 }) {
   const [step, setStep] = useState<Step>("plan");
   const [selectedPlanId, setSelectedPlanId] = useState(plans[0]?.id ?? "");
@@ -155,10 +133,9 @@ export function PaymentCheckout({
     [plans, selectedPlanId]
   );
 
-  const paymentOptions = getPaymentOptions(enabledProviders, plategaPaymentMethods);
-  const [paymentOptionIndex, setPaymentOptionIndex] = useState(0);
-  const paymentOption = paymentOptions[paymentOptionIndex] ?? paymentOptions[0] ?? null;
-  const provider = paymentOption?.provider ?? null;
+  const [selectedProvider, setSelectedProvider] = useState(enabledProviders[0] ?? null);
+  const provider =
+    selectedProvider && enabledProviders.includes(selectedProvider) ? selectedProvider : (enabledProviders[0] ?? null);
 
   const durationPricing = calculateDurationPricing(selectedPlan?.price ?? 0, months);
   const durationOptions = MONTH_OPTIONS.map((option) => ({
@@ -259,7 +236,6 @@ export function PaymentCheckout({
         body: JSON.stringify({
           planId: selectedPlan.id,
           provider,
-          paymentMethod: paymentOption?.paymentMethod,
           months,
           promoCode: promoCode.trim() || undefined
         })
@@ -425,25 +401,25 @@ export function PaymentCheckout({
                 </p>
               ) : null}
             </div>
-            {paymentOptions.length > 1 ? (
+            {enabledProviders.length > 1 ? (
               <div className="checkoutPromoGroup" role="group" aria-labelledby="checkout-method-title">
                 <span id="checkout-method-title" className="checkoutDurationLabel">
                   Способ оплаты
                 </span>
                 <div className="checkoutDurationGrid">
-                  {paymentOptions.map((option, index) => (
+                  {enabledProviders.map((option) => (
                     <button
-                      key={`${option.provider}-${option.paymentMethod ?? ""}`}
+                      key={option}
                       type="button"
                       disabled={pending}
-                      aria-pressed={option === paymentOption}
+                      aria-pressed={option === provider}
                       onClick={() => {
-                        setPaymentOptionIndex(index);
+                        setSelectedProvider(option);
                         setPaymentError(null);
                       }}
-                      className={cn("checkoutDurationOption", option === paymentOption ? "is-active" : "")}
+                      className={cn("checkoutDurationOption", option === provider ? "is-active" : "")}
                     >
-                      <strong className="checkoutDurationPrice">{option.label}</strong>
+                      <strong className="checkoutDurationPrice">{PAYMENT_PROVIDER_LABELS[option]}</strong>
                     </button>
                   ))}
                 </div>

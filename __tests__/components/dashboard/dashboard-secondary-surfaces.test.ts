@@ -44,8 +44,7 @@ describe("dashboard secondary surfaces", () => {
             createdAt: new Date("2026-04-01T00:00:00.000Z"),
             updatedAt: new Date("2026-04-01T00:00:00.000Z")
           }
-        ],
-        plategaPaymentMethods: [2, 10, 13]
+        ]
       })
     );
 
@@ -64,9 +63,7 @@ describe("dashboard secondary surfaces", () => {
     expect(markup).toContain(`Оплатить ${formatPrice(99000)}`);
     expect(markup).not.toContain("Оплата через");
     expect(markup).not.toContain("Платежи временно недоступны");
-    expect(markup).not.toContain("СБП");
-    expect(markup).not.toContain("Карты РФ");
-    expect(markup).not.toContain("Крипта");
+    expect(markup).not.toContain("Способ оплаты");
     expect(markup).not.toMatch(/\btelemetryHero\b/);
     expect(markup).not.toMatch(/\bcommandPanel\b/);
     expect(markup).not.toMatch(/\bcheckoutWorkspace\b/);
@@ -94,8 +91,7 @@ describe("dashboard secondary surfaces", () => {
             createdAt: new Date("2026-04-01T00:00:00.000Z"),
             updatedAt: new Date("2026-04-01T00:00:00.000Z")
           }
-        ],
-        plategaPaymentMethods: []
+        ]
       })
     );
 
@@ -106,7 +102,7 @@ describe("dashboard secondary surfaces", () => {
     expect(markup).not.toContain("ЮKassa");
   });
 
-  it("offers YooKassa and each enabled Platega method as payment choices", () => {
+  it("offers one choice per enabled provider", () => {
     const markup = renderToStaticMarkup(
       React.createElement(PaymentCheckout, {
         enabledProviders: [PaymentProvider.YOOKASSA, PaymentProvider.PLATEGA],
@@ -128,16 +124,14 @@ describe("dashboard secondary surfaces", () => {
             createdAt: new Date("2026-04-01T00:00:00.000Z"),
             updatedAt: new Date("2026-04-01T00:00:00.000Z")
           }
-        ],
-        plategaPaymentMethods: [2, 13]
+        ]
       })
     );
 
     expect(markup).toContain("Способ оплаты");
     expect(markup).toMatch(/aria-pressed="true"[^>]*><strong[^>]*>ЮKassa</);
-    expect(markup).toMatch(/aria-pressed="false"[^>]*><strong[^>]*>СБП</);
-    expect(markup).toContain("Крипта");
-    expect(markup).not.toContain("Карты РФ");
+    expect(markup).toMatch(/aria-pressed="false"[^>]*><strong[^>]*>Platega</);
+    expect(markup.match(/<strong class="checkoutDurationPrice">(ЮKassa|Platega)</g) ?? []).toHaveLength(2);
   });
 
   it("renders payment history with dashboard stats and a table card", () => {

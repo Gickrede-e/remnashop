@@ -2,8 +2,6 @@ import "server-only";
 
 import { z } from "zod";
 
-import { parsePlategaPaymentMethods } from "@/lib/payments/platega-methods";
-
 const NODE_ENV = process.env.NODE_ENV ?? "development";
 const isProduction = NODE_ENV === "production";
 const isProductionBuild = process.env.NEXT_PHASE === "phase-production-build";
@@ -38,7 +36,6 @@ const DEV_ENV_FALLBACKS = {
   PLATEGA_ENABLED: "false",
   PLATEGA_MERCHANT_ID: "",
   PLATEGA_API_KEY: "",
-  PLATEGA_PAYMENT_METHODS: "2,10,13",
   SMTP_HOST: "smtp",
   SMTP_PORT: "2525",
   SMTP_SECURE: "false",
@@ -146,7 +143,6 @@ const rawEnv = {
   PLATEGA_ENABLED: readEnvValue("PLATEGA_ENABLED"),
   PLATEGA_MERCHANT_ID: readEnvValue("PLATEGA_MERCHANT_ID"),
   PLATEGA_API_KEY: readEnvValue("PLATEGA_API_KEY"),
-  PLATEGA_PAYMENT_METHODS: readEnvValue("PLATEGA_PAYMENT_METHODS"),
   SMTP_HOST: readEnvValue("SMTP_HOST"),
   SMTP_PORT: readEnvValue("SMTP_PORT"),
   SMTP_SECURE: readEnvValue("SMTP_SECURE"),
@@ -193,7 +189,6 @@ const envSchema = z.object({
     .transform((value) => value === "true"),
   PLATEGA_MERCHANT_ID: z.string().trim().default(""),
   PLATEGA_API_KEY: z.string().trim().default(""),
-  PLATEGA_PAYMENT_METHODS: z.string().default("2,10,13"),
   SMTP_HOST: z.string().min(1),
   SMTP_PORT: z.coerce.number().int().positive(),
   SMTP_SECURE: z
@@ -266,15 +261,6 @@ const envSchema = z.object({
         message: "PLATEGA_API_KEY is set to a placeholder value — use the key from the Platega cabinet"
       });
     }
-
-    const { methods, invalidValues } = parsePlategaPaymentMethods(value.PLATEGA_PAYMENT_METHODS);
-    if (invalidValues.length > 0 || methods.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["PLATEGA_PAYMENT_METHODS"],
-        message: "PLATEGA_PAYMENT_METHODS must list supported method ids (2, 10, 13), comma-separated"
-      });
-    }
   }
 
   if (!!value.SMTP_USER !== !!value.SMTP_PASS) {
@@ -340,7 +326,6 @@ export const env = {
   ...base,
   siteUrl: base.NEXT_PUBLIC_SITE_URL.replace(/\/+$/, ""),
   siteName: base.NEXT_PUBLIC_SITE_NAME,
-  plategaPaymentMethods: parsePlategaPaymentMethods(base.PLATEGA_PAYMENT_METHODS).methods,
   // Days credited per paying referral when the programme pays in days (dashboard copy).
   referralBonusDays: base.REFERRAL_REWARD_TYPE === "FREE_DAYS" ? base.REFERRAL_REWARD_VALUE : null,
   adminEmails: base.ADMIN_EMAILS.split(",")

@@ -36,15 +36,9 @@ export async function createPaymentForUser(input: {
   provider: PaymentProvider;
   promoCode?: string;
   months?: number;
-  paymentMethod?: number;
 }) {
   if (!isPaymentProviderEnabledFromEnv(input.provider)) {
     throw new Error("Способ оплаты недоступен");
-  }
-
-  const plategaPaymentMethod = input.paymentMethod ?? env.plategaPaymentMethods[0];
-  if (input.provider === PaymentProvider.PLATEGA && !env.plategaPaymentMethods.includes(plategaPaymentMethod)) {
-    throw new Error("Недоступный метод оплаты Platega");
   }
 
   const plan = await prisma.plan.findUnique({
@@ -108,23 +102,29 @@ export async function createPaymentForUser(input: {
 
   try {
     if (input.provider === PaymentProvider.PLATEGA) {
+      // Platega's v2 API requires the buyer's email.
+      const user = await prisma.user.findUniqueOrThrow({
+        where: { id: input.userId },
+        select: { email: true }
+      });
       const remote = await createPlategaPayment({
         amount,
         description,
         paymentId: payment.id,
-        paymentMethod: plategaPaymentMethod,
+        userId: input.userId,
+        userEmail: user.email,
         returnUrl,
         failedUrl: `${returnUrl}?payment=failed`
       });
-      if (!remote.transactionId || !remote.redirect) {
-        throw new Error("Platega did not return a transaction id and redirect url");
+      if (!remote.transactionId || !remote.url) {
+        throw new Error("Platega did not return a transaction id and payment url");
       }
 
       return prisma.payment.update({
         where: { id: payment.id },
         data: {
           externalPaymentId: remote.transactionId,
-          confirmationUrl: remote.redirect,
+          confirmationUrl: remote.url,
           providerPayload: toJsonValue(remote)
         }
       });

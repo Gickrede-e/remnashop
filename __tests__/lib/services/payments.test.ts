@@ -16,8 +16,7 @@ const {
   mockGetPlategaTransaction
 } = vi.hoisted(() => ({
   mockEnv: {
-    NEXT_PUBLIC_SITE_URL: "https://vpn.example.com",
-    plategaPaymentMethods: [2, 13]
+    NEXT_PUBLIC_SITE_URL: "https://vpn.example.com"
   },
   mockPrisma: {
     payment: {
@@ -30,6 +29,9 @@ const {
     },
     plan: {
       findUnique: vi.fn()
+    },
+    user: {
+      findUniqueOrThrow: vi.fn()
     }
   },
   mockLogAdminAction: vi.fn(),
@@ -217,46 +219,36 @@ describe("createPaymentForUser", () => {
     });
   });
 
-  it("creates a Platega payment with the chosen method and stores its redirect", async () => {
+  it("creates a Platega payment with the buyer's email and stores its payment url", async () => {
     const { createPaymentForUser } = await import("@/lib/services/payments");
+    mockPrisma.user.findUniqueOrThrow.mockResolvedValue({ email: "buyer@example.com" });
     mockCreatePlategaPayment.mockResolvedValue({
       transactionId: "tx-1",
-      redirect: "https://pay.platega.io/tx-1"
+      url: "https://pay.platega.io/?id=tx-1"
     });
 
     await createPaymentForUser({
       userId: "user-1",
       planId: "plan-1",
-      provider: PaymentProvider.PLATEGA,
-      paymentMethod: 13
+      provider: PaymentProvider.PLATEGA
     });
 
     expect(mockCreatePlategaPayment).toHaveBeenCalledWith(
-      expect.objectContaining({ amount: 99000, paymentId: "payment-1", paymentMethod: 13 })
+      expect.objectContaining({
+        amount: 99000,
+        paymentId: "payment-1",
+        userId: "user-1",
+        userEmail: "buyer@example.com"
+      })
     );
     expect(mockPrisma.payment.update).toHaveBeenCalledWith({
       where: { id: "payment-1" },
       data: expect.objectContaining({
         externalPaymentId: "tx-1",
-        confirmationUrl: "https://pay.platega.io/tx-1"
+        confirmationUrl: "https://pay.platega.io/?id=tx-1"
       })
     });
     expect(mockCreateYooKassaPayment).not.toHaveBeenCalled();
-  });
-
-  it("rejects a Platega method that is not enabled before creating a payment", async () => {
-    const { createPaymentForUser } = await import("@/lib/services/payments");
-
-    await expect(
-      createPaymentForUser({
-        userId: "user-1",
-        planId: "plan-1",
-        provider: PaymentProvider.PLATEGA,
-        paymentMethod: 10
-      })
-    ).rejects.toThrow("Недоступный метод оплаты Platega");
-
-    expect(mockPrisma.payment.create).not.toHaveBeenCalled();
   });
 });
 

@@ -11,8 +11,7 @@ export const paymentCreateSchema = z.object({
   planId: z.string().min(1),
   provider: z.enum(PaymentProvider),
   promoCode: z.string().trim().toUpperCase().optional(),
-  months: z.coerce.number().int().min(1).max(12).default(1),
-  paymentMethod: z.coerce.number().int().positive().optional()
+  months: z.coerce.number().int().min(1).max(12).default(1)
 });
 
 export const promoValidateSchema = z.object({

@@ -84,8 +84,7 @@ describe("dashboard buy page", () => {
 
     expect(paymentCheckoutPropsMock).toHaveBeenCalledWith({
       enabledProviders: [PaymentProvider.YOOKASSA],
-      plans,
-      plategaPaymentMethods: [2, 10, 13]
+      plans
     });
     expect(redirectMock).not.toHaveBeenCalled();
   });

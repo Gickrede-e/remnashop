@@ -13,14 +13,15 @@ type PlategaCreatePaymentInput = {
   amount: number;
   description: string;
   paymentId: string;
-  paymentMethod: number;
+  userId: string;
+  userEmail: string;
   returnUrl: string;
   failedUrl: string;
 };
 
 type PlategaCreatedTransaction = {
   transactionId?: string;
-  redirect?: string;
+  url?: string;
 };
 
 export type PlategaTransaction = {
@@ -67,11 +68,11 @@ async function plategaRequest<T>(path: string, init?: RequestInit) {
   }
 }
 
+// The v2 endpoint takes no paymentMethod: the buyer picks СБП, card or crypto on Platega's own page.
 export async function createPlategaPayment(input: PlategaCreatePaymentInput) {
-  return plategaRequest<PlategaCreatedTransaction>("/transaction/process", {
+  return plategaRequest<PlategaCreatedTransaction>("/v2/transaction/process", {
     method: "POST",
     body: JSON.stringify({
-      paymentMethod: input.paymentMethod,
       paymentDetails: {
         amount: input.amount / 100,
         currency: "RUB"
@@ -79,7 +80,11 @@ export async function createPlategaPayment(input: PlategaCreatePaymentInput) {
       description: input.description,
       return: input.returnUrl,
       failedUrl: input.failedUrl,
-      payload: input.paymentId
+      payload: input.paymentId,
+      metadata: {
+        user_email: input.userEmail,
+        userId: input.userId
+      }
     })
   });
 }
