@@ -5,9 +5,14 @@ import { calculateDurationPricing, normalizePaymentMonths } from "@/lib/payments
 import { isPaymentProviderEnabledFromEnv } from "@/lib/payments/provider-config";
 import { prisma, toJsonValue } from "@/lib/prisma";
 import { logger, serializeError } from "@/lib/server/logger";
-import { mapYooKassaStatus } from "@/lib/services/payment-status";
+import { mapPlategaStatus, mapYooKassaStatus } from "@/lib/services/payment-status";
 import { failPromoUsage, registerPromoUsage, validatePromoCode } from "@/lib/services/promos";
 import { activateSubscriptionFromPayment } from "@/lib/services/payment-activation";
+import {
+  createPlategaPayment,
+  getPlategaTransaction,
+  type PlategaTransaction
+} from "@/lib/services/platega";
 import {
   createYooKassaPayment,
   getYooKassaPayment,
@@ -31,9 +36,15 @@ export async function createPaymentForUser(input: {
   provider: PaymentProvider;
   promoCode?: string;
   months?: number;
+  paymentMethod?: number;
 }) {
   if (!isPaymentProviderEnabledFromEnv(input.provider)) {
     throw new Error("Способ оплаты недоступен");
+  }
+
+  const plategaPaymentMethod = input.paymentMethod ?? env.plategaPaymentMethods[0];
+  if (input.provider === PaymentProvider.PLATEGA && !env.plategaPaymentMethods.includes(plategaPaymentMethod)) {
+    throw new Error("Недоступный метод оплаты Platega");
   }
 
   const plan = await prisma.plan.findUnique({
@@ -93,11 +104,35 @@ export async function createPaymentForUser(input: {
   }
 
   const returnUrl = `${env.NEXT_PUBLIC_SITE_URL}/dashboard`;
+  const description = `GickShop — Тариф ${plan.name}`;
 
   try {
+    if (input.provider === PaymentProvider.PLATEGA) {
+      const remote = await createPlategaPayment({
+        amount,
+        description,
+        paymentId: payment.id,
+        paymentMethod: plategaPaymentMethod,
+        returnUrl,
+        failedUrl: `${returnUrl}?payment=failed`
+      });
+      if (!remote.transactionId || !remote.redirect) {
+        throw new Error("Platega did not return a transaction id and redirect url");
+      }
+
+      return prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          externalPaymentId: remote.transactionId,
+          confirmationUrl: remote.redirect,
+          providerPayload: toJsonValue(remote)
+        }
+      });
+    }
+
     const remote = await createYooKassaPayment({
       amount,
-      description: `GickShop — Тариф ${plan.name}`,
+      description,
       paymentId: payment.id,
       returnUrl
     });
@@ -332,6 +367,117 @@ export async function handleYookassaWebhook(input: {
   });
 }
 
+function assertPlategaTransactionMatchesLocal(input: {
+  localPayment: {
+    id: string;
+    amount: number;
+    currency: string;
+    externalPaymentId?: string | null;
+  };
+  transaction: PlategaTransaction;
+}) {
+  const { localPayment, transaction } = input;
+
+  if (transaction.payload !== localPayment.id) {
+    throw new WebhookIntegrityError("payload paymentId mismatch");
+  }
+
+  if (localPayment.externalPaymentId && transaction.id !== localPayment.externalPaymentId) {
+    throw new WebhookIntegrityError("remote payment id mismatch");
+  }
+
+  const remoteCurrency = String(transaction.paymentDetails?.currency ?? "").trim().toUpperCase();
+  if (remoteCurrency !== localPayment.currency.trim().toUpperCase()) {
+    throw new WebhookIntegrityError("currency mismatch");
+  }
+
+  // Platega reports rubles as a JSON number.
+  const remoteAmount = transaction.paymentDetails?.amount;
+  if (typeof remoteAmount !== "number" || Math.round(remoteAmount * 100) !== localPayment.amount) {
+    throw new WebhookIntegrityError("amount mismatch");
+  }
+}
+
+async function processPlategaTransaction(input: {
+  localPaymentId: string;
+  transaction: PlategaTransaction;
+  source: "WEBHOOK" | "ADMIN_REFRESH";
+}) {
+  const localPayment = await prisma.payment.findUniqueOrThrow({
+    where: { id: input.localPaymentId }
+  });
+
+  if (localPayment.status === PaymentStatus.SUCCEEDED && localPayment.subscriptionId) {
+    return localPayment;
+  }
+
+  assertPlategaTransactionMatchesLocal({ localPayment, transaction: input.transaction });
+
+  const remoteStatus = normalizeProviderStatus(input.transaction.status);
+  const status = mapPlategaStatus(remoteStatus);
+  const providerPayload = mergeProviderPayload(input.transaction, {
+    lastProviderSync: {
+      source: input.source,
+      remoteStatus,
+      status,
+      at: new Date().toISOString()
+    }
+  });
+
+  if (status === PaymentStatus.SUCCEEDED) {
+    return activateSubscriptionFromPayment(localPayment.id, {
+      externalPaymentId: input.transaction.id,
+      providerPayload
+    });
+  }
+
+  // A late pending/canceled observation cannot revoke a confirmed or completed activation.
+  await prisma.payment.updateMany({
+    where: { id: localPayment.id, activationConfirmedAt: null, status: { not: PaymentStatus.SUCCEEDED } },
+    data: {
+      status,
+      externalPaymentId: input.transaction.id,
+      providerPayload
+    }
+  });
+  return prisma.payment.findUniqueOrThrow({ where: { id: localPayment.id } });
+}
+
+// The caller has already checked the callback's X-MerchantId / X-Secret headers. The body is only
+// a hint: the status that counts is re-fetched from the Platega API.
+export async function handlePlategaWebhook(input: {
+  callback: {
+    id: string;
+    payload?: string;
+  };
+}) {
+  const hintedLocalPaymentId = input.callback.payload;
+  let localPayment = hintedLocalPaymentId
+    ? await prisma.payment.findUnique({ where: { id: hintedLocalPaymentId } })
+    : null;
+
+  if (!localPayment) {
+    localPayment = await prisma.payment.findUnique({
+      where: { externalPaymentId: input.callback.id }
+    });
+  }
+
+  if (!localPayment || localPayment.provider !== PaymentProvider.PLATEGA) {
+    throw new WebhookDropSilentlyError("local payment not found");
+  }
+
+  if (localPayment.status === PaymentStatus.SUCCEEDED && localPayment.subscriptionId) {
+    return localPayment;
+  }
+
+  const transaction = await getPlategaTransaction(localPayment.externalPaymentId ?? input.callback.id);
+  return processPlategaTransaction({
+    localPaymentId: localPayment.id,
+    transaction,
+    source: "WEBHOOK"
+  });
+}
+
 
 export async function refreshPaymentStatus(paymentId: string) {
   const payment = await prisma.payment.findUnique({
@@ -359,6 +505,19 @@ export async function refreshPaymentStatus(paymentId: string) {
     return processYooKassaRemotePayment({
       localPaymentId: payment.id,
       remotePayment,
+      source: "ADMIN_REFRESH"
+    });
+  }
+
+  if (payment.provider === PaymentProvider.PLATEGA) {
+    if (!payment.externalPaymentId) {
+      throw new Error("У платежа Platega отсутствует внешний идентификатор");
+    }
+
+    const transaction = await getPlategaTransaction(payment.externalPaymentId);
+    return processPlategaTransaction({
+      localPaymentId: payment.id,
+      transaction,
       source: "ADMIN_REFRESH"
     });
   }

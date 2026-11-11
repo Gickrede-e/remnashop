@@ -34,9 +34,6 @@ enum PaymentStatus {
 
 enum PaymentProvider {
   YOOKASSA
-  // Removed provider. Kept only so historical payment / webhook_delivery rows
-  // stay valid — the app never writes PLATEGA (permanently disabled in
-  // lib/payments/provider-config.ts, no routes/service).
   PLATEGA
 }
 

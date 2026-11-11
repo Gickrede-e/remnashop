@@ -142,6 +142,29 @@ function createProviderProbes() {
           cache: "no-store",
           signal
         })
+    },
+    {
+      label: "Platega",
+      isEnabled: env.PLATEGA_ENABLED,
+      isConfigured: env.PLATEGA_ENABLED && !isMissingValue(env.PLATEGA_MERCHANT_ID) && !isMissingValue(env.PLATEGA_API_KEY),
+      // Platega docs expose GET /transaction/balance-unlock-operations, a read-only listing with X-MerchantId/X-Secret.
+      run: (signal) => {
+        const query = new URLSearchParams({
+          from: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+          to: new Date().toISOString(),
+          page: "1",
+          size: "1"
+        });
+
+        return fetch(`https://app.platega.io/transaction/balance-unlock-operations?${query}`, {
+          headers: {
+            "X-MerchantId": env.PLATEGA_MERCHANT_ID,
+            "X-Secret": env.PLATEGA_API_KEY
+          },
+          cache: "no-store",
+          signal
+        });
+      }
     }
   ] satisfies ProviderProbe[];
 }

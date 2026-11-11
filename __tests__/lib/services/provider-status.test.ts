@@ -8,7 +8,10 @@ const { mockEnv, envReads } = vi.hoisted(() => {
     REMNAWAVE_API_TOKEN: "placeholder_token",
     YOOKASSA_ENABLED: true,
     YOOKASSA_SHOP_ID: "123456",
-    YOOKASSA_SECRET_KEY: "test_secret_key"
+    YOOKASSA_SECRET_KEY: "test_secret_key",
+    PLATEGA_ENABLED: false,
+    PLATEGA_MERCHANT_ID: "",
+    PLATEGA_API_KEY: ""
   };
   const reads: string[] = [];
 
@@ -85,6 +88,13 @@ describe("getProviderStatuses", () => {
         summary: "Не настроен",
         detail: "placeholder config",
         checkedAt: expect.any(String)
+      },
+      {
+        label: "Platega",
+        status: "disabled",
+        summary: "Выключен",
+        detail: "module disabled by env flag",
+        checkedAt: expect.any(String)
       }
     ]);
   });
@@ -140,7 +150,8 @@ describe("getProviderStatuses", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(result.map((item) => item.status)).toEqual([
       "not_configured",
-      "not_configured"
+      "not_configured",
+      "disabled"
     ]);
   });
 
@@ -262,7 +273,7 @@ describe("getProviderStatuses", () => {
 
     const result = await getProviderStatuses();
 
-    expect(result).toHaveLength(2);
+    expect(result).toHaveLength(3);
     expect(result.find((item) => item.label === "Remnawave")).toMatchObject({
       status: "unavailable",
       summary: "Недоступен",

@@ -11,10 +11,13 @@ const {
   mockCreateYooKassaPayment,
   mockGetYooKassaPayment,
   mockVerifyYooKassaIp,
-  mockIsPaymentProviderEnabledFromEnv
+  mockIsPaymentProviderEnabledFromEnv,
+  mockCreatePlategaPayment,
+  mockGetPlategaTransaction
 } = vi.hoisted(() => ({
   mockEnv: {
-    NEXT_PUBLIC_SITE_URL: "https://vpn.example.com"
+    NEXT_PUBLIC_SITE_URL: "https://vpn.example.com",
+    plategaPaymentMethods: [2, 13]
   },
   mockPrisma: {
     payment: {
@@ -36,7 +39,14 @@ const {
   mockCreateYooKassaPayment: vi.fn(),
   mockGetYooKassaPayment: vi.fn(),
   mockVerifyYooKassaIp: vi.fn(),
-  mockIsPaymentProviderEnabledFromEnv: vi.fn()
+  mockIsPaymentProviderEnabledFromEnv: vi.fn(),
+  mockCreatePlategaPayment: vi.fn(),
+  mockGetPlategaTransaction: vi.fn()
+}));
+
+vi.mock("@/lib/services/platega", () => ({
+  createPlategaPayment: mockCreatePlategaPayment,
+  getPlategaTransaction: mockGetPlategaTransaction
 }));
 
 vi.mock("@/lib/env", () => ({
@@ -205,6 +215,113 @@ describe("createPaymentForUser", () => {
       userId: "user-1",
       paymentId: "payment-1"
     });
+  });
+
+  it("creates a Platega payment with the chosen method and stores its redirect", async () => {
+    const { createPaymentForUser } = await import("@/lib/services/payments");
+    mockCreatePlategaPayment.mockResolvedValue({
+      transactionId: "tx-1",
+      redirect: "https://pay.platega.io/tx-1"
+    });
+
+    await createPaymentForUser({
+      userId: "user-1",
+      planId: "plan-1",
+      provider: PaymentProvider.PLATEGA,
+      paymentMethod: 13
+    });
+
+    expect(mockCreatePlategaPayment).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 99000, paymentId: "payment-1", paymentMethod: 13 })
+    );
+    expect(mockPrisma.payment.update).toHaveBeenCalledWith({
+      where: { id: "payment-1" },
+      data: expect.objectContaining({
+        externalPaymentId: "tx-1",
+        confirmationUrl: "https://pay.platega.io/tx-1"
+      })
+    });
+    expect(mockCreateYooKassaPayment).not.toHaveBeenCalled();
+  });
+
+  it("rejects a Platega method that is not enabled before creating a payment", async () => {
+    const { createPaymentForUser } = await import("@/lib/services/payments");
+
+    await expect(
+      createPaymentForUser({
+        userId: "user-1",
+        planId: "plan-1",
+        provider: PaymentProvider.PLATEGA,
+        paymentMethod: 10
+      })
+    ).rejects.toThrow("Недоступный метод оплаты Platega");
+
+    expect(mockPrisma.payment.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("handlePlategaWebhook", () => {
+  const confirmedTransaction = {
+    id: "tx-1",
+    status: "CONFIRMED",
+    paymentDetails: { amount: 990, currency: "RUB" },
+    payload: "payment-1"
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    mockPrisma.payment.findUnique.mockResolvedValue({
+      id: "payment-1",
+      provider: PaymentProvider.PLATEGA,
+      status: PaymentStatus.PENDING,
+      subscriptionId: null,
+      externalPaymentId: "tx-1",
+      amount: 99000,
+      currency: "RUB"
+    });
+    mockPrisma.payment.findUniqueOrThrow.mockImplementation(() => mockPrisma.payment.findUnique());
+    mockGetPlategaTransaction.mockResolvedValue(confirmedTransaction);
+    mockActivateSubscriptionFromPayment.mockResolvedValue({ id: "payment-1", status: PaymentStatus.SUCCEEDED });
+  });
+
+  it("activates the subscription when the re-fetched transaction is confirmed", async () => {
+    const { handlePlategaWebhook } = await import("@/lib/services/payments");
+
+    await handlePlategaWebhook({ callback: { id: "tx-1", payload: "payment-1" } });
+
+    expect(mockGetPlategaTransaction).toHaveBeenCalledWith("tx-1");
+    expect(mockActivateSubscriptionFromPayment).toHaveBeenCalledWith(
+      "payment-1",
+      expect.objectContaining({ externalPaymentId: "tx-1" })
+    );
+  });
+
+  it("throws WebhookIntegrityError when the re-fetched amount does not match", async () => {
+    const { handlePlategaWebhook, WebhookIntegrityError } = await import("@/lib/services/payments");
+    mockGetPlategaTransaction.mockResolvedValue({
+      ...confirmedTransaction,
+      paymentDetails: { amount: 1, currency: "RUB" }
+    });
+
+    await expect(
+      handlePlategaWebhook({ callback: { id: "tx-1", payload: "payment-1" } })
+    ).rejects.toBeInstanceOf(WebhookIntegrityError);
+    expect(mockActivateSubscriptionFromPayment).not.toHaveBeenCalled();
+  });
+
+  it("drops callbacks that point at a payment from another provider", async () => {
+    const { handlePlategaWebhook, WebhookDropSilentlyError } = await import("@/lib/services/payments");
+    mockPrisma.payment.findUnique.mockResolvedValue({
+      id: "payment-1",
+      provider: PaymentProvider.YOOKASSA,
+      status: PaymentStatus.PENDING
+    });
+
+    await expect(
+      handlePlategaWebhook({ callback: { id: "tx-1", payload: "payment-1" } })
+    ).rejects.toBeInstanceOf(WebhookDropSilentlyError);
+    expect(mockGetPlategaTransaction).not.toHaveBeenCalled();
   });
 });
 

@@ -6,7 +6,6 @@ export const PAGINATION_MAX_LIMIT = 100;
 
 export const PAYMENT_PROVIDER_LABELS = {
   YOOKASSA: "ЮKassa",
-  // Removed provider — label kept so historical payments still render a name.
   PLATEGA: "Platega"
 } as const;
 

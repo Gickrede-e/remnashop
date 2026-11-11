@@ -2,6 +2,8 @@ import "server-only";
 
 import { z } from "zod";
 
+import { parsePlategaPaymentMethods } from "@/lib/payments/platega-methods";
+
 const NODE_ENV = process.env.NODE_ENV ?? "development";
 const isProduction = NODE_ENV === "production";
 const isProductionBuild = process.env.NEXT_PHASE === "phase-production-build";
@@ -33,6 +35,10 @@ const DEV_ENV_FALLBACKS = {
   YOOKASSA_ENABLED: "false",
   YOOKASSA_SHOP_ID: "123456",
   YOOKASSA_SECRET_KEY: "test_secret_key",
+  PLATEGA_ENABLED: "false",
+  PLATEGA_MERCHANT_ID: "",
+  PLATEGA_API_KEY: "",
+  PLATEGA_PAYMENT_METHODS: "2,10,13",
   SMTP_HOST: "smtp",
   SMTP_PORT: "2525",
   SMTP_SECURE: "false",
@@ -53,6 +59,7 @@ const EXAMPLE_ENV_PLACEHOLDERS = {
   JWT_SECRET: "REPLACE_WITH_OPENSSL_RAND_HEX_32",
   REMNAWAVE_API_TOKEN: "REPLACE_WITH_REMNAWAVE_API_TOKEN",
   YOOKASSA_SECRET_KEY: "REPLACE_WITH_YOOKASSA_SECRET_KEY",
+  PLATEGA_API_KEY: "REPLACE_WITH_PLATEGA_API_KEY",
   CRON_SECRET: "REPLACE_WITH_OPENSSL_RAND_HEX_16"
 } as const;
 
@@ -76,6 +83,7 @@ const KNOWN_PLACEHOLDERS = new Set<string>([
   EXAMPLE_ENV_PLACEHOLDERS.JWT_SECRET,
   EXAMPLE_ENV_PLACEHOLDERS.REMNAWAVE_API_TOKEN,
   EXAMPLE_ENV_PLACEHOLDERS.YOOKASSA_SECRET_KEY,
+  EXAMPLE_ENV_PLACEHOLDERS.PLATEGA_API_KEY,
   EXAMPLE_ENV_PLACEHOLDERS.CRON_SECRET
 ]);
 
@@ -135,6 +143,10 @@ const rawEnv = {
   YOOKASSA_ENABLED: readEnvValue("YOOKASSA_ENABLED"),
   YOOKASSA_SHOP_ID: readEnvValue("YOOKASSA_SHOP_ID"),
   YOOKASSA_SECRET_KEY: readEnvValue("YOOKASSA_SECRET_KEY"),
+  PLATEGA_ENABLED: readEnvValue("PLATEGA_ENABLED"),
+  PLATEGA_MERCHANT_ID: readEnvValue("PLATEGA_MERCHANT_ID"),
+  PLATEGA_API_KEY: readEnvValue("PLATEGA_API_KEY"),
+  PLATEGA_PAYMENT_METHODS: readEnvValue("PLATEGA_PAYMENT_METHODS"),
   SMTP_HOST: readEnvValue("SMTP_HOST"),
   SMTP_PORT: readEnvValue("SMTP_PORT"),
   SMTP_SECURE: readEnvValue("SMTP_SECURE"),
@@ -175,6 +187,13 @@ const envSchema = z.object({
     .transform((value) => value === "true"),
   YOOKASSA_SHOP_ID: z.string().default(""),
   YOOKASSA_SECRET_KEY: z.string().default(""),
+  PLATEGA_ENABLED: z
+    .string()
+    .default("false")
+    .transform((value) => value === "true"),
+  PLATEGA_MERCHANT_ID: z.string().trim().default(""),
+  PLATEGA_API_KEY: z.string().trim().default(""),
+  PLATEGA_PAYMENT_METHODS: z.string().default("2,10,13"),
   SMTP_HOST: z.string().min(1),
   SMTP_PORT: z.coerce.number().int().positive(),
   SMTP_SECURE: z
@@ -225,6 +244,35 @@ const envSchema = z.object({
         code: z.ZodIssueCode.custom,
         path: ["YOOKASSA_SECRET_KEY"],
         message: "YOOKASSA_SECRET_KEY is set to a placeholder value — generate a real secret"
+      });
+    }
+  }
+
+  if (value.PLATEGA_ENABLED) {
+    for (const field of ["PLATEGA_MERCHANT_ID", "PLATEGA_API_KEY"] as const) {
+      if (!value[field]) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [field],
+          message: `${field} is required when PLATEGA_ENABLED=true`
+        });
+      }
+    }
+
+    if (isStrict && KNOWN_PLACEHOLDERS.has(value.PLATEGA_API_KEY)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["PLATEGA_API_KEY"],
+        message: "PLATEGA_API_KEY is set to a placeholder value — use the key from the Platega cabinet"
+      });
+    }
+
+    const { methods, invalidValues } = parsePlategaPaymentMethods(value.PLATEGA_PAYMENT_METHODS);
+    if (invalidValues.length > 0 || methods.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["PLATEGA_PAYMENT_METHODS"],
+        message: "PLATEGA_PAYMENT_METHODS must list supported method ids (2, 10, 13), comma-separated"
       });
     }
   }
@@ -292,6 +340,7 @@ export const env = {
   ...base,
   siteUrl: base.NEXT_PUBLIC_SITE_URL.replace(/\/+$/, ""),
   siteName: base.NEXT_PUBLIC_SITE_NAME,
+  plategaPaymentMethods: parsePlategaPaymentMethods(base.PLATEGA_PAYMENT_METHODS).methods,
   // Days credited per paying referral when the programme pays in days (dashboard copy).
   referralBonusDays: base.REFERRAL_REWARD_TYPE === "FREE_DAYS" ? base.REFERRAL_REWARD_VALUE : null,
   adminEmails: base.ADMIN_EMAILS.split(",")

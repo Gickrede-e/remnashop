@@ -44,7 +44,8 @@ describe("dashboard secondary surfaces", () => {
             createdAt: new Date("2026-04-01T00:00:00.000Z"),
             updatedAt: new Date("2026-04-01T00:00:00.000Z")
           }
-        ]
+        ],
+        plategaPaymentMethods: [2, 10, 13]
       })
     );
 
@@ -93,7 +94,8 @@ describe("dashboard secondary surfaces", () => {
             createdAt: new Date("2026-04-01T00:00:00.000Z"),
             updatedAt: new Date("2026-04-01T00:00:00.000Z")
           }
-        ]
+        ],
+        plategaPaymentMethods: []
       })
     );
 
@@ -102,6 +104,40 @@ describe("dashboard secondary surfaces", () => {
     expect(markup).toMatch(/<button[^>]*disabled=""[^>]*>Платежи недоступны<\/button>/);
     expect(markup).toContain("Платежи временно недоступны");
     expect(markup).not.toContain("ЮKassa");
+  });
+
+  it("offers YooKassa and each enabled Platega method as payment choices", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(PaymentCheckout, {
+        enabledProviders: [PaymentProvider.YOOKASSA, PaymentProvider.PLATEGA],
+        plans: [
+          {
+            id: "plan-1",
+            slug: "starter",
+            name: "Starter",
+            description: null,
+            price: 99000,
+            durationDays: 30,
+            trafficGB: 100,
+            highlight: null,
+            isActive: true,
+            sortOrder: 1,
+            remnawaveExternalSquadUuid: null,
+            remnawaveInternalSquadUuids: [],
+            remnawaveHwidDeviceLimit: null,
+            createdAt: new Date("2026-04-01T00:00:00.000Z"),
+            updatedAt: new Date("2026-04-01T00:00:00.000Z")
+          }
+        ],
+        plategaPaymentMethods: [2, 13]
+      })
+    );
+
+    expect(markup).toContain("Способ оплаты");
+    expect(markup).toMatch(/aria-pressed="true"[^>]*><strong[^>]*>ЮKassa</);
+    expect(markup).toMatch(/aria-pressed="false"[^>]*><strong[^>]*>СБП</);
+    expect(markup).toContain("Крипта");
+    expect(markup).not.toContain("Карты РФ");
   });
 
   it("renders payment history with dashboard stats and a table card", () => {
