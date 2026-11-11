@@ -120,6 +120,7 @@ describe("createPaymentForUser", () => {
       isActive: true
     });
     mockValidatePromoCode.mockResolvedValue(null);
+    mockPrisma.user.findUniqueOrThrow.mockResolvedValue({ email: "buyer@example.com" });
     mockPrisma.payment.create.mockResolvedValue({
       id: "payment-1"
     });
@@ -173,7 +174,8 @@ describe("createPaymentForUser", () => {
     });
     expect(mockCreateYooKassaPayment).toHaveBeenCalledWith(
       expect.objectContaining({
-        amount: 282150
+        amount: 282150,
+        customerEmail: "buyer@example.com"
       })
     );
   });
@@ -221,7 +223,6 @@ describe("createPaymentForUser", () => {
 
   it("creates a Platega payment with the buyer's email and stores its payment url", async () => {
     const { createPaymentForUser } = await import("@/lib/services/payments");
-    mockPrisma.user.findUniqueOrThrow.mockResolvedValue({ email: "buyer@example.com" });
     mockCreatePlategaPayment.mockResolvedValue({
       transactionId: "tx-1",
       url: "https://pay.platega.io/?id=tx-1"

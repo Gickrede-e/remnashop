@@ -12,10 +12,15 @@ const YOOKASSA_ALLOWED_IPS = [
   "2a02:5180::/32"
 ] as const;
 
+// 54-ФЗ receipt line: the shop is an ИП on УСН, so no VAT (vat_code 1); access is a service paid in full.
+const RECEIPT_VAT_CODE = 1;
+const RECEIPT_ITEM_DESCRIPTION_MAX_LENGTH = 128;
+
 type YooKassaCreatePaymentInput = {
   amount: number;
   description: string;
   paymentId: string;
+  customerEmail: string;
   returnUrl: string;
 };
 
@@ -115,6 +120,25 @@ export async function createYooKassaPayment(input: YooKassaCreatePaymentInput) {
       },
       capture: true,
       description: input.description,
+      receipt: {
+        customer: {
+          email: input.customerEmail
+        },
+        items: [
+          {
+            description: input.description.slice(0, RECEIPT_ITEM_DESCRIPTION_MAX_LENGTH),
+            quantity: 1,
+            amount: {
+              value: amountValue,
+              currency: "RUB"
+            },
+            vat_code: RECEIPT_VAT_CODE,
+            payment_subject: "service",
+            payment_mode: "full_payment",
+            measure: "piece"
+          }
+        ]
+      },
       metadata: {
         paymentId: input.paymentId
       }

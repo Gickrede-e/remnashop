@@ -101,12 +101,13 @@ export async function createPaymentForUser(input: {
   const description = `GickShop — Тариф ${plan.name}`;
 
   try {
+    // Both gateways need the buyer's email: Platega's v2 API and YooKassa's 54-ФЗ receipt.
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { id: input.userId },
+      select: { email: true }
+    });
+
     if (input.provider === PaymentProvider.PLATEGA) {
-      // Platega's v2 API requires the buyer's email.
-      const user = await prisma.user.findUniqueOrThrow({
-        where: { id: input.userId },
-        select: { email: true }
-      });
       const remote = await createPlategaPayment({
         amount,
         description,
@@ -134,6 +135,7 @@ export async function createPaymentForUser(input: {
       amount,
       description,
       paymentId: payment.id,
+      customerEmail: user.email,
       returnUrl
     });
 
